@@ -308,27 +308,27 @@ class ResultList():
         global queryFilter
         global newSearchSource
         self.resultEntries = resultEntries
-        oldFilter = {
-            'msgTypeFilter': [],
-            'senderFilter': [],
-            'recipFilter': [],
-            'dateFilter': []
-            }
-        if type(newSearchSource) == urwid.wimp.Button:
-            for key in oldFilter.keys():
-                if getattr(queryFilter, key).current != []:
-                    oldFilter[key] = getattr(queryFilter, key).current
-                    logging.info('queryFilter Contents stored= %s', getattr(queryFilter, key).current)
-                    getattr(queryFilter, key).current = []
-            self.filteredResults = self.filterResults()
-            for key in oldFilter.keys():
-                if oldFilter[key] != []:
-                    getattr(queryFilter, key).current = oldFilter[key]
-                    logging.info('queryFilter Contents retrieved= %s', getattr(queryFilter, key).current)
-                    oldFilter[key] = []
-            newSearchSource = ''
-        else:
-            self.filteredResults = self.filterResults()
+        #oldFilter = {
+        #    'msgTypeFilter': [],
+        #    'senderFilter': [],
+        #    'recipFilter': [],
+        #    'dateFilter': []
+        #    }
+        #if type(newSearchSource) == urwid.wimp.Button:
+        #    for key in oldFilter.keys():
+        #        if getattr(queryFilter, key).current != []:
+        #            oldFilter[key] = getattr(queryFilter, key).current
+        #            logging.info('queryFilter Contents stored= %s', getattr(queryFilter, key).current)
+        #            getattr(queryFilter, key).current = []
+        #    self.filteredResults = self.filterResults()
+        #    for key in oldFilter.keys():
+        #        if oldFilter[key] != []:
+        #            getattr(queryFilter, key).current = oldFilter[key]
+        #            logging.info('queryFilter Contents retrieved= %s', getattr(queryFilter, key).current)
+        #            oldFilter[key] = []
+        #    newSearchSource = ''
+        #else:
+        #    self.filteredResults = self.filterResults()
         self.div = urwid.Divider(' ',top=0,bottom=0)
         x = 1
         rows = [urwid.Divider(' ',top=0,bottom=0)]
@@ -596,7 +596,6 @@ class Search():
             for x in filter:
                 filteredResults['LogFile'] = [
                     filterType + ' Filtered Results ' + str(x)]
-            logging.info(': %s: filteredResults :: %s', filterType, filteredResults)
             return filteredResults
     def filterLogs(self, filter):
         starttime = datetime.now()
@@ -608,7 +607,9 @@ class Search():
             logPoolArgs.append([filter,log])
         filterLogProcessPool = Pool(processes=len(logPoolArgs))
         filteredLogs = filterLogProcessPool.map(filterLogProcess, logPoolArgs)
-        logging.info('QT = %s : filteredLog Pool Results: %s',datetime.now() - starttime, filteredLogs)
+        for resultList in filteredLogs:
+            for logfile in resultList.keys():
+                logging.info('QT = %s : filteredLog Pool Result Count: %s',datetime.now() - starttime, len(resultList[logfile]))
         return 'STILL TESTING'
 class LogFiles():
     def activateParsing(self, *args):
