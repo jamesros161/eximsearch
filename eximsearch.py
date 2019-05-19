@@ -398,28 +398,20 @@ class Views():
                     on_state_change=[logFiles,'update'], 
                     user_data=[log])
                     )
+        logCheckBoxes.append(w.div)
+        logCheckBoxes.append(w.getButton('Continue', views, 'home'))
         listBox = w.getListBox(logCheckBoxes)[0]
         return self.centeredListLineBox(
             listBox, 
             'Choose Your Logs to Search',
             len(logCheckBoxes) + 3)
-        #height = len(logFiles.availableLogs) + 3
-        #filler = urwid.Filler(listBox, height=height)
-        #insideCol = w.getColRow([w.blankBox,('weight',2,filler),w.blankBox])
-        #debug('chooseLogs filler.sizing(): %s', filler.sizing())
-        #lineBox = w.getLineBox(insideCol,'Choose Your Logs to Search')
-        #debug('chooseLogs listBox: %s', listBox)
-        #outsidefiller = urwid.Filler(lineBox,height=height)
-        #outsideCol = w.getColRow([w.blankBox,('weight',2,outsidefiller),w.blankBox])
-        #filler = urwid.Filler(outsideCol, height=height)
-        #return outsideCol
-    def show(self,widget,location):
-        self.primary.contents.__setitem__('body', [newContents, None])
-
+    def show(self,widget,target, location):
+        target.__setitem__(location, [widget, None])
     def home(self):
         """Page displayed as Home Page for the application
         """
         debug('Started Views.home')
+        homeText
     def newSearch(self):
         """Page opened when starting an entirely new
            search. Not used for revising or filtering 
