@@ -1,7 +1,0 @@
-INFO:root:Start Search
-INFO:root:Selected Log Files: ['/var/log/exim_mainlog']
-INFO:root:query: Parse Logs: {}
-INFO:root:Parse Logs filter : ['camera@dsaconsultancies.com']
-INFO:root::filterLogs :: Current Thread:: MainThread
-INFO:root:filterLogs filter: ['camera@dsaconsultancies.com']
-INFO:root:QT = 0:00:03.104511 : filteredLog Pool Result Count: 76422

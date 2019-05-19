@@ -3,13 +3,14 @@
 import urwid, datetime, os, subprocess, sys, json, re, shlex, gzip, time, logging, collections, socket, threading
 from multiprocessing import Pool, Queue, current_process
 from datetime import datetime, timedelta
+os.nice(20)
 
 logging.basicConfig(filename='log',filemode='a', level=logging.INFO)
 logging.log = logging.info
 
 entryList = {}
 logfiles = {}
-results = {}
+results = []
 pid = ''
 query = ['',[]]
 newQuery = ['',[]]
@@ -48,6 +49,18 @@ class GlobalSettings():
             'msgTypeFilter',
             'query'
         ]
+class DateRange():
+    def getDateRangeArray(self,dateRangeStrings):
+        dateRangeArray = []
+        startDate = datetime.strptime(dateRangeStrings[0], s.displayDateFormat)
+        endDate = datetime.strptime(dateRangeStrings[1], s.displayDateFormat)
+        for single_date in self.daterange(startDate, endDate):
+            dateRangeArray.append(single_date.strftime(s.logDateFormat))
+        return dateRangeArray
+    def dateRange(self,start_date, end_date):
+        for n in range(int ((end_date - start_date).days)):
+            yield start_date + timedelta(n)
+
 class ResultListSettings():
     def __init__(self):
         self.ButtonColWidth = 7
@@ -97,6 +110,8 @@ class FixedButton(urwid.Button):
     def enable(self):
         _selectable = True
 class MyWidgets():
+    def __init__(self):
+        self.div = urwid.Divider(' ',top=0,bottom=0)
     def getButton(self, thisLabel, callingObject, callback, user_data=None):
         button = FixedButton(str(thisLabel),
         on_press=getattr(callingObject, callback),
@@ -217,7 +232,7 @@ class MainMenu():
         frame.primary.focus_position = 'body'
         self.edit = urwid.Edit("Enter Search Query \n")
         self.searchFill = QuestionBox(self.edit)
-        frame.primary.contents.__setitem__('body', [self.searchFill, None])
+        frame.update('body', self.searchFill)
         #urwid.connect_signal(self.edit, 'postchange', newSearch)
     def getFilters(self, *args):
         global queryFilter
@@ -533,8 +548,11 @@ class Search():
         self.selectedLogs = self.transposeLogFiles()
         self.currentFilters = self.transposeFilters()
         self.filteredResults = None
+        self.filterExclusions = []
         logging.log('Selected Log Files: %s', self.selectedLogs)
-        results = self.filterResults(input=results)
+        results = self.filterResults()
+        logging.log('Result Count = %s', len(results))
+        self.summarizeResults()
     def transposeLogFiles(self):
         selectedLogs = []
         for key, value in logfiles.items():
@@ -547,7 +565,7 @@ class Search():
             for filterType in self.filterTypes:
                 if filterType != 'query':
                     x = getattr(queryFilter, filterType).current
-                    currentFilters[filterType] = self.formatFilterStr(filterType,x)
+                    currentFilters[filterType] = x
                 else:
                     if query[1] == '':
                         currentFilters[filterType] = []
@@ -568,34 +586,88 @@ class Search():
             return currentFilters
     def formatFilterStr(self, filterType, filters):
         formattedFilter = []
-        for filterString in filters:
-            if filterType == 'senderFilter':
-                formattedFilter.append('from <' + filterString + '>')
-                formattedFilter.append('F=<' + filterString + '>')
-        return formattedFilter
+        self.filterExclusions = []
+        logging.info('formatFilterStr filters: %s', filters)
+        if filterType == 'senderFilter':
+            for filterString in filters:
+                formattedFilter.append(' from <' + filterString + '>')
+                formattedFilter.append(' F=<' + filterString + '>')
+            return formattedFilter
+        if filterType == 'recipFilter':
+            formattedFilter = []
+            for filterString in filters:
+                formattedFilter.append(' for ' + filterString)
+                formattedFilter.append(' => ' + filterString)
+            return formattedFilter
+        if filterType == 'msgTypeFilter':
+            for filter in filters:
+                if filter.lower() == 'incoming':
+                    formattedFilter.append(' <= ')
+                    self.filterExclusions.extend([
+                        'A=dovecot',
+                        'P=local',
+                        'H=(' + s.hostname + ')'
+                        ])
+                if filter.lower() == 'outgoing':
+                    formattedFilter.append(' => ')
+                    self.filterExclusions.extend([
+                        ' T=dovecot'
+                        ])
+                if filter.lower() == 'local':
+                    formattedFilter.append('P=local')
+            return formattedFilter
+        if filterType == 'dateFilter':
+            for filterString in filters:
+                if len(filterString) == 1:
+                    formattedFilter.append(filterString)
+                if len(filterString) == 2:
+                    d = DateRange()
+                    formattedFilter.extend(d.getDateRangeArray(filterString))
+            return formattedFilter
+        else:
+            return filters
     def filterResults(self,input=None):
-        filterInput = input
-        filteredResults = self.filterInput('senderFilter', input=filterInput)
+        originalInput = input
+        filteredResults = self.filterInput('senderFilter', input=originalInput)
         filteredResults = self.filterInput('recipFilter', input=filteredResults)
         filteredResults = self.filterInput('dateFilter', input=filteredResults)
         filteredResults = self.filterInput('msgTypeFilter', input=filteredResults)
         filteredResults = self.filterInput('query', input=filteredResults)
         return filteredResults
-    def filterInput(self, filterType, input=None):
-        filteredResults = {}
-        filter = self.currentFilters[filterType]
-        if filter == None or filter == []:
+    def filterInput(self, filterType, input=None, optFilter=None):
+        originalInput = input
+        if originalInput != None:
+            logging.info('\n::%s filterInput::\nOriginal Input: %s',filterType, len(originalInput))
+        filteredResults = []
+        if optFilter != None:
+            filters = optFilter
+        else:
+            filters = self.currentFilters[filterType]
+        if filters == None or filters == []:
             return input
-        if input == None or input == {}:
-            logging.log('%s: Parse Logs: %s', filterType, input)
-            logging.log('Parse Logs filter : %s', filter)
-            filteredResults = self.filterLogs(filter)
+        if input == None or input == []:
+            filters = self.formatFilterStr(filterType,filters)
+            filteredResults = self.filterLogs(filters)
             return filteredResults
         else:
-            logging.info(': %s: Filter input: %s', filterType, input)
-            for x in filter:
-                filteredResults['LogFile'] = [
-                    filterType + ' Filtered Results ' + str(x)]
+            logging.info('filterInput beforeExclusion len(input): %s', len(input))
+            filters = self.formatFilterStr(filterType,filters)
+            logging.info('formatFilterStr: %s', filters)
+            excludedItems = []
+            for item in input[:]:
+                for exclusion in self.filterExclusions:
+                    if exclusion in item:
+                        excludedItems.append(input.pop(input.index(item)))
+            logging.info('filterInput afterExclusion len(input): %s', len(input))
+            for item in input[:]:
+                for filter in filters:
+                    if filter in item:
+                        filteredResults.append(item)
+            logging.info('filterInput len(filteredResults): %s', len(filteredResults))
+            self.filterExclusions = []
+            input.extend(excludedItems)
+            logging.info('%s filterInput:: Original Input: %s\n', filterType, len(originalInput))
+            input = originalInput
             return filteredResults
     def filterLogs(self, filter):
         starttime = datetime.now()
@@ -605,12 +677,143 @@ class Search():
         logPoolArgs = []
         for log in self.selectedLogs:
             logPoolArgs.append([filter,log])
-        filterLogProcessPool = Pool(processes=len(logPoolArgs))
+        filterLogProcessPool = Pool()
         filteredLogs = filterLogProcessPool.map(filterLogProcess, logPoolArgs)
+        results = []
         for resultList in filteredLogs:
-            for logfile in resultList.keys():
-                logging.info('QT = %s : filteredLog Pool Result Count: %s',datetime.now() - starttime, len(resultList[logfile]))
-        return 'STILL TESTING'
+            for logFile in resultList.keys():
+                results.extend(resultList[logFile])
+        logging.info('QT = %s : filteredLog Pool Result Count: %s',datetime.now() - starttime, len(results))
+        return results
+    def summarizeResults(self,input=None):
+        summary = urwid.Filler(self.getSummaryRows(input=input))
+        frame.update('body',summary)
+    def getSummaryValues(self):
+        summary = {}
+        if len(self.currentFilters.keys()) > 0:
+            if len(self.currentFilters['msgTypeFilter']) > 0:
+                summary[' Filtered by Message Type(s) '] = self.currentFilters['msgTypeFilter']
+            if len(self.currentFilters['senderFilter']) > 0:
+                summary[' Filtered by Sender(s) '] = self.currentFilters['senderFilter']
+            if len(self.currentFilters['recipFilter']) > 0:
+                summary[' Filtered by Recipient(s) '] = self.currentFilters['recipFilter']
+            if len(self.currentFilters['dateFilter']) > 0:
+                summary[' Filtered By Date(s) / Date Range(s) '] = self.currentFilters['dateFilter']
+        else:
+            summary[' No Filters Applied '] = ['']
+        return summary
+    def getSummaryFunnel(self, input=None):
+        if input == None:
+            resultsToDisplay = results
+        else:
+            resultsToDisplay = self.filteredResults
+        summaryFunnelCntr = [
+        [['msgTypeFilter','incoming'], 
+            'Number of incoming messages', 
+            len(self.filterInput(
+                'msgTypeFilter', 
+                input=resultsToDisplay, 
+                optFilter=['incoming']
+                ))],
+        [['msgTypeFilter','outgoing'],
+            'Number of outgoing messages', 
+            len(self.filterInput(
+                'msgTypeFilter',
+                input=resultsToDisplay,
+                optFilter=['outgoing']
+                ))],
+        [['senderFilter',query[1]],
+            'Number of times Query is Sender', 
+            len(self.filterInput(
+                'senderFilter',
+                input=resultsToDisplay,
+                optFilter=[query[1]]
+                ))],
+        [['recipFilter',query[1]],
+            'Number of times Query is Recipient',
+            len(self.filterInput(
+                'recipFilter',
+                input=resultsToDisplay,
+                optFilter=[query[1]]
+                ))]
+        ]
+        summaryFunnel = []
+        summaryFunnel.append(w.getText('bold','Filters to Narrow Down Results', 'center'))
+        summaryFunnel.append(w.div)
+        for item in summaryFunnelCntr:
+            summaryFunnel.append(w.getColRow([
+                w.getButton('(Apply / Remove)', self, 'filterFromSummary',user_data=item[0]),
+                ('weight',2, w.getText('body',item[1],'center')), 
+                w.getText('body',str(item[2]),'center') 
+                ]))
+        summaryFunnel.append(w.div)
+        summaryFunnel.append(w.getText('bold','Filters by Message Date', 'center'))
+        summaryFunnel.append(w.div)
+        for dateString, count in self.getDateListCounter(results).items():
+            summaryFunnel.append(w.getColRow([
+                ('weight',2, w.getText('body',dateString, 'center')),
+                w.getText('body',str(count), 'center')
+                ]))
+        return summaryFunnel
+    def filterFromSummary(self,*args):
+        global queryFilter
+        global results
+        logging.info('filterFromSummary args: %s', args)
+        if type(queryFilter) == str:
+            queryFilter = Filters()
+        if args[0][1] in getattr(queryFilter,args[0][0]).current:
+            getattr(queryFilter,args[0][0]).current.remove(args[0][1])
+        else:
+            getattr(queryFilter,args[0][0]).current.append(args[0][1])
+        if args[0][1] in self.currentFilters[args[0][0]]:
+            self.currentFilters[args[0][0]].remove(args[0][1])
+        else:
+            self.currentFilters[args[0][0]].append(args[0][1])
+        if self.filteredResults == None:
+            self.filteredResults = self.filterInput(args[0][0],input=results)
+        else:
+            self.filteredResults = self.filterInput(args[0][0],input=self.filteredResults)
+        self.summarizeResults(self.filteredResults)
+        
+    def getDateListCounter(self, results):
+        cnt = collections.Counter()
+        for result in results:
+            dateString = result[:result.index(' ')]
+            cnt[dateString] += 1
+        logging.info('datelist Counter = %s', cnt)
+        return cnt
+    def getSummaryFields(self, input=None):
+        if input == None:
+            resultsToDisplay = results
+        else:
+            resultsToDisplay = input
+        summaryValues = self.getSummaryValues()
+        summaryFields = []
+        summaryFields.append(w.getText('bold',' There are ' + str(len(resultsToDisplay)) + ' Results ', 'center'))
+        summaryFields.append(w.div)
+        for key, values in summaryValues.items():
+            summaryFields.append(w.getText('header',key,'center'))
+            for value in values:
+                summaryFields.append(w.getText('body',value,'center'))
+        return summaryFields
+    def getSummaryRows(self, input=None):
+        summaryFields = self.getSummaryFields(input=input)
+        summaryRows = [w.div]
+        for field in summaryFields:
+            summaryRows.append(field)
+        summaryRows.append(w.div)
+        summaryRows = summaryRows + self.getSummaryFunnel(input=input)
+        blank = w.getText('body','','left')
+        logging.info('getSummaryRows summaryRows: %s', summaryRows)
+        summaryList = urwid.Pile(summaryRows, focus_item=None)
+        summaryBorder = urwid.LineBox(summaryList, title='Query Summary : ' + str(query[1]), title_align='center')
+        summaryRow = urwid.Columns([blank, ('weight', 1, summaryBorder), blank], dividechars=1, focus_column=None, min_width=1, box_columns=None)
+        return summaryRow
+    def getSummaryCol(self,countWidth,text,count):
+        return urwid.Columns([text, (countWidth, count)],
+            dividechars=0,
+            focus_column=None, min_width=1,
+            box_columns=None)
 class LogFiles():
     def activateParsing(self, *args):
         if any(logfiles.values()):
@@ -919,7 +1122,13 @@ class QuestionBox(urwid.Filler):
         if key != 'enter':
             return super(QuestionBox, self).keypress(size, key)
         newQuery = ['',self.original_widget.get_edit_text()]
-        self.original_widget.set_edit_text('')
+        self.original_widget = w.getText(
+        'body', 
+        'Searching Logs Now.....', 
+        'left')
+        frame.update('body', self)
+        loop.draw_screen()
+        logging.info('Current Original Widget: %s', self.original_widget)
         newSearch(newQuery)
 class FilterEntry(urwid.Filler):
     def keypress(self, size, key):
@@ -1083,6 +1292,7 @@ class Filters():
         frame.update('body',filterPile)
         frame.setFocus('body')
 def filterLogProcess(poolArgs):
+        os.nice(20)
         filters,log = poolArgs
         rawEntries = {}
         if log[-2:] != 'gz':
@@ -1103,10 +1313,10 @@ def filterLogProcess(poolArgs):
                             rawEntries[log].append(line)
         return rawEntries
 def newSearch(*args):
+    logging.info('newSearch args: %s', args)
     global query
     global newQuery
     global newSearchSource
-    #if newQuery[1]:
     query = newQuery
     newQuery = ['','']
     global frame
@@ -1146,6 +1356,14 @@ def stringToDate(newFilter):
             return datetime.strptime(newFilter, s.displayDateFormat)
     else:
         return datetime.strptime(newFilter, s.displayDateTimeFormat)
+def changeButton(*args):
+    logging.info('changeButton Thread args = %s', args)
+    args[0].original_widget = w.getText(
+        'body', 
+        'Searching Logs Now.....', 
+        'left')
+    frame.update('body', args[0])
+    loop.draw_screen()
 if __name__ == '__main__':
     s = GlobalSettings()
     w = MyWidgets()
