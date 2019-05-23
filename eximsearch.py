@@ -2,6 +2,7 @@
 #/opt/imh-python/bin/python
 import urwid, datetime, os, subprocess, sys, json, re, shlex, gzip, time, logging, collections, socket, threading
 from multiprocessing import Pool, Queue, current_process
+from multiprocessing.pool import ThreadPool
 from datetime import datetime, timedelta
 
 os.nice(20)
@@ -9,6 +10,7 @@ logging.basicConfig(filename='log',filemode='a', level=logging.DEBUG)
 info = logging.info
 debug = logging.debug
 warning = logging.warning
+searchCounter = 1
 
 """
 SETTINGS / DEFAULT VALUE CLASSES
@@ -39,6 +41,7 @@ class GlobalSettings():
             'msgTypeFilter',
             'query'
         ]
+        self.activeView = ''
     def unhandled_input(self,key):
         if type(key) == str:
             if key in ('q', 'N'):   
@@ -53,6 +56,9 @@ class GlobalSettings():
                 else:
                     if self.menuEnabled:
                         frame.focus_position = 'footer'
+            if s.activeView == 'singleEntry':
+                if key in ('B', 'b'):
+                    views.resultList('search' + str(searchCounter - 1).zfill(3))
 class DateTimeSettings():
     def __init__(self):
         """Settings for DateTime functions / formatting
@@ -84,6 +90,30 @@ class DisplayFrameSettings():
                 'statSummary'],
             ['(T)est Mailer',
                 'testMailer'],
+            ['(Q)uit',
+                'quitLoop']
+        ]
+        self.resultsListMenu = [
+            ['(N)ew Search',
+                'newSearch'],
+            ['(F)ilter Current Results',
+                'filterResults'],
+            ['(C)lear Applied Filters',
+                'statSummary'],
+            ['(H)ome',
+                'home'],
+            ['(Q)uit',
+                'quitLoop']
+        ]
+        self.singleResultMenu = [
+            ['(N)ew Search',
+                'newSearch'],
+            ['(S)how Related Entries',
+                'showRelatedEntries'],
+            ['(B)ack To Result List',
+                'resultList'],
+            ['(H)ome',
+                'home'],
             ['(Q)uit',
                 'quitLoop']
         ]
@@ -201,7 +231,7 @@ class MyWidgets():
         self.div = urwid.Divider(' ',top=0,bottom=0)
         self.blankFlow = self.getText('body','','center')
         self.blankBox = urwid.Filler(self.blankFlow)
-    def getButton(self, thisLabel, callingObject, callback, user_data=None):
+    def getButton(self, thisLabel, callingObject, callback, user_data=None, buttonMap='bold', focus_map='header'):
         """Creates and returns a FixedButton object.
         
         Arguments:
@@ -221,7 +251,7 @@ class MyWidgets():
         on_press=getattr(callingObject, callback),
         user_data=user_data)
         button._label.align = 'center'
-        buttonMap = urwid.AttrMap(button, 'bold', focus_map='header')
+        buttonMap = urwid.AttrMap(button, buttonMap, focus_map=focus_map)
         return buttonMap
     def getText(self,format,textString, alignment,**kwargs):
         """Creates a basic urwid.Text widget
@@ -351,14 +381,26 @@ class MyWidgets():
         """
         menuList = []
         for item in menuItems:
-            menuList.append(
-                w.getButton(item[0],views,item[1]))
+            if len(item) == 3:
+                menuList.append(
+                    w.getButton(item[0],views,item[1],user_data=item[2]))
+            else:
+                menuList.append(
+                    w.getButton(item[0],views,item[1]))
         return urwid.Columns(
             menuList,
             dividechars=1,
             focus_column=None,
             min_width=1, 
             box_columns=None)
+class QuestionBox(urwid.Filler):
+    def keypress(self, size, key):
+        if key != 'enter':
+            return super(QuestionBox, self).keypress(size, key)
+        entry = self.original_widget.get_edit_text()
+        self.original_widget.set_edit_text('')
+        debug('%s Entry String: %s', self.original_widget, entry)
+        search.new(entry)
 w = MyWidgets()
 """
 VIEW CLASSES
@@ -371,7 +413,7 @@ class Views():
             area generated views of various classes, the objects of which are
             stored in Views.page
         """
-        self. page = {}
+        self.page = {}
     def addRemoveFilters(self):
         """Page for adding / removing filters from
            current filter lists
@@ -381,7 +423,7 @@ class Views():
         filler = urwid.Filler(contents, height=listHeight)
         insideCol = w.getColRow([w.blankBox,('weight',2,filler),w.blankBox])
         debug('centeredListLineBox filler.sizing(): %s', filler.sizing())
-        lineBox = w.getLineBox(insideCol,'Choose Your Logs to Search')
+        lineBox = w.getLineBox(insideCol,title)
         debug('centeredListLineBox listBox: %s', contents)
         outsidefiller = urwid.Filler(lineBox,height=listHeight)
         outsideCol = w.getColRow([w.blankBox,('weight',2,outsidefiller),w.blankBox])
@@ -391,6 +433,7 @@ class Views():
            logs that will be used in searches / filters
         """
         debug('Started Views.chooseLogs')
+        s.activeView = 'chooseLogs'
         logCheckBoxes = [w.div]
         for log in logFiles.availableLogs:
             logCheckBoxes.append(
@@ -405,28 +448,113 @@ class Views():
             listBox, 
             'Choose Your Logs to Search',
             len(logCheckBoxes) + 3)
-    def show(self,widget,target, location):
-        target.__setitem__(location, [widget, None])
+    def filterResults(self, *args):
+        debug('Started Views.filterResults View')
+    def show(self,widget,target, location, focus=''):
+        target.contents.__setitem__(location, [widget, None])
+        if focus:
+            target.focus_position = focus
     def home(self):
         """Page displayed as Home Page for the application
         """
+        s.activeView = 'home'
         debug('Started Views.home')
-        homeText
+        homeText = w.getText('body', 'Welcome to the best Exim Search Utility ever created.\nSelect an option below to begin.','center')
+        homeFiller = urwid.Filler(homeText, 'middle')
+        self.show(homeFiller, frame, 'body', )
+        self.show(footers.main, frame, 'footer')
+        frame.focus_position = 'footer'
     def newSearch(self):
         """Page opened when starting an entirely new
            search. Not used for revising or filtering 
            previous searches
         """
         debug('Started Views.newSearch')
+        s.activeView = 'newSearch'
+        selectQuery = urwid.Edit('Enter your query below\n',align='center')
+        selectFiller = QuestionBox(selectQuery, 'middle')
+        queryBox = self.centeredListLineBox(selectFiller, 'New Search Query', 5)
+        self.show(queryBox, frame, 'body')
+        frame.focus_position = 'body'
     def quitLoop(self):
         """Page opened upon a request to quit, and 
             asks for confirmation of quiting
         """
         debug('Started Views.quitLoop')
+    def searching(self):
+        debug('Started Views.searching')
+        searchingStatus = urwid.Filler(w.getText('body', 'Searching Logs Now. Please wait....', 'center'), 'middle')
+        statusBox = self.centeredListLineBox(searchingStatus, '',5)
+        self.show(statusBox, frame,'body')
+        loop.draw_screen()
+    def showRelatedEntries(self, *args):
+        debug('Started Views.showRelatedEntries: %s', args)
     def statSummary(self):
         """Page opened to display a summary of general
            stats for the email logs"""
         debug('Started Views.statSummary')
+    def resultList(self,*args):
+        debug('Start Views.resultList : %s', args)
+        s.activeView = 'resultList'
+        rawResultList = results.getRawResultList(args[0])
+        x = 1
+        listDisplayCols = []
+        for rawResult in rawResultList:
+            listDisplayCols.append(w.getColRow(
+                [
+                    (5, w.getButton(str(x),self,'singleEntry',user_data=[rawResultList.index(rawResult), args[0]])),
+                    w.getText('body',rawResult,'left')
+                ]
+            ))
+            x += 1
+        resultListWalker = urwid.SimpleFocusListWalker(listDisplayCols)
+        resultListBox = urwid.ListBox(resultListWalker)
+        #resultListFiller = urwid.Filler(resultListBox)
+        self.show(resultListBox, frame,'body')
+        frame.focus_position = 'body'
+        self.show(footers.resultsListMenu,frame,'footer')
+        return resultListBox
+    def singleEntry(self, *args):
+        debug('Start Views.singleEntry : %s', args)
+        s.activeView = 'singleEntry'
+        entryNo = args[0][0]
+        searchNo = args[0][1]
+        singleEntryFields = results.getSingleEntry(entryNo,searchNo)
+        singleEntryFields.sort()
+        singleEntryCols = [w.div]
+        for field in singleEntryFields:
+            singleEntryCols.append(w.getColRow([
+                (30,w.getButton(field[2],search,'new',user_data=field[3], buttonMap='body')),
+                ('weight',4,w.getText('body', field[3], 'left'))
+            ]))
+        singleEntryWalker = urwid.SimpleFocusListWalker(singleEntryCols)
+        singleEntryList = urwid.ListBox(singleEntryWalker)
+        #singleEntryFiller = urwid.Filler(singleEntryList)
+        s.df.resultsListMenu[2] = [
+            '(B)ack To Result List',
+            'resultList',
+            searchNo
+            ]
+        footers.update('singleEntryMenu', s.df.resultsListMenu)
+        self.show(footers.singleEntryMenu, frame, 'footer')
+        self.show(singleEntryList,frame,'body')
+    def newSearchSummary(self,searchNo, query):
+        s.activeView = 'newSearchSummary'
+        summaryRows = [
+            w.div,
+            w.getText('bold','There are ' + str(results.getCount(searchNo)) + ' results', 'center'),
+            w.div
+        ]
+        activeFilters = results.getActiveFilterStrings()
+        if activeFilters:
+            summaryRows.append(w.getText('bold', 'Currently Active Filters:', 'center'))
+            for activeFilter in activeFilters:
+                summaryRows.append(w.getText('body', activeFilter, 'center'))
+        summaryRows.append(w.div)
+        summaryRows.append(w.getButton('Show Results', self,'resultList', user_data=searchNo))
+        summary = urwid.SimpleFocusListWalker(summaryRows)
+        summaryList = urwid.ListBox(summary)
+        return views.centeredListLineBox(summaryList, 'Search Results for ' + query, len(summaryRows) + 3)
     def testMailer(self):
         """Page opened to allow user to send test emails"""
         debug('Started Views.testMailer')
@@ -458,6 +586,8 @@ class Footers():
         """
         self.widgets = {}
         self.main = w.getFooterWidget(s.df.mainMenu)
+        self.resultsListMenu = w.getFooterWidget(s.df.resultsListMenu)
+        self.singleEntryMenu = w.getFooterWidget(s.df.singleResultMenu)
     def new(self,name,menuItems):
         """Creates a new footerWidget using a list of
            menuItems, and a name for the footer
@@ -483,6 +613,12 @@ class Footers():
             raise Exception('A footer by the name of {} already exists'.format(name))
         else:
             setattr(self,name,footerWidget)
+    def update(self,name,menuItems):
+        if hasattr(self, name):
+            newWidget = w.getFooterWidget(menuItems)
+            setattr(self,name, newWidget)
+        else:
+            raise Exception('A footer by the name of {} does not exist'.format(name))
 class Headers():
     def __init__(self):
         """This class is used to create header objects
@@ -606,8 +742,141 @@ class LogFiles():
             if file.startswith("exim_mainlog"):
                 loglist.append(os.path.join(logdir, file))
         return loglist
+class Entries():
+    def __init__(self, fullEntryText):
+        """This class is used to create single-view Entry Objects
+        """
+        self.fullEntryText = fullEntryText
+        debug('Init Entries: %s', self.fullEntryText)
+        try:
+            shlex.split(self.fullEntryText)
+        except:
+            m = self.fullEntryText.split()
+            self.parseError = [15, 'Parsing Error: ', str(Exception)]
+            x = 0
+            while x <= len(m):
+                if x == 0:
+                    self.date = [10, 'Date: ', m[x]]
+                if x == 1:
+                    self.time = [11, 'Time: ', m[x]]
+                if x == 2:
+                    self.pid = [12, 'Process ID: ', m[x]]
+                if x == 3:
+                    self.id = [13, 'Message ID: ', m[x]]
+                x += 1
+            self.fullEntryText = [14, 'Full Entry: ', self.fullEntryText]        
+        else:
+            m = shlex.split(self.fullEntryText)
+            x = 0
+            while x < len(m):
+                if x == 0:
+                    self.date = [10, 'Date: ', m[x]]
+                if x == 1:
+                    self.time = [11, 'Time: ', m[x]]
+                if x == 2:
+                    self.pid = [12, 'Process ID: ', m[x]]
+                if x == 3:
+                    self.id = [13, 'Message ID: ', m[x]]
+                if x == 4:
+                    self.entryType = [22, 'Entry Type Symbol: ', m[x]] 
+                if 'H=' in m[x]:
+                    if m[x+1][0] == '(':
+                        self.host = [16,'Host: ', m[x][2:] + ' ' + m[x+1]]
+                        self.hostIp = [17, 'Host IP: ', m[x+2].split(':')[0]]
+                        if s.hostname in self.host:
+                            self.msgType = [15, 'Type: ', 'relay']
+                    else:
+                        self.host = [16, 'Host: ', m[x][2:]]
+                        self.hostIp = [17, 'Host IP: ', m[x+1].split(':')[0]]
+                        if s.hostname in self.host:
+                            self.msgType = [15, 'Type: ', 'relay']
+                if m[x] == 'SMTP':
+                    self.smtpError = [22, 'Failure Message: ', " ".join(m[x:])]
+                if 'S=' in m[x] and m[x][0] != 'M':
+                    self.size = [22, 'Size: ', m[x][2:]]
+                if 'I=' in m[x] and m[x][0] != 'S':
+                    self.interface = [22, 'Receiving Interface: ', m[x].split(':')[0][2:]]
+                if 'R=' in m[x]:
+                    self.bounceId = [22, 'Bounce ID: ', m[x][2:]]
+                if 'U=' in m[x]:
+                    self.mta = [22, 'MTA / User: ', m[x][2:]]
+                if 'id=' in m[x]:
+                    self.remoteId = [22, 'Sending Server Message ID: ', m[x][3:]]
+                if 'F=<' in m[x]:
+                    self.sendAddr = [18, 'Sender: ', m[x][2:]]
+                    if not self.sendAddr[1] == '<>':
+                        self.sendAddr = [18, 'Sender: ', m[x][3:-1]]
+                    self.fr = self.sendAddr
+                if 'C=' in m[x]:
+                    self.delStatus = [22, 'Delivery Status: ', m[x][2:]]
+                if 'QT=' in m[x]:
+                    self.timeInQueue = [22, 'Time Spent in Queue: ', m[x][3:]]
+                if 'DT=' in m[x]:
+                    self.deliveryTime = [22, 'Time Spent being Delivered: ', m[x][3:]]
+                if 'RT=' in m[x]:
+                    self.deliveryTime = [22, 'Time Spent being Delivered: ', m[x][3:]]
+                if ' <= ' in fullEntryText:
+                    self.msgType = [15, 'Message Type: ', 'incoming']
+                    if 'A=' in m[x]:
+                        self.smtpAuth = [22, 'Auth. Method: ', m[x][2:]]
+                        if 'dovecot' in m[x]:
+                            self.msgType = [15, 'Type: ', 'relay']
+                    if x == 5:
+                        self.sendAddr = [18, 'Sender', m[x]]
+                    if 'P=' in m[x]:
+                        self.protocol = [22, 'Protocol: ', m[x][2:]]
+                        if 'local' in self.protocol[1]:
+                            self.msgtype = [15, 'Type: ', 'local']
+                    if 'T=' in m[x] and m[x][0] != 'R':
+                        self.topic = [21, 'Subject: ', m[x][2:]]
+                    if m[x] == 'from':
+                        if m[x+1] == '<>':
+                            self.fr = [18, 'Sender: ', m[x+1]]
+                            self.msgType = [15, 'Type: ', 'bounce']
+                        else:
+                            self.fr = [18, 'Sender: ', m[x+1][1:-1]]
+                    if m[x] == 'for':
+                        self.to = [19, 'Recipient: ', m[x+1]]
+                    x += 1
+                else:
+                    if x == 5:
+                        if '@' in m[x]:
+                            self.to = [19, 'Recipient: ', m[x]]
+                        else:
+                            self.to = [19, 'Recipient: ', m[x] + m[x+1]]
+                    if 'P=' in m[x]:
+                        self.returnPath = [20, 'Return Path: ', m[x][3:-1]]
+                    if 'T=' in m[x] and m[x][0] != 'D' and m[x][0] != 'Q':
+                        self.mta = [22, 'MTA: ', m[x][2:]]
+                        if 'dovecot' in self.mta[1]:
+                            self.msgType = [15, 'Type: ', 'local']
+                    if ' => ' in fullEntryText:
+                        self.msgType = [15, 'Message Type: ', 'outgoing']
+                    x += 1
+            self.fullEntryText = [14, 'Full Entry: ', self.fullEntryText]
+    def getEntryFields(self):
+
+        fieldList = [a for a in dir(self) if not a.startswith('__') and not callable(getattr(self,a))]
+        fields = []
+        for field in fieldList:
+            x = getattr(self,field)
+            fields.append([
+                x[0],
+                field,
+                x[1],
+                x[2]
+            ])
+        return fields
 class Results():
-    def __init__(self,name,resultType,resultContents):
+    def __init__(self):
+        self.currentFilters = {
+            'Type': [],
+            'Sender': [],
+            'Recipient': [],
+            'Date': [],
+        }
+        self.entries = {}
+    def new(self,name,resultType,resultContents):
         """Class of Result Lists
         
         Arguments:
@@ -619,14 +888,47 @@ class Results():
             TypeError: raised if resultContents is not a list
             TypeError: raised if the first item in resultContents is not a str
         """
+        debug('New Result List created: %s', name)
         if type(resultContents) != list:
-            raise TypeError('{} provided :: resultContnents must be a list of strings'.format(type(resultContents)))
-        if type(resultContents[0]) != str:
-            raise TypeError('{} provided :: resultContnents must be a list of strings'.format(type(resultContents[0])))
+            raise TypeError('{} provided :: resultContents must be a list of strings'.format(type(resultContents)))
+        try:
+            type(resultContents[0])
+        except:
+            pass
+        else:
+            if type(resultContents[0]) != str:
+                raise TypeError('{} provided :: resultContents must be a list of strings'.format(type(resultContents[0])))
         self.resultType = resultType
         self.list = resultContents
-        self.count = len(self.list)
-        self.name = name
+        self.count = len(self.list)    
+        if hasattr(self, name):
+            raise Exception('A footer by the name of {} already exists'.format(name))
+        else:
+            setattr(self,name,resultContents)
+    def getSingleEntry(self,entryNo,searchNo):
+        entryId = str(searchNo) + '_' + str(entryNo)
+        if entryId in self.entries.keys():
+            debug('Results.getSingleEntry: entryId %s Exists', entryId)
+            return self.entries[entryId].getEntryFields()
+        else:
+            debug('Results.getSingleEntry: entryId %s does not Exist', entryId)
+            searchNo = getattr(self,searchNo)
+            debug('Results.getSingleEntry searchNo: %s', len(searchNo))
+            debug('Results Instance is %s',self)
+            self.entries[entryId] = Entries(searchNo[entryNo])
+            debug('Results.getSingleEntry self.entries.keys(): %s', self.entries.keys())
+            return self.entries[entryId].getEntryFields()
+    def getActiveFilterStrings(self):
+        activeFilterStringList = []
+        for filterType, activeFilter in self.currentFilters.items():
+            if activeFilter:
+                activeFilterStringList.append('Message ' + filterType + ' = ' + ', '.join(activeFilter))
+        return activeFilterStringList
+    def getCount(self,searchNo):
+        resultList = getattr(self,searchNo)
+        return len(resultList)
+    def getRawResultList(self, searchNo):
+        return getattr(self,searchNo)
     def update(self,itemsToUpdate):
         """updates an item in the result list by either adding or removing the item
         
@@ -651,7 +953,94 @@ class Results():
                 self.list.append(x)
                 updates['added'].append(x)
         return updates
+class Search():
+    def new(self, query):
+        debug('New Search Object with query: %s', query)
+        updateThread = threading.Thread(target=views.searching())
+        updateThread.start()
+        updateThread.join()
+        searchNumber = self.incrementCounter()
+        results.new(searchNumber, 'logResults', self.queryLogs(query))
+        views.show(views.newSearchSummary(searchNumber,query), frame, 'body')
+    def incrementCounter(self):
+        global searchCounter
+        searchCounterStr = 'search' + str(searchCounter).zfill(3)
+        searchCounter += 1
+        return searchCounterStr
+    def filterResults(self,*args):
+        debug("Start Search.filterResults: %s", args)
+    def queryLogs(self,query):
+        starttime = datetime.now()
+        debug(":filterLogs :: Current Thread:: %s", threading.current_thread().getName())
+        debug('filterLogs filter: %s', query)
+        #for log in self.selectedLogs:
+        logPoolArgs = []
+        for log in logFiles.selectedLogs:
+            logPoolArgs.append([query,log])
+        queryLogProcessPool = ThreadPool()
+        searchedLogs = queryLogProcessPool.map(queryLogProcess, logPoolArgs)
+        results = []
+        for resultList in searchedLogs:
+            results.extend(resultList)
+        logging.info('QT = %s : filteredLog Pool Result Count: %s',datetime.now() - starttime, len(results))
+        return results
 
+def queryLogProcess(poolArgs):
+    os.nice(20)
+    query,log = poolArgs
+    debug('Log = %s, filters = %s', log, query)
+    rawEntries = []
+    if log[-2:] != 'gz':
+        with open(log,mode='r') as f:
+            for i, line in enumerate(f):
+                pass
+            debug('Lines in file: %s', i)
+            linesPerProcess = i // 10
+        x = 0
+        logPoolArgs = []
+        while x < i:
+            startline = x
+            if x + linesPerProcess > i:
+                endline = i
+            else:
+                endline = x + linesPerProcess
+            logPoolArgs.append([query,log,startline,endline])
+            x = endline
+        #for log in logFiles.selectedLogs:
+        #    logPoolArgs.append([query,log,lines])
+        queryLogProcessPool = Pool()
+        searchedLogs = queryLogProcessPool.map(queryLogProcess2, logPoolArgs)
+        results = []
+        for resultList in searchedLogs:
+            results.extend(resultList)
+        #with open(log,mode='r') as p:
+        #    for _, line in enumerate(p):
+        #        if query in line:
+        #            if line not in rawEntries:
+        #                rawEntries.append(line)
+        #                debug('Length of rawEntris: %s', len(rawEntries))
+    else:
+        with gzip.open(log,mode='r') as f:
+            for _, line in enumerate(f):
+                if query in line:
+                    if line not in rawEntries:
+                        rawEntries.append(line)
+    return results
+def queryLogProcess2(logPoolArgs):
+    rawEntries = []
+    log = logPoolArgs[1]
+    query = logPoolArgs[0]
+    start = logPoolArgs[2]
+    end = logPoolArgs[3]
+    debug('Start Line: %s :: End Line: %s', start,end)
+    with open(log,mode='r') as p:
+            for i, line in enumerate(p):
+                if i >= start and i <= end:
+                    if query in line:
+                        if line not in rawEntries:
+                            rawEntries.append(line)
+        
+    return rawEntries
 if __name__ == '__main__':
     debug('Application Start')
 
@@ -665,6 +1054,11 @@ if __name__ == '__main__':
     views = Views()
     headers = Headers()
     footers = Footers()
+
+    #Initialize Results Object
+    results = Results()
+    #Initialize Search Object
+    search = Search()
 
     #Get Initial Frame Sections
     frame.contents.__setitem__('header', [headers.main, None])
