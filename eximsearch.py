@@ -59,6 +59,9 @@ class GlobalSettings():
             if s.activeView == 'singleEntry':
                 if key in ('B', 'b'):
                     views.resultList('search' + str(searchCounter - 1).zfill(3))
+            if s.activeView == 'resultList':
+                if key in ('F', 'f'):
+                    views.filterResults('search' + str(searchCounter - 1).zfill(3))
 class DateTimeSettings():
     def __init__(self):
         """Settings for DateTime functions / formatting
@@ -130,6 +133,7 @@ class ResultListSettings():
         """
         self.ButtonColWidth = 7
         self.divChars = 1
+        self.resultOverflow = False
 s = GlobalSettings()
 """
 CUSTOM WIDGET CLASSES
@@ -231,6 +235,7 @@ class MyWidgets():
         self.div = urwid.Divider(' ',top=0,bottom=0)
         self.blankFlow = self.getText('body','','center')
         self.blankBox = urwid.Filler(self.blankFlow)
+        self.searchProgress = urwid.ProgressBar('body', 'header', current=0, done=100, satt=None)
     def getButton(self, thisLabel, callingObject, callback, user_data=None, buttonMap='bold', focus_map='header'):
         """Creates and returns a FixedButton object.
         
@@ -401,6 +406,13 @@ class QuestionBox(urwid.Filler):
         self.original_widget.set_edit_text('')
         debug('%s Entry String: %s', self.original_widget, entry)
         search.new(entry)
+class FilterEntry(urwid.Filler):
+    def keypress(self, size, key):
+        results.filterEntryEditText
+        if key != 'enter':
+            return super(FilterEntry, self).keypress(size, key)
+        results.filterEntryEditText = self.original_widget.get_edit_text()
+        self.original_widget.set_edit_text('')
 w = MyWidgets()
 """
 VIEW CLASSES
@@ -449,7 +461,34 @@ class Views():
             'Choose Your Logs to Search',
             len(logCheckBoxes) + 3)
     def filterResults(self, *args):
-        debug('Started Views.filterResults View')
+        debug('Started Views.filterResults View: %s', args)
+        filterList = []
+        for filterType in results.currentFilters.keys():
+            filterSubSet = []
+            x = urwid.Edit(caption='Filter By Message ' + filterType + '\n')
+            xFiller = FilterEntry(x)
+            xAdapter = urwid.BoxAdapter(xFiller, 2)
+            filterSubSet.append(xAdapter)
+            urwid.connect_signal(x, 'postchange', getattr(results,'checkForAddFilterEntry'))
+            button = w.getButton('Add Filter', results, 'addFilters', user_data=x)
+            filterSubSet.append(button)
+            #filterAddWalker = urwid.SimpleFocusListWalker(filterSubSet)
+            #checkBoxList = urwid.ListBox(filterAddWalker)
+            filterPile = urwid.Pile(filterSubSet)
+            #filterList.append(urwid.LineBox(filterPile, 
+            #    title='Message ' + filterType + ' Filter(s)', title_align='center'))
+            filterList.append(filterPile)
+            filterList.append(w.div)
+        #filterListWalker = urwid.SimpleFocusListWalker(filterList)
+        #filterListBox = urwid.ListBox(filterListWalker)
+        filterPile = urwid.Pile(filterList)
+        innerFiller = urwid.Filler(filterPile, valign='middle', height='pack')
+        filterBox = urwid.LineBox(innerFiller, title='Filter Current Results', title_align='center')
+        filterBoxCols = urwid.Columns([w.blankBox,filterBox, w.blankBox])
+        filterPadding = urwid.Padding(filterBoxCols,align='center',)
+        filterFiller = urwid.Filler(filterPadding,height=('relative',50))
+        self.show(filterFiller, frame, 'body', focus='body')
+        #return filterfiller
     def show(self,widget,target, location, focus=''):
         target.contents.__setitem__(location, [widget, None])
         if focus:
@@ -483,8 +522,12 @@ class Views():
         debug('Started Views.quitLoop')
     def searching(self):
         debug('Started Views.searching')
-        searchingStatus = urwid.Filler(w.getText('body', 'Searching Logs Now. Please wait....', 'center'), 'middle')
-        statusBox = self.centeredListLineBox(searchingStatus, '',5)
+        searchingStatus = urwid.Pile([
+            w.getText('body', 'Searching Logs Now. Please wait....', 'center'),
+            w.searchProgress
+            ])
+        statusFiller = urwid.Filler(searchingStatus, 'middle')
+        statusBox = self.centeredListLineBox(statusFiller, '',10)
         self.show(statusBox, frame,'body')
         loop.draw_screen()
     def showRelatedEntries(self, *args):
@@ -510,6 +553,12 @@ class Views():
         resultListWalker = urwid.SimpleFocusListWalker(listDisplayCols)
         resultListBox = urwid.ListBox(resultListWalker)
         #resultListFiller = urwid.Filler(resultListBox)
+        s.df.resultsListMenu[1] = [
+            '(F)ilter Current Results',
+            'filterResults',
+            args[0]
+            ]
+        footers.update('resultsListMenu', s.df.resultsListMenu)
         self.show(resultListBox, frame,'body')
         frame.focus_position = 'body'
         self.show(footers.resultsListMenu,frame,'footer')
@@ -540,11 +589,20 @@ class Views():
         self.show(singleEntryList,frame,'body')
     def newSearchSummary(self,searchNo, query):
         s.activeView = 'newSearchSummary'
-        summaryRows = [
-            w.div,
-            w.getText('bold','There are ' + str(results.getCount(searchNo)) + ' results', 'center'),
-            w.div
-        ]
+        if s.rl.resultOverflow:
+            summaryRows = [
+                w.div,
+                w.getText('bold',' There are too many Results \n Only showing the first ' 
+                    + str(results.getCount(searchNo)) + 
+                    ' Results \nConsider applying filters to narrow down results ', 'center'),
+                w.div
+            ]   
+        else:
+            summaryRows = [
+                w.div,
+                w.getText('bold','There are ' + str(results.getCount(searchNo)) + ' results', 'center'),
+                w.div
+            ]
         activeFilters = results.getActiveFilterStrings()
         if activeFilters:
             summaryRows.append(w.getText('bold', 'Currently Active Filters:', 'center'))
@@ -554,7 +612,7 @@ class Views():
         summaryRows.append(w.getButton('Show Results', self,'resultList', user_data=searchNo))
         summary = urwid.SimpleFocusListWalker(summaryRows)
         summaryList = urwid.ListBox(summary)
-        return views.centeredListLineBox(summaryList, 'Search Results for ' + query, len(summaryRows) + 3)
+        return views.centeredListLineBox(summaryList, 'Search Results for ' + query, len(summaryRows) + 5)
     def testMailer(self):
         """Page opened to allow user to send test emails"""
         debug('Started Views.testMailer')
@@ -876,6 +934,7 @@ class Results():
             'Date': [],
         }
         self.entries = {}
+        self.filterEntryEditText = ''
     def new(self,name,resultType,resultContents):
         """Class of Result Lists
         
@@ -929,6 +988,14 @@ class Results():
         return len(resultList)
     def getRawResultList(self, searchNo):
         return getattr(self,searchNo)
+    def checkForAddFilterEntry(self, *args):
+        debug('Results.checkForAddFilterEntry args: %s', args)
+        #if self.filterEntryEditText:
+        #    newFilter = self.filterEntryEditText
+        #    self.filterEntryEditText = ''
+        #    self.currentFilters[filterType].append(newFilter)
+    def addFilters(self, *args):
+        debug('Results.addFilters args: %s', args)
     def update(self,itemsToUpdate):
         """updates an item in the result list by either adding or removing the item
         
@@ -955,6 +1022,7 @@ class Results():
         return updates
 class Search():
     def new(self, query):
+        s.rl.resultOverflow = False
         debug('New Search Object with query: %s', query)
         updateThread = threading.Thread(target=views.searching())
         updateThread.start()
@@ -995,51 +1063,47 @@ def queryLogProcess(poolArgs):
             for i, line in enumerate(f):
                 pass
             debug('Lines in file: %s', i)
-            linesPerProcess = i // 10
-        x = 0
-        logPoolArgs = []
-        while x < i:
-            startline = x
-            if x + linesPerProcess > i:
-                endline = i
-            else:
-                endline = x + linesPerProcess
-            logPoolArgs.append([query,log,startline,endline])
-            x = endline
-        #for log in logFiles.selectedLogs:
-        #    logPoolArgs.append([query,log,lines])
-        queryLogProcessPool = Pool()
-        searchedLogs = queryLogProcessPool.map(queryLogProcess2, logPoolArgs)
-        results = []
-        for resultList in searchedLogs:
-            results.extend(resultList)
-        #with open(log,mode='r') as p:
-        #    for _, line in enumerate(p):
-        #        if query in line:
-        #            if line not in rawEntries:
-        #                rawEntries.append(line)
-        #                debug('Length of rawEntris: %s', len(rawEntries))
-    else:
-        with gzip.open(log,mode='r') as f:
-            for _, line in enumerate(f):
+            totalLines = i
+        
+        #logPoolArgs = []
+        with open(log,mode='r') as p:
+            for i, line in enumerate(p):
+                if len(rawEntries) == 10000:
+                    s.rl.resultOverflow = True
+                    debug('ResultOverflow = True')
+                    break
                 if query in line:
                     if line not in rawEntries:
                         rawEntries.append(line)
-    return results
-def queryLogProcess2(logPoolArgs):
-    rawEntries = []
-    log = logPoolArgs[1]
-    query = logPoolArgs[0]
-    start = logPoolArgs[2]
-    end = logPoolArgs[3]
-    debug('Start Line: %s :: End Line: %s', start,end)
-    with open(log,mode='r') as p:
-            for i, line in enumerate(p):
-                if i >= start and i <= end:
-                    if query in line:
-                        if line not in rawEntries:
-                            rawEntries.append(line)
-        
+                if i % 1000000 == 0:
+                    percent = float(i) / float(totalLines)
+                    completion = int(percent * 100)
+                    debug('Total Lines in file: %s', totalLines)
+                    debug('Current Line Percent: %s', completion)
+                    w.searchProgress.set_completion(completion)
+                    loop.draw_screen()
+    else:
+        with gzip.open(log,mode='r') as f:
+            for i, line in enumerate(f):
+                pass
+            debug('Lines in file: %s', i)
+            totalLines = i
+        with gzip.open(log,mode='r') as f:
+            for i, line in enumerate(f):
+                if len(rawEntries) == 10000:
+                    s.rl.resultOverflow = True
+                    debug('ResultOverflow = True')
+                    break
+                if query in line:
+                    if line not in rawEntries:
+                        rawEntries.append(line)
+                if i % 1000000 == 0:
+                    percent = float(i) / float(totalLines)
+                    completion = int(percent * 100)
+                    debug('Total Lines in file: %s', totalLines)
+                    debug('Current Line Percent: %s', completion)
+                    w.searchProgress.set_completion(completion)
+                    loop.draw_screen()
     return rawEntries
 if __name__ == '__main__':
     debug('Application Start')
