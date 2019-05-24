@@ -11,7 +11,7 @@ info = logging.info
 debug = logging.debug
 warning = logging.warning
 searchCounter = 1
-
+filterEntryEditText = ''
 """
 SETTINGS / DEFAULT VALUE CLASSES
 """
@@ -62,6 +62,9 @@ class GlobalSettings():
             if s.activeView == 'resultList':
                 if key in ('F', 'f'):
                     views.filterResults('search' + str(searchCounter - 1).zfill(3))
+            if s.activeView == 'filterResults':
+                if key in ('A', 'a'):
+                    search.filterResults()
 class DateTimeSettings():
     def __init__(self):
         """Settings for DateTime functions / formatting
@@ -69,6 +72,19 @@ class DateTimeSettings():
         self.logDateFormat ="%Y-%m-%d"
         self.displayDateFormat = "%m-%d-%Y"
         self.stringToDateFormat = "%Y-%m-%d"
+        self.displayDateTimeFormat = "%m-%d-%Y_%H:%M:%S"
+    def stringToDate(self,newFilter):
+        try:
+            datetime.strptime(newFilter, self.displayDateTimeFormat)
+        except ValueError:
+            try:
+                datetime.strptime(newFilter, self.displayDateFormat)
+            except:
+                return False
+            else:
+                return datetime.strptime(newFilter, self.displayDateFormat)
+        else:
+            return datetime.strptime(newFilter, self.displayDateTimeFormat)
 class DisplayFrameSettings():
     def __init__(self):
         """Settings & Defaults for the Applications Interface
@@ -102,7 +118,7 @@ class DisplayFrameSettings():
             ['(F)ilter Current Results',
                 'filterResults'],
             ['(C)lear Applied Filters',
-                'statSummary'],
+                'clearFilters'],
             ['(H)ome',
                 'home'],
             ['(Q)uit',
@@ -113,6 +129,18 @@ class DisplayFrameSettings():
                 'newSearch'],
             ['(S)how Related Entries',
                 'showRelatedEntries'],
+            ['(B)ack To Result List',
+                'resultList'],
+            ['(H)ome',
+                'home'],
+            ['(Q)uit',
+                'quitLoop']
+        ]
+        self.filterResultsMenu = [
+            ['(N)ew Search',
+                'newSearch'],
+            ['(A)pply Current Results',
+                'applyFilters'],
             ['(B)ack To Result List',
                 'resultList'],
             ['(H)ome',
@@ -408,10 +436,10 @@ class QuestionBox(urwid.Filler):
         search.new(entry)
 class FilterEntry(urwid.Filler):
     def keypress(self, size, key):
-        results.filterEntryEditText
+        global filterEntryEditText
         if key != 'enter':
             return super(FilterEntry, self).keypress(size, key)
-        results.filterEntryEditText = self.original_widget.get_edit_text()
+        filterEntryEditText = self.original_widget.get_edit_text()
         self.original_widget.set_edit_text('')
 w = MyWidgets()
 """
@@ -462,33 +490,8 @@ class Views():
             len(logCheckBoxes) + 3)
     def filterResults(self, *args):
         debug('Started Views.filterResults View: %s', args)
-        filterList = []
-        for filterType in results.currentFilters.keys():
-            filterSubSet = []
-            x = urwid.Edit(caption='Filter By Message ' + filterType + '\n')
-            xFiller = FilterEntry(x)
-            xAdapter = urwid.BoxAdapter(xFiller, 2)
-            filterSubSet.append(xAdapter)
-            urwid.connect_signal(x, 'postchange', getattr(results,'checkForAddFilterEntry'))
-            button = w.getButton('Add Filter', results, 'addFilters', user_data=x)
-            filterSubSet.append(button)
-            #filterAddWalker = urwid.SimpleFocusListWalker(filterSubSet)
-            #checkBoxList = urwid.ListBox(filterAddWalker)
-            filterPile = urwid.Pile(filterSubSet)
-            #filterList.append(urwid.LineBox(filterPile, 
-            #    title='Message ' + filterType + ' Filter(s)', title_align='center'))
-            filterList.append(filterPile)
-            filterList.append(w.div)
-        #filterListWalker = urwid.SimpleFocusListWalker(filterList)
-        #filterListBox = urwid.ListBox(filterListWalker)
-        filterPile = urwid.Pile(filterList)
-        innerFiller = urwid.Filler(filterPile, valign='middle', height='pack')
-        filterBox = urwid.LineBox(innerFiller, title='Filter Current Results', title_align='center')
-        filterBoxCols = urwid.Columns([w.blankBox,filterBox, w.blankBox])
-        filterPadding = urwid.Padding(filterBoxCols,align='center',)
-        filterFiller = urwid.Filler(filterPadding,height=('relative',50))
-        self.show(filterFiller, frame, 'body', focus='body')
-        #return filterfiller
+        s.activeView = 'filterResults'
+        filters.addRemoveFilters()
     def show(self,widget,target, location, focus=''):
         target.contents.__setitem__(location, [widget, None])
         if focus:
@@ -613,10 +616,124 @@ class Views():
         summary = urwid.SimpleFocusListWalker(summaryRows)
         summaryList = urwid.ListBox(summary)
         return views.centeredListLineBox(summaryList, 'Search Results for ' + query, len(summaryRows) + 5)
+    def clearFilters(self):
+        filters.clear()
+        views.resultList(results.query)
+    def applyFilters(self, *args):
+        search.filterResults()
+        frame.set_focus('body')
     def testMailer(self):
         """Page opened to allow user to send test emails"""
         debug('Started Views.testMailer')
-
+class Filters():
+    def __init__(self):
+        self.senderFilter = Filter('Sender')
+        self.recipFilter = Filter('Recipient')
+        self.dateFilter = Filter('Date')
+        self.msgTypeFilter = Filter('Type')
+    def get(self):
+        x = {
+            'Sender': self.senderFilter.current,
+            'Recipient': self.recipFilter.current,
+            'Date': self.dateFilter.current,
+            'Type': self.msgTypeFilter.current,
+        }
+        return x
+    def clear(self):
+        self.senderFilter.current = []
+        self.recipFilter.current = []
+        self.dateFilter.current = []
+        self.msgTypeFilter.current = []
+    def getCheckBox(self,title,contents,submitLabel,submitAction):
+        button = w.getButton(str(submitLabel),submitAction[0],submitAction[1])
+        contents.append(button)
+        checkBoxWalker = urwid.SimpleFocusListWalker(contents)
+        checkBoxList = urwid.ListBox(checkBoxWalker)
+        return [checkBoxWalker,
+            urwid.LineBox(checkBoxList, 
+            title=str(title), title_align='center')]
+    def getCheckBoxItem(self,label,on_state_change=None,user_data=None):
+        return urwid.CheckBox(label, state=False, has_mixed=False, on_state_change=getattr(on_state_change[0],on_state_change[1]), user_data=user_data)
+    def filterDisplayList(self,filterInst,filterType):
+        filterDisplayList = []
+        for filter in getattr(filterInst,'current'):
+            if filterType == 'Date':
+                filter = ','.join(filter)
+            filterDisplayList.append(
+                self.getCheckBoxItem(filter,
+                    on_state_change=[filterInst,'markForDeletion'],
+                    user_data=filter))
+        checkBox = self.getCheckBox('Active Filter List', filterDisplayList,'Remove Selected Filter(s)', [filterInst,'remFilters'])
+        return checkBox
+    def filterSetList(self,filterInst,filterType):
+        filterSetList = []
+        filterInput = urwid.Edit("Enter Desired Filter\n")
+        filterEntryFill = FilterEntry(filterInput)
+        filterEntryAdapter = urwid.BoxAdapter(filterEntryFill, 2)
+        filterSetList.append(filterEntryAdapter)
+        urwid.connect_signal(filterInput, 'postchange', getattr(filterInst,'checkForAddFilterEntry'))
+        button = w.getButton('Add Filter', filterInst, 'addFilters', user_data=filterInput)
+        filterSetList.append(button)
+        filterAddWalker = urwid.SimpleFocusListWalker(filterSetList)
+        checkBoxList = urwid.ListBox(filterAddWalker)
+        addBox = [filterAddWalker,
+            urwid.LineBox(checkBoxList, 
+            title='Add ' + filterType + ' Filter(s)', title_align='center')]
+        return addBox
+    def getCurrentFilters(self):
+        self.filterDisplayItems = [
+            [self.senderFilter,'Sender'],
+            [self.recipFilter,'Recipient'],
+            [self.dateFilter,'Date'],
+            [self.msgTypeFilter,'Type']]
+        filterDisplays = []
+        self.filterDisplayWalkers = {}
+        for x in self.filterDisplayItems:
+            boxitem = self.filterDisplayList(x[0],x[1])
+            filterDisplays.append(boxitem[1])
+            self.filterDisplayWalkers[x[1]] = boxitem[0]
+        filterDisplayRow = w.getColRow(filterDisplays)
+        return filterDisplayRow
+    def setCurrentFilters(self):
+        filterSetDisplays = []
+        for x in self.filterDisplayItems:
+            boxitem = self.filterSetList(x[0],x[1])
+            filterSetDisplays.append(boxitem[1])
+        filterSetRow = w.getColRow(filterSetDisplays)
+        return filterSetRow
+    def getFilterHeaders(self):
+        filterHeaders = w.getColRow([
+        urwid.LineBox(urwid.Filler(w.getText('body','Sender filter in\nuser@domain.com format\nMultiple senders are filtered as OR','center')), title='Sender Filters', title_align='center'),
+        urwid.LineBox(urwid.Filler(w.getText('body','Recipient filter in\nuser@domain.com format\nMultiple recipients are filtered as OR','center')), title='Recipient Filters', title_align='center'),
+        urwid.LineBox(urwid.Filler(w.getText('body','Date filter in\nYYYY-MM-DD format: \
+            Date ranges in\n START DATE, END DATE Format\n Ex: 2019-01-01,2019-01-31\n\
+            Date-time format in \n YYYY-MM-DD_HH:MM:SS.SSS','center')), title='Date Filters', title_align='center'),
+        urwid.LineBox(urwid.Filler(w.getText('body','Type filter options:\nIncoming, Outgoing, Local\nMultiple Types are filtered as OR','center')), title='Type Filters', title_align='center')
+        ])
+        return filterHeaders
+    def getHeader(self):
+        headerText = w.getText('center', s.filterGuide, 'center')
+        #headerFiller = urwid.Filler(headerText, height='pack')
+        headerBox = urwid.LineBox(headerText, title='Add / Remove Filters', title_align='center')
+        return headerBox    
+    def addRemoveFilters(self):
+        header = self.getHeader()
+        getFilters = self.getCurrentFilters()
+        setFilters = self.setCurrentFilters()
+        applyButton = w.getButton('(A)pply Filters to Current Results', search,'filterResults')
+        applyBox = urwid.LineBox(applyButton)
+        filterPile = urwid.Pile([
+            ('pack', header),
+            #(5, filterHeaders),
+            (5,setFilters),
+            getFilters
+        ])
+        #filterPageList = urwid.Pile(filterPile)
+        #self.filterFiller = urwid.Filler(self.filterPageList,valign='middle')
+        views.show(footers.filterResultsMenu, frame, 'footer')
+        views.show(filterPile,frame,'body',focus='body')
+        #frame.update('body',filterPile)
+        #frame.setFocus('body')
 """
 URWID FRAME CLASSES
 """
@@ -646,6 +763,7 @@ class Footers():
         self.main = w.getFooterWidget(s.df.mainMenu)
         self.resultsListMenu = w.getFooterWidget(s.df.resultsListMenu)
         self.singleEntryMenu = w.getFooterWidget(s.df.singleResultMenu)
+        self.filterResultsMenu = w.getFooterWidget(s.df.filterResultsMenu)
     def new(self,name,menuItems):
         """Creates a new footerWidget using a list of
            menuItems, and a name for the footer
@@ -935,7 +1053,7 @@ class Results():
         }
         self.entries = {}
         self.filterEntryEditText = ''
-    def new(self,name,resultType,resultContents):
+    def new(self,name,resultType,query,resultContents,original_results=''):
         """Class of Result Lists
         
         Arguments:
@@ -959,7 +1077,8 @@ class Results():
                 raise TypeError('{} provided :: resultContents must be a list of strings'.format(type(resultContents[0])))
         self.resultType = resultType
         self.list = resultContents
-        self.count = len(self.list)    
+        self.count = len(self.list)
+        self.query = query
         if hasattr(self, name):
             raise Exception('A footer by the name of {} already exists'.format(name))
         else:
@@ -1020,6 +1139,79 @@ class Results():
                 self.list.append(x)
                 updates['added'].append(x)
         return updates
+class Filter():
+    def __init__(self,filterType):
+        self.current = []
+        self.filterType = filterType
+        self.markedForDeletion = []
+        self.markForAddition = []
+    def checkForAddFilterEntry(self, *args):
+        global filterEntryEditText
+        if filterEntryEditText:
+            debug('Filter.checkForAddFilterEntry newFilter: %s', filterEntryEditText)
+            newFilter = filterEntryEditText
+            filterEntryEditText = ''
+            self.addFilters(newFilter)
+    def markForDeletion(self,*args):
+        logging.info
+        if args[2] in self.markedForDeletion:
+            self.markedForDeletion.remove(args[2])
+        else:
+            self.markedForDeletion.append(args[2])
+    def remFilters(self):
+        for item in self.markedForDeletion:
+            if self.filterType == 'Date':
+                filterStringArray = item.split(',')
+                if filterStringArray in self.current:
+                    self.current.remove(filterStringArray)
+            else:
+                self.current.remove(item)
+            currentFilterWalker = filters.filterDisplayWalkers[self.filterType]
+            for filter in currentFilterWalker:
+                try:
+                    if item in filter.label:
+                        currentFilterWalker.remove(filter)
+                        self.markedForDeletion = []
+                except:
+                    pass
+    def addFilters(self, *args):
+        if type(args[0]) == str:
+            newFilter = args[0]
+        else:
+            newFilter = args[0].get_edit_text()
+            args[0].set_edit_text('')
+        addFilterTrue = True
+        if self.filterType == 'Date':
+            if ',' in newFilter:
+                newFilter = newFilter.split(',')
+            else:
+                newFilter = [newFilter]
+            dateTimeFilter = []
+            for entry in newFilter:
+                dateString = s.dt.stringToDate(entry)
+                if not dateString:
+                    addFilterTrue = False
+                else:
+                    dateTimeObject = s.dt.stringToDate(entry)
+                    dateTimeFilter.append(datetime.strftime(dateTimeObject.date(), s.dt.logDateFormat))
+        if addFilterTrue:
+            if newFilter not in self.current:
+                if self.filterType == 'Date':
+                    if dateTimeFilter not in self.current:
+                        self.current.append(dateTimeFilter)
+                        newFilter = ','.join(newFilter)
+                        newFilterCheckBoxItem = filters.getCheckBoxItem(newFilter,
+                            on_state_change=[self,'markForDeletion'],
+                            user_data=newFilter)
+                else:
+                    self.current.append(newFilter)
+                newFilterCheckBoxItem = filters.getCheckBoxItem(newFilter,
+                    on_state_change=[self,'markForDeletion'],
+                    user_data=newFilter)
+                currentFilterWalker = filters.filterDisplayWalkers[self.filterType]
+                if newFilterCheckBoxItem not in currentFilterWalker:
+                    currentFilterWalker.insert(-1, newFilterCheckBoxItem)
+
 class Search():
     def new(self, query):
         s.rl.resultOverflow = False
@@ -1028,7 +1220,7 @@ class Search():
         updateThread.start()
         updateThread.join()
         searchNumber = self.incrementCounter()
-        results.new(searchNumber, 'logResults', self.queryLogs(query))
+        results.new(searchNumber, 'logResults', query, self.queryLogs(query))
         views.show(views.newSearchSummary(searchNumber,query), frame, 'body')
     def incrementCounter(self):
         global searchCounter
@@ -1036,7 +1228,90 @@ class Search():
         searchCounter += 1
         return searchCounterStr
     def filterResults(self,*args):
-        debug("Start Search.filterResults: %s", args)
+        debug("Start Search.filterResults: %s", filters.get())
+        currentSearchNo = 'search' + str(searchCounter - 1).zfill(3)
+        filteredSearchNo = self.incrementCounter()
+        currentResultList = getattr(results,currentSearchNo)
+        self.currentFilters = filters.get()
+        filteredResults = []
+        originalQuery = results.query
+        originalInput = currentResultList
+        filteredResults = self.filterInput('Sender', input=originalInput)
+        filteredResults = self.filterInput('Recipient', input=filteredResults)
+        filteredResults = self.filterInput('Date', input=filteredResults)
+        filteredResults = self.filterInput('Type', input=filteredResults)
+        debug("Filtered Results Count: %s", len(filteredResults))
+        results.new(filteredSearchNo, 'filteredResults', originalQuery, filteredResults, original_results=currentSearchNo)
+        views.show(views.newSearchSummary(filteredSearchNo,originalQuery), frame, 'body')
+    def filterInput(self, filterType, input=None):
+        if not self.currentFilters[filterType]:
+            return input
+        else:
+            filteredResults = []
+            debug('filterInput beforeExclusion len(input): %s', len(input))
+            filters = self.currentFilters[filterType]
+            filters = self.formatFilterStr(filterType,filters)
+            #debug('formatFilterStr: %s', filters)
+            excludedItems = []
+            for item in input[:]:
+                for exclusion in self.filterExclusions:
+                    if exclusion in item:
+                        excludedItems.append(input.pop(input.index(item)))
+            #debug('filterInput afterExclusion len(input): %s', len(input))
+            for item in input[:]:
+                for filter in filters:
+                    #debug('filterInput filter: %s', filter)
+                    if filter in item:
+                        filteredResults.append(item)
+            #debug('filterInput len(filteredResults): %s', len(filteredResults))
+            self.filterExclusions = []
+            input.extend(excludedItems)
+           #debug('%s filterInput:: Original Input: %s\n', filterType, len(input))
+            return filteredResults
+    def formatFilterStr(self, filterType, filters):
+        formattedFilter = []
+        self.filterExclusions = []
+        logging.info('formatFilterStr filters: %s', filters)
+        if filterType == 'Sender':
+            for filterString in filters:
+                formattedFilter.append(' from <' + filterString + '>')
+                formattedFilter.append(' F=<' + filterString + '>')
+            return formattedFilter
+        if filterType == 'Recipient':
+            formattedFilter = []
+            for filterString in filters:
+                formattedFilter.append(' for ' + filterString)
+                formattedFilter.append(' => ' + filterString)
+            return formattedFilter
+        if filterType == 'Type':
+            for filter in filters:
+                if filter.lower() == 'incoming':
+                    formattedFilter.append(' <= ')
+                    self.filterExclusions.extend([
+                        'A=dovecot',
+                        'P=local',
+                        'H=(' + s.hostname + ')'
+                        ])
+                if filter.lower() == 'outgoing':
+                    formattedFilter.append(' => ')
+                    self.filterExclusions.extend([
+                        ' T=dovecot'
+                        ])
+                if filter.lower() == 'local':
+                    formattedFilter.append('P=local')
+            return formattedFilter
+        if filterType == 'Date':
+            for filterString in filters:
+                debug('Date Formatting filterString in filters: %s', filterString)
+                if len(filterString) == 1:
+                    formattedFilter.append(filterString[0])
+                if len(filterString) == 2:
+                    d = DateRange()
+                    formattedFilter.extend(d.getDateRangeArray(filterString))
+                    debug('Date Formatting formattedFilter: %s', formattedFilter)
+            return formattedFilter
+        else:
+            return filters            
     def queryLogs(self,query):
         starttime = datetime.now()
         debug(":filterLogs :: Current Thread:: %s", threading.current_thread().getName())
@@ -1052,7 +1327,17 @@ class Search():
             results.extend(resultList)
         logging.info('QT = %s : filteredLog Pool Result Count: %s',datetime.now() - starttime, len(results))
         return results
-
+class DateRange():
+    def getDateRangeArray(self,dateRangeStrings):
+        dateRangeArray = []
+        startDate = datetime.strptime(dateRangeStrings[0], s.dt.logDateFormat)
+        endDate = datetime.strptime(dateRangeStrings[1], s.dt.logDateFormat)
+        for single_date in self.dateRange(startDate, endDate):
+            dateRangeArray.append(single_date.strftime(s.dt.logDateFormat))
+        return dateRangeArray
+    def dateRange(self,start_date, end_date):
+        for n in range(int ((end_date - start_date).days)):
+            yield start_date + timedelta(n)
 def queryLogProcess(poolArgs):
     os.nice(20)
     query,log = poolArgs
@@ -1121,6 +1406,8 @@ if __name__ == '__main__':
 
     #Initialize Results Object
     results = Results()
+    #Initialize Filter Object
+    filters = Filters()
     #Initialize Search Object
     search = Search()
 
