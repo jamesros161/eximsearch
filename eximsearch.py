@@ -1,5 +1,6 @@
-#!/usr/bin/python
-#/opt/imh-python/bin/python
+#!/opt/imh-python/bin/python
+#/usr/bin/python
+
 import urwid, datetime, os, subprocess, sys, json, re, shlex, gzip, time, logging, collections, socket, threading
 from multiprocessing import Pool, Queue, current_process
 from multiprocessing.pool import ThreadPool
