@@ -12,6 +12,7 @@ debug = logging.debug
 warning = logging.warning
 searchCounter = 1
 filterEntryEditText = ''
+mostRecentSearchNo = ''
 """
 SETTINGS / DEFAULT VALUE CLASSES
 """
@@ -45,7 +46,7 @@ class GlobalSettings():
     def unhandled_input(self,key):
         if type(key) == str:
             if key in ('q', 'N'):   
-                raise urwid.ExitMainLoop
+                views.quitLoop()
             if key in ('N', 'n'):
                 views.newSearch()
             if key in ('S', 's'):
@@ -72,6 +73,7 @@ class DateTimeSettings():
         self.logDateFormat ="%Y-%m-%d"
         self.displayDateFormat = "%m-%d-%Y"
         self.stringToDateFormat = "%Y-%m-%d"
+        self.logDateTimeFormat = "%Y-%m-%d_%H:%M:%S.%f"
         self.displayDateTimeFormat = "%m-%d-%Y_%H:%M:%S"
     def stringToDate(self,newFilter):
         try:
@@ -106,9 +108,9 @@ class DisplayFrameSettings():
             ['Add / Remove (F)ilters',
                 'addRemoveFilters'],
             ['(S)tats Summary',
-                'statSummary'],
+                'comingSoon'],
             ['(T)est Mailer',
-                'testMailer'],
+                'comingSoon'],
             ['(Q)uit',
                 'quitLoop']
         ]
@@ -124,7 +126,7 @@ class DisplayFrameSettings():
             ['(Q)uit',
                 'quitLoop']
         ]
-        self.singleResultMenu = [
+        self.singleEntryMenu = [
             ['(N)ew Search',
                 'newSearch'],
             ['(S)how Related Entries',
@@ -389,10 +391,12 @@ class MyWidgets():
             object -- urwid.Pile object to be used as the header's widget 
             FLOW WIDGET
         """
-        titleMap = urwid.AttrMap(self.getText('header',title,'center'), 'header')
+        self.title = self.getText('header',title,'center')
+        self.subtitle = self.getText('header',subtitle,'center')
+        titleMap = urwid.AttrMap(self.title, 'header')
         divMap = urwid.AttrMap(self.div, 'body')
         if subtitle:
-            subtitleMap = urwid.AttrMap(self.getText('header',subtitle,'center'), 'header')
+            subtitleMap = urwid.AttrMap(self.subtitle, 'header')
             return urwid.Pile((titleMap, subtitleMap, divMap), focus_item=None)
         else:
             return urwid.Pile((titleMap, divMap), focus_item=None)
@@ -459,6 +463,14 @@ class Views():
            current filter lists
         """
         debug('Started Views.addRemoveFilters')
+    def comingSoon(self):
+        debug('Started Views.comingSoon')
+        comingSoonStatus = urwid.Pile([
+            w.getText('body', 'Feature Still under Development. Coming Soon....', 'center')
+            ])
+        comingSoonFiller = urwid.Filler(comingSoonStatus, 'middle')
+        comingSoonBox = self.centeredListLineBox(comingSoonFiller, '',10)
+        self.show(comingSoonBox, frame,'body')
     def centeredListLineBox(self,contents, title, listHeight, **kwargs):
         filler = urwid.Filler(contents, height=listHeight)
         insideCol = w.getColRow([w.blankBox,('weight',2,filler),w.blankBox])
@@ -473,6 +485,7 @@ class Views():
            logs that will be used in searches / filters
         """
         debug('Started Views.chooseLogs')
+        s.menuEnabled = False
         s.activeView = 'chooseLogs'
         logCheckBoxes = [w.div]
         for log in logFiles.availableLogs:
@@ -484,10 +497,12 @@ class Views():
         logCheckBoxes.append(w.div)
         logCheckBoxes.append(w.getButton('Continue', views, 'home'))
         listBox = w.getListBox(logCheckBoxes)[0]
-        return self.centeredListLineBox(
+        chooseLogsBox = self.centeredListLineBox(
             listBox, 
             'Choose Your Logs to Search',
             len(logCheckBoxes) + 3)
+        self.show(chooseLogsBox,frame,'body',focus='body')
+        return chooseLogsBox
     def filterResults(self, *args):
         debug('Started Views.filterResults View: %s', args)
         s.activeView = 'filterResults'
@@ -499,6 +514,9 @@ class Views():
     def home(self):
         """Page displayed as Home Page for the application
         """
+        if not s.menuEnabled:
+            self.show(self.chooseLogs(),frame,'body',focus='body')
+        s.menuEnabled = True
         s.activeView = 'home'
         debug('Started Views.home')
         homeText = w.getText('body', 'Welcome to the best Exim Search Utility ever created.\nSelect an option below to begin.','center')
@@ -522,7 +540,23 @@ class Views():
         """Page opened upon a request to quit, and 
             asks for confirmation of quiting
         """
-        debug('Started Views.quitLoop')
+        debug('Started Views.quitLoop s.activeView: %s', s.activeView)
+        if s.activeView == 'chooseLogs':
+            noButton = w.getButton('No', views, 'chooseLogs')
+        else:
+            noButton = w.getButton('No', views, 'exit')
+        quitList = [
+            w.div,
+            w.getColRow([
+                w.getButton('Yes', views, 'exit'),
+                noButton]),
+            w.div]
+        quitBox = w.getListBox(quitList)[0]
+        quitLineBox = self.centeredListLineBox(
+            quitBox, 
+            'Are You Sure You Want to Quit?',
+            len(quitList) + 2)
+        self.show(quitLineBox,frame,'body',focus='body')
     def searching(self):
         debug('Started Views.searching')
         searchingStatus = urwid.Pile([
@@ -541,15 +575,20 @@ class Views():
         debug('Started Views.statSummary')
     def resultList(self,*args):
         debug('Start Views.resultList : %s', args)
+        searchNo = args[0]
         s.activeView = 'resultList'
-        rawResultList = results.getRawResultList(args[0])
+        currentResults = results.getRawResultList(searchNo)
         x = 1
         listDisplayCols = []
-        for rawResult in rawResultList:
+        for result in currentResults.resultList:
             listDisplayCols.append(w.getColRow(
                 [
-                    (5, w.getButton(str(x),self,'singleEntry',user_data=[rawResultList.index(rawResult), args[0]])),
-                    w.getText('body',rawResult,'left')
+                    (5, w.getButton(
+                        str(x),
+                        self,
+                        'singleEntry',
+                        user_data=[currentResults.resultList.index(result), searchNo])),
+                    w.getText('body',result,'left')
                 ]
             ))
             x += 1
@@ -559,7 +598,7 @@ class Views():
         s.df.resultsListMenu[1] = [
             '(F)ilter Current Results',
             'filterResults',
-            args[0]
+            searchNo
             ]
         footers.update('resultsListMenu', s.df.resultsListMenu)
         self.show(resultListBox, frame,'body')
@@ -582,12 +621,12 @@ class Views():
         singleEntryWalker = urwid.SimpleFocusListWalker(singleEntryCols)
         singleEntryList = urwid.ListBox(singleEntryWalker)
         #singleEntryFiller = urwid.Filler(singleEntryList)
-        s.df.resultsListMenu[2] = [
+        s.df.singleEntryMenu[2] = [
             '(B)ack To Result List',
             'resultList',
             searchNo
             ]
-        footers.update('singleEntryMenu', s.df.resultsListMenu)
+        footers.update('singleEntryMenu', s.df.singleEntryMenu)
         self.show(footers.singleEntryMenu, frame, 'footer')
         self.show(singleEntryList,frame,'body')
     def newSearchSummary(self,searchNo, query):
@@ -599,7 +638,8 @@ class Views():
                     + str(results.getCount(searchNo)) + 
                     ' Results \nConsider applying filters to narrow down results ', 'center'),
                 w.div
-            ]   
+            ]
+            s.rl.resultOverflow = False
         else:
             summaryRows = [
                 w.div,
@@ -618,25 +658,29 @@ class Views():
         return views.centeredListLineBox(summaryList, 'Search Results for ' + query, len(summaryRows) + 5)
     def clearFilters(self):
         filters.clear()
-        views.resultList(results.query)
+        currentResultList = results.getRawResultList(mostRecentSearchNo)
+        debug('clearFilters mostRecentSearchNo: %s', mostRecentSearchNo)
+        views.resultList(currentResultList.original_results)
     def applyFilters(self, *args):
         search.filterResults()
         frame.set_focus('body')
     def testMailer(self):
         """Page opened to allow user to send test emails"""
         debug('Started Views.testMailer')
+    def exit(self):
+        raise urwid.ExitMainLoop()
 class Filters():
     def __init__(self):
-        self.senderFilter = Filter('Sender')
-        self.recipFilter = Filter('Recipient')
-        self.dateFilter = Filter('Date')
-        self.msgTypeFilter = Filter('Type')
+        self.senderFilter = Filter('sendAddr')
+        self.recipFilter = Filter('recipient')
+        self.dateFilter = Filter('date')
+        self.msgTypeFilter = Filter('msgType')
     def get(self):
         x = {
-            'Sender': self.senderFilter.current,
-            'Recipient': self.recipFilter.current,
-            'Date': self.dateFilter.current,
-            'Type': self.msgTypeFilter.current,
+            'sendAddr': self.senderFilter.current,
+            'recipient': self.recipFilter.current,
+            'date': self.dateFilter.current,
+            'msgType': self.msgTypeFilter.current,
         }
         return x
     def clear(self):
@@ -657,7 +701,7 @@ class Filters():
     def filterDisplayList(self,filterInst,filterType):
         filterDisplayList = []
         for filter in getattr(filterInst,'current'):
-            if filterType == 'Date':
+            if filterType == 'date':
                 filter = ','.join(filter)
             filterDisplayList.append(
                 self.getCheckBoxItem(filter,
@@ -682,10 +726,10 @@ class Filters():
         return addBox
     def getCurrentFilters(self):
         self.filterDisplayItems = [
-            [self.senderFilter,'Sender'],
-            [self.recipFilter,'Recipient'],
-            [self.dateFilter,'Date'],
-            [self.msgTypeFilter,'Type']]
+            [self.senderFilter,'sendAddr'],
+            [self.recipFilter,'recipient'],
+            [self.dateFilter,'date'],
+            [self.msgTypeFilter,'msgType']]
         filterDisplays = []
         self.filterDisplayWalkers = {}
         for x in self.filterDisplayItems:
@@ -720,8 +764,8 @@ class Filters():
         header = self.getHeader()
         getFilters = self.getCurrentFilters()
         setFilters = self.setCurrentFilters()
-        applyButton = w.getButton('(A)pply Filters to Current Results', search,'filterResults')
-        applyBox = urwid.LineBox(applyButton)
+        #applyButton = w.getButton('(A)pply Filters to Current Results', search,'filterResults')
+        #applyBox = urwid.LineBox(applyButton)
         filterPile = urwid.Pile([
             ('pack', header),
             #(5, filterHeaders),
@@ -762,7 +806,7 @@ class Footers():
         self.widgets = {}
         self.main = w.getFooterWidget(s.df.mainMenu)
         self.resultsListMenu = w.getFooterWidget(s.df.resultsListMenu)
-        self.singleEntryMenu = w.getFooterWidget(s.df.singleResultMenu)
+        self.singleEntryMenu = w.getFooterWidget(s.df.singleEntryMenu)
         self.filterResultsMenu = w.getFooterWidget(s.df.filterResultsMenu)
     def new(self,name,menuItems):
         """Creates a new footerWidget using a list of
@@ -803,7 +847,8 @@ class Headers():
         """
         
         self.widgets = {}
-        self.main = w.getHeaderWidget()
+        self.main = w.getHeaderWidget(subtitle='If you can do better, then do it')
+        self.resultList = w.getHeaderWidget(subtitle='')
     def new(self,name,title=s.df.mainTitle,subtitle=''):
         """Creates a new Header widget object based on the
            provided name, title, and optional sub-title. Uses 
@@ -922,8 +967,13 @@ class Entries():
     def __init__(self, fullEntryText):
         """This class is used to create single-view Entry Objects
         """
+        self.msgType = []
+        self.date = []
+        self.time = []
+        self.sendAddr = []
+        self.recipient = []
         self.fullEntryText = fullEntryText
-        debug('Init Entries: %s', self.fullEntryText)
+        #debug('Init Entries: %s', self.fullEntryText)
         try:
             shlex.split(self.fullEntryText)
         except:
@@ -954,7 +1004,8 @@ class Entries():
                 if x == 3:
                     self.id = [13, 'Message ID: ', m[x]]
                 if x == 4:
-                    self.entryType = [22, 'Entry Type Symbol: ', m[x]] 
+                    if len(m[x]) == 2:
+                        self.entryType = [22, 'Entry Type Symbol: ', m[x]] 
                 if 'H=' in m[x]:
                     if m[x+1][0] == '(':
                         self.host = [16,'Host: ', m[x][2:] + ' ' + m[x+1]]
@@ -1012,14 +1063,16 @@ class Entries():
                         else:
                             self.fr = [18, 'Sender: ', m[x+1][1:-1]]
                     if m[x] == 'for':
-                        self.to = [19, 'Recipient: ', m[x+1]]
+                        self.receipient = [19, 'Recipient: ', m[x+1]]
                     x += 1
                 else:
                     if x == 5:
                         if '@' in m[x]:
-                            self.to = [19, 'Recipient: ', m[x]]
+                            self.receipient = [19, 'Recipient: ', m[x]]
                         else:
-                            self.to = [19, 'Recipient: ', m[x] + m[x+1]]
+                            if len(m) > x + 1:
+                                if '@' in m[x + 1]:
+                                    self.receipient = [19, 'Recipient: ', m[x] + m[x+1]]
                     if 'P=' in m[x]:
                         self.returnPath = [20, 'Return Path: ', m[x][3:-1]]
                     if 'T=' in m[x] and m[x][0] != 'D' and m[x][0] != 'Q':
@@ -1029,20 +1082,62 @@ class Entries():
                     if ' => ' in fullEntryText:
                         self.msgType = [15, 'Message Type: ', 'outgoing']
                     x += 1
+            
             self.fullEntryText = [14, 'Full Entry: ', self.fullEntryText]
+    def getTimeOrd(self):
+        x = str(self.date[2]) + '_' + str(self.time[2])
+        x = datetime.strptime(x, s.dt.logDateTimeFormat)
+        return x.toordinal()
     def getEntryFields(self):
 
         fieldList = [a for a in dir(self) if not a.startswith('__') and not callable(getattr(self,a))]
         fields = []
         for field in fieldList:
             x = getattr(self,field)
-            fields.append([
-                x[0],
-                field,
-                x[1],
-                x[2]
-            ])
+            if x:
+                fields.append([
+                    x[0],
+                    field,
+                    x[1],
+                    x[2]
+                ])
         return fields
+class ResultLists():
+    def __init__(self,listNumber,resultType,query,resultContents,count,original_results='',isFiltered=False, filters_applied=[]):
+        self.listNumber = listNumber
+        self.isFiltered = isFiltered
+        self.query = query
+        self.original_results = original_results
+        self.filteredApplied = filters_applied
+        self.count = count
+        if resultType == 'logResults':
+            self.resultList = resultContents
+            self.parseEntries()
+        else:
+            resultContents.sort(key=lambda x: str(x.getTimeOrd()), reverse=False)
+            i = 0
+            self.resultList = []
+            for entry in resultContents:
+                name = 'entry-' + str(i)
+                setattr(self,name,entry)
+                self.resultList.append(entry.fullEntryText[2])
+                i += 1
+        debug('List of Attr in new ResultList: %s', dir(self))
+    def parseEntries(self):
+        i = 0
+        for result in self.resultList:
+            name = 'entry-' + str(i)
+            if hasattr(self, name):
+                raise Exception('Entry number {} has already been parsed'.format(name))
+            else:
+                setattr(self,name,Entries(result))
+            i += 1
+    def getListOfEntries(self):
+        listOfEntries = []
+        for attr in dir(self):
+            if 'entry-' in attr:
+                listOfEntries.append(getattr(self,attr))
+        return listOfEntries
 class Results():
     def __init__(self):
         self.currentFilters = {
@@ -1053,7 +1148,9 @@ class Results():
         }
         self.entries = {}
         self.filterEntryEditText = ''
-    def new(self,name,resultType,query,resultContents,original_results=''):
+    def new(self, name, resultType,
+        query, resultContents, original_results='',
+        isFiltered=False,filters_applied=[]):
         """Class of Result Lists
         
         Arguments:
@@ -1066,36 +1163,39 @@ class Results():
             TypeError: raised if the first item in resultContents is not a str
         """
         debug('New Result List created: %s', name)
-        if type(resultContents) != list:
-            raise TypeError('{} provided :: resultContents must be a list of strings'.format(type(resultContents)))
-        try:
-            type(resultContents[0])
-        except:
-            pass
+        if resultType == 'logResults':
+            if type(resultContents) != list:
+                raise TypeError('{} provided :: resultContents must be a list of strings'.format(type(resultContents)))
+            try:
+                type(resultContents[0])
+            except:
+                pass
+            else:
+                if type(resultContents[0]) != str:
+                    raise TypeError('{} provided :: resultContents must be a list of strings'.format(type(resultContents[0])))
+            count = len(resultContents)
+            if hasattr(self, name):
+                raise Exception('A result list by the name of {} already exists'.format(name))
+            else:
+                setattr(self,name,ResultLists(
+                    name, resultType, query,
+                    resultContents, count,
+                    original_results,
+                    isFiltered, filters_applied))
         else:
-            if type(resultContents[0]) != str:
-                raise TypeError('{} provided :: resultContents must be a list of strings'.format(type(resultContents[0])))
-        self.resultType = resultType
-        self.list = resultContents
-        self.count = len(self.list)
-        self.query = query
-        if hasattr(self, name):
-            raise Exception('A footer by the name of {} already exists'.format(name))
-        else:
-            setattr(self,name,resultContents)
+            count = len(resultContents)
+            setattr(self,name,ResultLists(
+                name, resultType, query,
+                resultContents, count,
+                original_results,
+                isFiltered, filters_applied))
     def getSingleEntry(self,entryNo,searchNo):
-        entryId = str(searchNo) + '_' + str(entryNo)
-        if entryId in self.entries.keys():
-            debug('Results.getSingleEntry: entryId %s Exists', entryId)
-            return self.entries[entryId].getEntryFields()
-        else:
-            debug('Results.getSingleEntry: entryId %s does not Exist', entryId)
-            searchNo = getattr(self,searchNo)
-            debug('Results.getSingleEntry searchNo: %s', len(searchNo))
-            debug('Results Instance is %s',self)
-            self.entries[entryId] = Entries(searchNo[entryNo])
-            debug('Results.getSingleEntry self.entries.keys(): %s', self.entries.keys())
-            return self.entries[entryId].getEntryFields()
+        debug('Started Results.getSingleEntry: %s, %s', entryNo, searchNo)
+        entryId = 'entry-' + str(entryNo)
+        resultList = getattr(self, searchNo)
+        debug('resultList : %s', resultList)
+        entry = getattr(resultList, entryId)
+        return entry.getEntryFields()
     def getActiveFilterStrings(self):
         activeFilterStringList = []
         for filterType, activeFilter in self.currentFilters.items():
@@ -1104,7 +1204,7 @@ class Results():
         return activeFilterStringList
     def getCount(self,searchNo):
         resultList = getattr(self,searchNo)
-        return len(resultList)
+        return resultList.count
     def getRawResultList(self, searchNo):
         return getattr(self,searchNo)
     def checkForAddFilterEntry(self, *args):
@@ -1115,30 +1215,6 @@ class Results():
         #    self.currentFilters[filterType].append(newFilter)
     def addFilters(self, *args):
         debug('Results.addFilters args: %s', args)
-    def update(self,itemsToUpdate):
-        """updates an item in the result list by either adding or removing the item
-        
-        Arguments:
-            itemsToUpdate {list} -- list of items to update. if only updating one item, it must still be contained in a list
-        
-        Raises:
-            TypeError: raised if itemsToUpdate is not a list
-        
-        Returns:
-            dict -- Dictionary of items added or removed in this call.
-        """
-        if type(itemsToUpdate) != list:
-            raise TypeError('{} provided where list is required', type(itemsToUpdate))
-        updates = {'removed':[],'added':[]}
-        listToBeUpdated = self.list
-        for x in itemsToUpdate:
-            if x in listToBeUpdated:
-                updates['removed'].append(x)
-                self.list.remove(x)
-            else:
-                self.list.append(x)
-                updates['added'].append(x)
-        return updates
 class Filter():
     def __init__(self,filterType):
         self.current = []
@@ -1181,7 +1257,7 @@ class Filter():
             newFilter = args[0].get_edit_text()
             args[0].set_edit_text('')
         addFilterTrue = True
-        if self.filterType == 'Date':
+        if self.filterType == 'date':
             if ',' in newFilter:
                 newFilter = newFilter.split(',')
             else:
@@ -1196,7 +1272,7 @@ class Filter():
                     dateTimeFilter.append(datetime.strftime(dateTimeObject.date(), s.dt.logDateFormat))
         if addFilterTrue:
             if newFilter not in self.current:
-                if self.filterType == 'Date':
+                if self.filterType == 'date':
                     if dateTimeFilter not in self.current:
                         self.current.append(dateTimeFilter)
                         newFilter = ','.join(newFilter)
@@ -1204,7 +1280,7 @@ class Filter():
                             on_state_change=[self,'markForDeletion'],
                             user_data=newFilter)
                 else:
-                    self.current.append(newFilter)
+                    self.current.append([newFilter])
                 newFilterCheckBoxItem = filters.getCheckBoxItem(newFilter,
                     on_state_change=[self,'markForDeletion'],
                     user_data=newFilter)
@@ -1214,12 +1290,14 @@ class Filter():
 
 class Search():
     def new(self, query):
+        global mostRecentSearchNo
         s.rl.resultOverflow = False
         debug('New Search Object with query: %s', query)
         updateThread = threading.Thread(target=views.searching())
         updateThread.start()
         updateThread.join()
         searchNumber = self.incrementCounter()
+        mostRecentSearchNo = searchNumber
         results.new(searchNumber, 'logResults', query, self.queryLogs(query))
         views.show(views.newSearchSummary(searchNumber,query), frame, 'body')
     def incrementCounter(self):
@@ -1228,45 +1306,45 @@ class Search():
         searchCounter += 1
         return searchCounterStr
     def filterResults(self,*args):
+        global mostRecentSearchNo
         debug("Start Search.filterResults: %s", filters.get())
         currentSearchNo = 'search' + str(searchCounter - 1).zfill(3)
         filteredSearchNo = self.incrementCounter()
-        currentResultList = getattr(results,currentSearchNo)
+        mostRecentSearchNo = filteredSearchNo
+        currentResultList = results.getRawResultList(currentSearchNo)
         self.currentFilters = filters.get()
         filteredResults = []
-        originalQuery = results.query
-        originalInput = currentResultList
-        filteredResults = self.filterInput('Sender', input=originalInput)
-        filteredResults = self.filterInput('Recipient', input=filteredResults)
-        filteredResults = self.filterInput('Date', input=filteredResults)
-        filteredResults = self.filterInput('Type', input=filteredResults)
+        originalQuery = currentResultList.query
+        #originalInput = currentResultList
+        entryList = currentResultList.getListOfEntries()
+        entryList.sort()
+        debug('filterResults entryList: %s', entryList)
+        filteredResults = self.filterInput('sendAddr', input=entryList)
+        filteredResults = self.filterInput('recipient', input=filteredResults)
+        filteredResults = self.filterInput('date', input=filteredResults)
+        filteredResults = self.filterInput('msgType', input=filteredResults)
         debug("Filtered Results Count: %s", len(filteredResults))
-        results.new(filteredSearchNo, 'filteredResults', originalQuery, filteredResults, original_results=currentSearchNo)
+        if currentResultList.isFiltered:
+            original_results = currentResultList.original_results
+        else:
+            original_results = currentSearchNo
+        results.new(filteredSearchNo, 'filteredResults', originalQuery, filteredResults, original_results=original_results, isFiltered=True)
         views.show(views.newSearchSummary(filteredSearchNo,originalQuery), frame, 'body')
     def filterInput(self, filterType, input=None):
         if not self.currentFilters[filterType]:
             return input
         else:
             filteredResults = []
-            debug('filterInput beforeExclusion len(input): %s', len(input))
-            filters = self.currentFilters[filterType]
-            filters = self.formatFilterStr(filterType,filters)
-            #debug('formatFilterStr: %s', filters)
-            excludedItems = []
+            filterSet = self.currentFilters[filterType]
+            #debug('filterInput filters: %s', filterSet)
             for item in input[:]:
-                for exclusion in self.filterExclusions:
-                    if exclusion in item:
-                        excludedItems.append(input.pop(input.index(item)))
-            #debug('filterInput afterExclusion len(input): %s', len(input))
-            for item in input[:]:
-                for filter in filters:
-                    #debug('filterInput filter: %s', filter)
-                    if filter in item:
-                        filteredResults.append(item)
-            #debug('filterInput len(filteredResults): %s', len(filteredResults))
-            self.filterExclusions = []
-            input.extend(excludedItems)
-           #debug('%s filterInput:: Original Input: %s\n', filterType, len(input))
+                x = getattr(item,filterType)
+                #debug('filterInput x.filterType: %s', x)
+                for filters in filterSet:
+                    for filter in filters:
+                        #debug('filterInput filter: %s', filter)
+                        if filter in x:
+                            filteredResults.append(item)
             return filteredResults
     def formatFilterStr(self, filterType, filters):
         formattedFilter = []
@@ -1282,6 +1360,7 @@ class Search():
             for filterString in filters:
                 formattedFilter.append(' for ' + filterString)
                 formattedFilter.append(' => ' + filterString)
+            logging.info('formatFilterStr formattedFilter: %s', formattedFilter)
             return formattedFilter
         if filterType == 'Type':
             for filter in filters:
@@ -1314,8 +1393,8 @@ class Search():
             return filters            
     def queryLogs(self,query):
         starttime = datetime.now()
-        debug(":filterLogs :: Current Thread:: %s", threading.current_thread().getName())
-        debug('filterLogs filter: %s', query)
+        #debug(":filterLogs :: Current Thread:: %s", threading.current_thread().getName())
+        #debug('filterLogs filter: %s', query)
         #for log in self.selectedLogs:
         logPoolArgs = []
         for log in logFiles.selectedLogs:
@@ -1341,13 +1420,13 @@ class DateRange():
 def queryLogProcess(poolArgs):
     os.nice(20)
     query,log = poolArgs
-    debug('Log = %s, filters = %s', log, query)
+    #debug('Log = %s, filters = %s', log, query)
     rawEntries = []
     if log[-2:] != 'gz':
         with open(log,mode='r') as f:
             for i, line in enumerate(f):
                 pass
-            debug('Lines in file: %s', i)
+            #debug('Lines in file: %s', i)
             totalLines = i
         
         #logPoolArgs = []
@@ -1363,15 +1442,15 @@ def queryLogProcess(poolArgs):
                 if i % 1000000 == 0:
                     percent = float(i) / float(totalLines)
                     completion = int(percent * 100)
-                    debug('Total Lines in file: %s', totalLines)
-                    debug('Current Line Percent: %s', completion)
+                    #debug('Total Lines in file: %s', totalLines)
+                    #debug('Current Line Percent: %s', completion)
                     w.searchProgress.set_completion(completion)
                     loop.draw_screen()
     else:
         with gzip.open(log,mode='r') as f:
             for i, line in enumerate(f):
                 pass
-            debug('Lines in file: %s', i)
+            #debug('Lines in file: %s', i)
             totalLines = i
         with gzip.open(log,mode='r') as f:
             for i, line in enumerate(f):
@@ -1385,8 +1464,8 @@ def queryLogProcess(poolArgs):
                 if i % 1000000 == 0:
                     percent = float(i) / float(totalLines)
                     completion = int(percent * 100)
-                    debug('Total Lines in file: %s', totalLines)
-                    debug('Current Line Percent: %s', completion)
+                    #debug('Total Lines in file: %s', totalLines)
+                    #debug('Current Line Percent: %s', completion)
                     w.searchProgress.set_completion(completion)
                     loop.draw_screen()
     return rawEntries
