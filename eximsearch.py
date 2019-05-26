@@ -1,5 +1,5 @@
-#!/opt/imh-python/bin/python
-#/usr/bin/python
+#!/usr/bin/python
+#/opt/imh-python/bin/python
 
 import urwid, datetime, os, subprocess, sys, json, re, shlex, gzip, time, logging, collections, socket, threading
 from multiprocessing import Pool, Queue, current_process
@@ -133,7 +133,8 @@ class DisplayFrameSettings():
             ['(S)how Related Entries',
                 'showRelatedEntries'],
             ['(B)ack To Result List',
-                'resultList'],
+                'resultList',
+                mostRecentSearchNo],
             ['(H)ome',
                 'home'],
             ['(Q)uit',
@@ -145,7 +146,8 @@ class DisplayFrameSettings():
             ['(A)pply Current Results',
                 'applyFilters'],
             ['(B)ack To Result List',
-                'resultList'],
+                'resultList',
+                mostRecentSearchNo],
             ['(H)ome',
                 'home'],
             ['(Q)uit',
@@ -633,15 +635,23 @@ class Views():
     def newSearchSummary(self,searchNo, query):
         s.activeView = 'newSearchSummary'
         if s.rl.resultOverflow:
-            summaryRows = [
+            if query:
+                summaryRows = [w.getText('header', ' for ' + query, 'center')]
+            else:
+                summaryRows = []
+            summaryRows.extend([
                 w.div,
                 w.getText('bold',' There are too many Results \n Only showing the first ' 
                     + str(results.getCount(searchNo)) + 
                     ' Results \nConsider applying filters to narrow down results ', 'center'),
                 w.div
-            ]
+            ])
             s.rl.resultOverflow = False
         else:
+            if query:
+                summaryRows = [w.getText('header', ' for ' + query, 'center')]
+            else:
+                summaryRows = []
             summaryRows = [
                 w.div,
                 w.getText('bold','There are ' + str(results.getCount(searchNo)) + ' results', 'center'),
@@ -656,7 +666,7 @@ class Views():
         summaryRows.append(w.getButton('Show Results', self,'resultList', user_data=searchNo))
         summary = urwid.SimpleFocusListWalker(summaryRows)
         summaryList = urwid.ListBox(summary)
-        return views.centeredListLineBox(summaryList, 'Search Results for ' + query, len(summaryRows) + 5)
+        return views.centeredListLineBox(summaryList, 'Search Results', len(summaryRows) + 5)
     def clearFilters(self):
         filters.clear()
         currentResultList = results.getRawResultList(mostRecentSearchNo)
@@ -775,6 +785,13 @@ class Filters():
         ])
         #filterPageList = urwid.Pile(filterPile)
         #self.filterFiller = urwid.Filler(self.filterPageList,valign='middle')
+        s.df.filterResultsMenu[2] = [
+            '(B)ack To Result List',
+            'resultList',
+            mostRecentSearchNo
+            ]
+        footers.update('filterResultsMenu', s.df.filterResultsMenu)
+        debug('Active Footer for filterResultsMenu: %s',footers.filterResultsMenu.contents[2][0].original_widget.user_data)
         views.show(footers.filterResultsMenu, frame, 'footer')
         views.show(filterPile,frame,'body',focus='body')
         #frame.update('body',filterPile)
@@ -1006,18 +1023,20 @@ class Entries():
                     self.id = [13, 'Message ID: ', m[x]]
                 if x == 4:
                     if len(m[x]) == 2:
-                        self.entryType = [22, 'Entry Type Symbol: ', m[x]] 
+                        self.entryType = [22, 'Entry Type Symbol: ', m[x]]
+                #debug('parseEntries self.fullEntryText: %s', self.fullEntryText)
                 if 'H=' in m[x]:
-                    if m[x+1][0] == '(':
-                        self.host = [16,'Host: ', m[x][2:] + ' ' + m[x+1]]
-                        self.hostIp = [17, 'Host IP: ', m[x+2].split(':')[0]]
-                        if s.hostname in self.host:
-                            self.msgType = [15, 'Type: ', 'relay']
-                    else:
-                        self.host = [16, 'Host: ', m[x][2:]]
-                        self.hostIp = [17, 'Host IP: ', m[x+1].split(':')[0]]
-                        if s.hostname in self.host:
-                            self.msgType = [15, 'Type: ', 'relay']
+                    if len(m) > x + 1:
+                        if m[x+1][0] == '(':
+                            self.host = [16,'Host: ', m[x][2:] + ' ' + m[x+1]]
+                            self.hostIp = [17, 'Host IP: ', m[x+2].split(':')[0]]
+                            if s.hostname in self.host:
+                                self.msgType = [15, 'Type: ', 'relay']
+                        else:
+                            self.host = [16, 'Host: ', m[x][2:]]
+                            self.hostIp = [17, 'Host IP: ', m[x+1].split(':')[0]]
+                            if s.hostname in self.host:
+                                self.msgType = [15, 'Type: ', 'relay']
                 if m[x] == 'SMTP':
                     self.smtpError = [22, 'Failure Message: ', " ".join(m[x:])]
                 if 'S=' in m[x] and m[x][0] != 'M':
@@ -1058,11 +1077,12 @@ class Entries():
                     if 'T=' in m[x] and m[x][0] != 'R':
                         self.topic = [21, 'Subject: ', m[x][2:]]
                     if m[x] == 'from':
-                        if m[x+1] == '<>':
-                            self.fr = [18, 'Sender: ', m[x+1]]
-                            self.msgType = [15, 'Type: ', 'bounce']
-                        else:
-                            self.fr = [18, 'Sender: ', m[x+1][1:-1]]
+                        if len(m) > x +1:
+                            if m[x+1] == '<>':
+                                self.fr = [18, 'Sender: ', m[x+1]]
+                                self.msgType = [15, 'Type: ', 'bounce']
+                            else:
+                                self.fr = [18, 'Sender: ', m[x+1][1:-1]]
                     if m[x] == 'for':
                         self.receipient = [19, 'Recipient: ', m[x+1]]
                     x += 1
@@ -1299,7 +1319,7 @@ class Search():
         updateThread.join()
         searchNumber = self.incrementCounter()
         mostRecentSearchNo = searchNumber
-        results.new(searchNumber, 'logResults', query, self.queryLogs(query))
+        results.new(searchNumber, 'logResults', query, self.queryLogs(query),original_results=searchNumber)
         views.show(views.newSearchSummary(searchNumber,query), frame, 'body')
     def incrementCounter(self):
         global searchCounter
