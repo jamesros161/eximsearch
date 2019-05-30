@@ -77,4 +77,4 @@ from urwid.treetools import (TreeWidgetError, TreeWidget, TreeNode,
 from urwid.vterm import (TermModes, TermCharset, TermScroller, TermCanvas,
     Terminal)
 
-from urwid import raw_display
+from urwid import raw_display,curses_display

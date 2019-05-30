@@ -1,5 +1,5 @@
 #!/opt/imh-python/bin/python
-#/usr/bin/python
+# -*- coding: utf-8 -*-
 
 import urwid, datetime, os, subprocess, sys, json, re, shlex, gzip, time, logging, collections, socket, threading
 from multiprocessing import Pool, Queue, current_process
@@ -14,15 +14,17 @@ BODY = 'body'
 HEADER = 'header'
 FOOTER = 'footer'
 
-
+urwid.set_encoding("UTF-8")
 info = logging.info
 debug = logging.debug
 warning = logging.warning
 
+PYTHONIOENCODING="utf-8"
+debug('Encoding Type: %s', PYTHONIOENCODING)
+
 """
 SETTINGS / DEFAULT VALUE CLASSES
 """
-
 class GlobalSettings(): 
     def __init__(self):
         """This class contains general settings / default variables for the application
@@ -51,22 +53,43 @@ class GlobalSettings():
         ]
     def unhandled_input(self,key):
         if type(key) == str:
-            if key in ('q', 'N'):   
+            #raw = loop.screen.get_input(raw_keys=True)
+            #debug('raw: %s', raw)
+            if key in 'ctrl e':   
                 views.activate('quit_loop',focus_position=BODY)
             if key in ('N', 'n'):
                 views.activate('new_search', focus_position=BODY)
             if key in ('S', 's'):
                 views.activate('coming_soon', focus_position=FOOTER)
+            if key in ('B', 'b') and 'single_entry' in state.get_view_name(ACTIVE):
+                views.activate('results_list', focus_position='body')
             if key in 'tab':
                 if frame.focus_position == 'footer':
                     frame.focus_position = 'body'
                 else:
                     if self.menuEnabled:
                         frame.focus_position = 'footer'
+            if key in 'ctrl left':
+                    state.go_back()
+            if key in 'ctrl right':
+                state.go_forward()
             if key in 'f5':
                 debug('Current View: %s', state.get_view_name(ACTIVE))
             if key in 'f6' and state.get_view(PREV):
                 debug('Previous View: %s', state.get_view_name(PREV))
+            if key in 'f7':
+                debug('Current Query: %s', state.get_query(ACTIVE))
+            if key in 'f8' and state.get_query(PREV):
+                debug('PRevious Query: %s', state.get_query(PREV))
+            if key in 'f9':
+                debug('Current Result List: %s', state.get_result_list_name(ACTIVE))
+            if key in 'f10' and state.get_result_list_name(PREV):
+                debug('PRevious Result LIst: %s', state.get_result_list_name(PREV))
+            if key in 'f3':
+                debug('Current View Chain Position: %s', state.get_view_chain_pos())
+            if key in 'f4':
+                debug('Current View Chain Name: %s', state.get_view_from_chain(state.get_view_chain_pos()).view_name)
+
             #if state.get_view(ACTIVE) == 'single_entry':
             #    if key in ('B', 'b'):
             #        views.activate('result_list',focus_position=BODY)
@@ -108,7 +131,9 @@ class DisplayFrameSettings():
             ('header',  'black',    'light gray'),
             ('footer',  'black',    'light gray'),
             ('body',    'white',    'default'),
-            ('bold',    'dark green, bold' , 'black')
+            ('bold',    'dark green, bold' , 'black'),
+            ('blue', 'bold', 'dark blue'),
+            ('highlight', 'dark green', 'default')
         ]
 class Menus():
         def __init__(self):
@@ -120,7 +145,7 @@ class Menus():
                 ['Add / Remove (F)ilters','add_remove_filters'],
                 ['(S)tats Summary','coming_soon'],
                 ['(T)est Mailer','coming_soon'],
-                ['(Q)uit','quit_loop']]
+                ['(Q)uit' ,'quit_loop']]
             self.new_search = self.home
             self.search_progress = self.home
         
@@ -135,7 +160,7 @@ class Menus():
             self.single_entry = [
                 ['(N)ew Search','new_search'],
                 ['(S)how Related Entries','show_related_entries'],
-                ['(B)ack To Result List','result_list'],
+                ['(B)ack To Result List','results_list'],
                 ['(H)ome','home'],
                 ['(Q)uit','quit_loop']]
             self.add_remove_filters = [
@@ -145,6 +170,17 @@ class Menus():
                 ['(H)ome','home'],
                 ['(Q)uit','quit_loop']]
             self.quit_loop = []
+            self.legend = [
+                ['Prev. Screen', 'Ctrl + ←'],
+                ['Next  Screen', 'Ctrl + →'],
+                ['Change Fields', '← / ↑ / ↓ / →'],
+                ['Toggle Menu', 'Tab'],
+                ['New Search', 'Ctrl + N'],
+                ['Add / Remove Filters', 'Ctrl + F'],
+                ['Apply Filters', 'Ctrl + Shift + F'],
+                ['Clear Filters', 'Ctrl + X'],
+                ['Exit', 'Ctrl + E']
+            ]
 class LogFileSettings():
     def __init__(self):
         """Settings for the LogFile class / objects
@@ -261,6 +297,52 @@ class QuestionBox(urwid.Filler):
         debug('%s Entry String: %s', self.original_widget, entry)
         state.set_query(entry)
         views.activate('search_progress',is_threaded=True,on_join=search.new)
+
+def show_or_exit(key):
+    if key in ('q', 'Q', 'esc'):
+        raise urwid.ExitMainLoop()
+
+
+class CustomButton(urwid.Button):
+    button_left = urwid.Text('[')
+    button_right = urwid.Text(']')
+class BoxButton(urwid.WidgetWrap):
+    _border_char = u'─'
+    def __init__(self, label, on_press=None, user_data=None):
+        padding_size = 2
+        border = self._border_char * (len(label) + padding_size * 2 )
+        self.cursor_position = len(border) + padding_size
+        self.top = u'┌' + border + u'┐\n'
+        self.middle = u'│  ' + label + u'  │\n'
+        self.bottom = u'└' + border + u'┘'
+
+        # self.widget = urwid.Text([self.top, self.middle, self.bottom])
+        self.widget = urwid.Pile([
+            urwid.Text(self.top[:-1],align='center'),
+            urwid.Text(self.middle[:-1],align='center'),
+            urwid.Text(self.bottom,align='center'),
+        ])
+
+        self.widget = urwid.AttrMap(self.widget, '', 'highlight')
+
+        # self.widget = urwid.Padding(self.widget, 'center')
+        # self.widget = urwid.Filler(self.widget)
+
+        # here is a lil hack: use a hidden button for evt handling
+        debug('on_press: %s, user_data: %s', on_press, user_data)
+        self._hidden_btn = urwid.Button('hidden %s' % label, on_press, user_data)
+
+        super(BoxButton, self).__init__(self.widget)
+
+    def selectable(self):
+        return True
+
+    def keypress(self, *args, **kw):
+        return self._hidden_btn.keypress(*args, **kw)
+
+    def mouse_event(self, *args, **kw):
+        return self._hidden_btn.mouse_event(*args, **kw)
+
 class MyWidgets():
     """A collection of functions to simplify creation of
        frequently used widgets """
@@ -292,6 +374,11 @@ class MyWidgets():
         button._label.align = 'center'
         buttonMap = urwid.AttrMap(button, buttonMap, focus_map=focus_map)
         return buttonMap
+    def get_custom_button(self, *args, **kwargs):
+        b = CustomButton(*args, **kwargs)
+        b = urwid.AttrMap(b, '', 'highlight')
+        b = urwid.Padding(b, left=4, right=4)
+        return b
     def getText(self,format,textString, alignment,**kwargs):
         """Creates a basic urwid.Text widget
         
@@ -429,20 +516,42 @@ class MyWidgets():
             object -- urwid.menuItems object to be used as the header's widget
             FLOW WIDGET
         """
+        debug('Getting Footer')
         menuList = []
+        menuGridList = []
         for item in menuItems:
             if len(item) == 3:
-                menuList.append(
-                    w.getButton(item[0],views,'activate',user_data=(item[1],item[2])))
+                #menuList.append(
+                    #w.getButton(item[0],views,'activate',user_data=(item[1],item[2])))
+                    #(len(item[0]) + 6, BoxButton(item[0], on_press=views.activate,user_data=(item[1],item[2]))))
+                menuGridList.append(BoxButton(item[0], on_press=views.activate,user_data=(item[1],item[2])))
             else:
-                menuList.append(
-                    w.getButton(item[0],views, 'activate', user_data=item[1]))
-        return urwid.Columns(
+                #menuList.append(
+                    #w.getButton(item[0],views, 'activate', user_data=item[1]))
+                    #(len(item[0]) + 6, BoxButton(item[0], on_press=views.activate,user_data=[item[1]])))
+                menuGridList.append(BoxButton(item[0], on_press=views.activate,user_data=(item[1])))
+        itemWidths = []
+        for item in menuGridList:
+            itemWidths.append(item.cursor_position)
+        itemWidths.sort()
+        menuColumns = urwid.Columns(
             menuList,
             dividechars=1,
             focus_column=None,
             min_width=1, 
             box_columns=None)
+        menuGrid = urwid.GridFlow(menuGridList,itemWidths[-1],0,0,'center')
+        debug('menuCol width: %s, menuPadding width:', menuColumns.column_widths)
+        legendItems = []
+        for legend in s.menus.legend:
+            legendItems.append(w.getText('bold', legend[0] + '\n' + legend[1], 'center'))
+        legendColumns = urwid.Columns(
+            legendItems,
+            dividechars=1,
+            focus_column=None,
+            min_width=1, 
+            box_columns=None)
+        return urwid.Pile([menuGrid, legendColumns])
 class BodyWidgets():
     def get_body_widget(self, view_name, user_args=None, calling_view=None):
         #debug('BodyWidgets.get_body_widget:: view_name: %s :: args: %s', view_name, args)
@@ -535,7 +644,7 @@ class BodyWidgets():
     def get_results_list(self, **kwargs):
         debug(' kwargs : %s', kwargs)
         result_list = state.get_result_list(ACTIVE)
-        calling_view = kwargs['calling_view']
+        result_list.set_previous_list()
         x = 1
         listDisplayCols = []
         for result in result_list.contents:
@@ -623,6 +732,9 @@ class State():
         self.active_entry_on_screen = None
         self.prev_entry_on_screen = None
         self.searchCounter = 1
+        self.view_count = -1
+        self.view_chain = []
+        self.view_chain_pos = -1
     def increment_counter(self):
         self.searchCounter += 1
     def get_new_search_number(self):
@@ -645,7 +757,13 @@ class State():
             self.prev_view_name = self.prev_view.view_name
         else:
             self.prev_view_name = None
-
+        debug('Len view_chain before set_view: %s, view_chain_pos: %s', len(self.view_chain),self.view_chain_pos)
+        if len(self.view_chain) > self.view_chain_pos:
+            self.view_chain.insert(self.view_chain_pos, view)
+        else:
+            self.view_chain.append(view)
+        self.view_chain = self.view_chain[0:self.view_chain_pos + 1]
+        debug('Len view_chain after set_view: %s, view_chain_pos: %s', len(self.view_chain),self.view_chain_pos)
         #store status of active and prev view as to whether or not it was a result list or single entry
         self.is_active_view_result_list = self.active_view.is_view_result_list
         self.is_active_view_single_entry = self.active_view.is_view_single_entry
@@ -672,6 +790,8 @@ class State():
         else:
             warning('State.get_view_name() active_prev parameter is invalid.')
             sys.exit('State.get_view_name() active_prev parameter is invalid.')
+    def get_view_from_chain(self,chain_pos):
+        return self.view_chain[chain_pos]
     def set_result_list(self,result_list):
         debug('State.set_result_list: %s', result_list)
         #assign current result_list to previous result_list and store result_list as active_result_list
@@ -724,14 +844,12 @@ class State():
         else:
             warning('State.get_query() active_prev parameter is invalid.')
             sys.exit('State.get_query() active_prev parameter is invalid.')
-
     def set_active_filters(self, active_filters):
         debug('State.set_active_filters: %s', active_filters)
         self.active_filters = active_filters
     def get_active_filters(self):
         debug('State.get_active_filters: %s', self.active_filters)
         return self.active_filters
-
     def set_entry_on_screen(self,entry_on_screen):
         debug('State.set_entry_on_screen: %s', entry_on_screen)
         self.prev_entry_on_screen = self.active_entry_on_screen
@@ -754,6 +872,26 @@ class State():
         else:
             warning('State.entry_on_screen() active_prev parameter is invalid.')
             sys.exit('State.entry_on_screen() active_prev parameter is invalid.')
+    def set_view_chain_pos(self,adjustment):
+        if adjustment > 0 and self.get_view_chain_pos() < len(self.view_chain) - 1:
+            self.view_chain_pos += adjustment
+            return True
+        if adjustment < 0 and self.get_view_chain_pos() > 0:
+            self.view_chain_pos += adjustment
+            return True
+        else:
+            #debug('Length of view_chain (%s) does not allow adjusting chain_pos from %s by %s positions', len(state.view_chain), state.get_view_chain_pos(), adjustment)
+            return False
+    def get_view_chain_pos(self):
+        return self.view_chain_pos
+    def go_back(self):
+        if self.set_view_chain_pos(-1):
+            x = state.get_view_from_chain(state.get_view_chain_pos())
+            x.reload()
+    def go_forward(self):
+        if self.set_view_chain_pos(1):
+            x = state.get_view_from_chain(state.get_view_chain_pos())
+            x.reload()
 class View():
     def __init__(self, view_name,
         default_view_focus,
@@ -769,8 +907,8 @@ class View():
         self.is_view_result_list = is_view_result_list
         self.is_view_single_entry = is_view_single_entry
         self.is_view_add_filters = is_view_add_filters
-    def start(self, previous_view, focus_position=None, user_args=None):
-        debug('view.start view_name: %s', self.view_name)
+    def start(self, previous_view, focus_position=None, user_args=None, add_to_view_chain=True):
+        debug('view_name: %s, focus_position: %s', self.view_name, focus_position)
         self.header = w.getHeaderWidget(self.header_title,subtitle=self.header_subtitle)
         self.previous_view = previous_view
         menuItems = getattr(s.menus,self.view_name)
@@ -780,10 +918,16 @@ class View():
         self.show_body()
         self.show_footer()
         if focus_position:
-            frame.focus_position = focus_position
+            frame.set_focus(focus_position)
         else:
-            frame.focus_position = self.default_view_focus
-        state.set_view(self)
+            frame.set_focus(self.default_view_focus)
+        if add_to_view_chain:
+            state.view_chain_pos += 1
+            state.set_view(self)
+    def reload(self):
+        self.show_header()
+        self.show_body()
+        self.show_footer()
     def show_header(self):
         frame.contents.__setitem__('header', [self.header, None])
     def show_body(self):
@@ -793,7 +937,7 @@ class View():
     def draw_screen(self,loop):
         loop.draw_screen()
     def set_focus(self,target_frame, focus_position):
-        target_frame.focus_position = focus_position
+        target_frame.set_focus(focus_position)
 class ViewSets():
     def __init__(self):
         self.quit_loop = View('quit_loop', BODY)
@@ -810,28 +954,41 @@ class ViewSets():
         self.single_entry = View('single_entry', BODY, is_view_single_entry=True)
     def get_view(self, view_name):
         return getattr(self,view_name)
-    def activate(self,view_name,
-        focus_position=None, user_args=[], 
-        is_threaded=False,on_join=None):
-        debug('views.activate args: %s', view_name)
+    def activate(self,*args, **kwargs):
+        debug('views.activate view_name: args: %s', args)
+        focus_position = None
+        is_threaded = False
+        on_join = None
         current_view = state.get_view(ACTIVE)
-        if type(view_name) == list:
-            activating_view = getattr(views, view_name[0])
-            passed_args = view_name[1:]
+        if len(args) == 2:
+            if type(args[0]) == urwid.Button:
+                view_name = args[1]
+            else:
+                debug('type of urwid.Button: %s', type(args[0]))
+                view_name = args[0]
+                focus_position = args[1]
+            #passed_args = args[1:]
+        elif len(args) == 1:
+            view_name = args[0]
         else:
-            activating_view = getattr(views, view_name)
-            passed_args = user_args
+            view_name = args[1][0]
+        activating_view = getattr(views, view_name)
+        if 'is_threaded' in kwargs.keys():
+            is_threaded = True
+            passed_args = args
+            on_join = kwargs['on_join']
         if is_threaded:
             debug('view.activate is threaded')
             updateThread = threading.Thread(
                 target=activating_view.start(current_view,
-                    focus_position=focus_position, 
-                    user_args=passed_args))
+                   focus_position=focus_position, 
+                    user_args=passed_args,
+                    add_to_view_chain=False))
             updateThread.start()
             updateThread.join()
             on_join()
         else:
-            activating_view.start(current_view,focus_position=focus_position, user_args=passed_args)
+            activating_view.start(current_view,focus_position=focus_position, user_args=None)
     def exit(self):
         debug
         raise urwid.ExitMainLoop()
@@ -922,6 +1079,7 @@ class Search():
         s.rl.resultOverflow = False
         if args:
             debug('Search Has special arguments: %s', args)
+            state.set_query(args[0])
         debug('New Search Object with query: %s', state.get_query(ACTIVE))
         searchNumber = state.get_new_search_number()
         results.new(
@@ -1081,6 +1239,7 @@ class ResultLists():
         self.original_results = original_results
         self.filteredApplied = filters_applied
         self.count = count
+        self.previous_results = None
         if resultType == 'logResults':
             self.contents = resultContents
             self.parseEntries()
@@ -1109,6 +1268,11 @@ class ResultLists():
             if 'entry-' in attr:
                 listOfEntries.append(getattr(self,attr))
         return listOfEntries
+    def set_previous_list(self):
+        if self.previous_results:
+            state.previous_result_list = self.previous_results
+        else:
+            self.previous_results = state.previous_result_list
 class Entries():
     def __init__(self, fullEntryText):
         """This class is used to create single-view Entry Objects
@@ -1348,7 +1512,6 @@ def queryLogProcess(poolArgs):
                     w.searchProgress.set_completion(completion)
                     loop.draw_screen()
     return rawEntries
-
 s = GlobalSettings()
 if __name__ == '__main__':
     debug("\n****\nApplication Start!\n****\n")

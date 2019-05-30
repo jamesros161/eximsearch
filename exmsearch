@@ -576,7 +576,7 @@ class Views():
         """Page opened to display a summary of general
            stats for the email logs"""
         debug('Started Views.statSummary')
-    def resultList(self,calling_view=None,*args):
+    def resultList(self,calling_view*args):
         debug('Start Views.resultList : %s', args)
         searchNo = args[0]
         s.activeView = 'resultList'

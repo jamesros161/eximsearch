@@ -1,0 +1,23 @@
+1419 :: <module> :: 
+****
+Application Start!
+****
+
+873 :: activate :: views.activate view_name: choose_logs , focus_position: body
+824 :: start :: view_name: choose_logs, focus_position: body
+477 :: get_choose_logs ::  kwargs: {'user_args': [], 'calling_view': <__main__.View instance at 0x7fe012257cb0>}
+658 :: set_view :: State.set_view: choose_logs
+673 :: set_view :: Len view_chain before set_view: 0, view_chain_pos: 0
+679 :: set_view :: Len view_chain after set_view: 1, view_chain_pos: 0
+873 :: activate :: views.activate view_name: home , focus_position: None
+824 :: start :: view_name: home, focus_position: None
+496 :: get_home ::  kwargs : {'user_args': [], 'calling_view': <__main__.View instance at 0x7fe012257cf8>}
+658 :: set_view :: State.set_view: home
+673 :: set_view :: Len view_chain before set_view: 1, view_chain_pos: 1
+679 :: set_view :: Len view_chain after set_view: 2, view_chain_pos: 1
+873 :: activate :: views.activate view_name: new_search , focus_position: None
+824 :: start :: view_name: new_search, focus_position: None
+508 :: get_new_search ::  kwargs : {'user_args': [], 'calling_view': <__main__.View instance at 0x7fe012257d40>}
+658 :: set_view :: State.set_view: new_search
+673 :: set_view :: Len view_chain before set_view: 2, view_chain_pos: 2
+679 :: set_view :: Len view_chain after set_view: 3, view_chain_pos: 2
