@@ -1,0 +1,3 @@
+{
+    "command": "frame.contents['body'][0].body",
+    "keycode": "f3"}

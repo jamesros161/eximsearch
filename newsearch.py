@@ -51,11 +51,27 @@ class GlobalSettings():
             'date',
             'type'
         ]
+    def dyn_store_debug(self):
+        data = {
+            "keycode": "f3",
+            "command": "state.get_view_name(ACTIVE)"
+        }
+        with open('/home/usirius/git/eximsearch/debug.json', 'a') as outfile:
+            json.dump(data, outfile)
+    def dyn_debug(self, *args):
+        with open('/home/usirius/git/eximsearch/debug.json', 'r') as debug_file:
+            x = json.load(debug_file,'utf-8')
+            try:
+                eval(x['command'])
+            except Exception as e:
+                debug('Exception is : %s', e)
+            else:
+                return eval(x['command'])
     def unhandled_input(self,key):
         if type(key) == str:
             #raw = loop.screen.get_input(raw_keys=True)
             #debug('raw: %s', raw)
-            if key in 'ctrl e':   
+            if key in 'ctrl e':
                 views.activate('quit_loop',focus_position=BODY)
             if key in ('N', 'n'):
                 views.activate('new_search', focus_position=BODY)
@@ -69,9 +85,9 @@ class GlobalSettings():
                 else:
                     if self.menuEnabled:
                         frame.focus_position = 'footer'
-            if key in 'ctrl left':
+            if 'ctrl left' in key:
                     state.go_back()
-            if key in 'ctrl right':
+            if 'ctrl right' in key:
                 state.go_forward()
             if key in 'f5':
                 debug('Current View: %s', state.get_view_name(ACTIVE))
@@ -81,13 +97,14 @@ class GlobalSettings():
                 debug('Current Query: %s', state.get_query(ACTIVE))
             if key in 'f8' and state.get_query(PREV):
                 debug('PRevious Query: %s', state.get_query(PREV))
-            if key in 'f9':
-                debug('Current Result List: %s', state.get_result_list_name(ACTIVE))
-            if key in 'f10' and state.get_result_list_name(PREV):
-                debug('PRevious Result LIst: %s', state.get_result_list_name(PREV))
             if key in 'f3':
+                debug('Body: %s', self.dyn_debug())
+            if key in 'f1':
+                debug('Current Result List: %s', state.get_result_list_name(ACTIVE))
+                if state.get_result_list_name(PREV):
+                    debug('Previous Result LIst: %s', state.get_result_list_name(PREV))
+            if key in 'f2':
                 debug('Current View Chain Position: %s', state.get_view_chain_pos())
-            if key in 'f4':
                 debug('Current View Chain Name: %s', state.get_view_from_chain(state.get_view_chain_pos()).view_name)
 
             #if state.get_view(ACTIVE) == 'single_entry':
@@ -141,34 +158,34 @@ class Menus():
                 ['(Q)uit','quit_loop']]
 
             self.home = [
-                ['(N)ew Search', 'new_search'],
-                ['Add / Remove (F)ilters','add_remove_filters'],
-                ['(S)tats Summary','coming_soon'],
-                ['(T)est Mailer','coming_soon'],
-                ['(Q)uit' ,'quit_loop']]
+                ['      (N)ew Search      ', 'new_search'],
+                [' Add / Remove (F)ilters ','add_remove_filters'],
+                ['     (S)tats Summary    ','coming_soon'],
+                ['      (T)est Mailer     ','coming_soon'],
+                ['          (Q)uit        ','quit_loop   ']]
             self.new_search = self.home
             self.search_progress = self.home
         
             self.results_list = [
-                ['(N)ew Search', 'new_search'],
                 ['(F)ilter Current Results','add_remove_filters'],
-                ['(C)lear Applied Filters','clear_applied_filters'],
-                ['(H)ome','home'],
-                ['(Q)uit','quit_loop']]
+                [' (C)lear Applied Filters','clear_applied_filters'],
+                ['         (H)ome         ','home'],
+                ['      (N)ew Search      ', 'new_search'],
+                ['          (Q)uit        ','quit_loop   ']]
             self.results_summary = self.results_list
 
             self.single_entry = [
-                ['(N)ew Search','new_search'],
-                ['(S)how Related Entries','show_related_entries'],
-                ['(B)ack To Result List','results_list'],
-                ['(H)ome','home'],
-                ['(Q)uit','quit_loop']]
+                [' (S)how Related Entries ','show_related_entries'],
+                ['  (B)ack To Result List ','results_list'],
+                ['         (H)ome         ','home'],
+                ['      (N)ew Search      ','new_search'],
+                ['          (Q)uit        ','quit_loop   ']]
             self.add_remove_filters = [
-                ['(N)ew Search','new_search'],
-                ['(A)pply Current Results','apply_filters'],
-                ['(B)ack To Result List','result_list'],
-                ['(H)ome','home'],
-                ['(Q)uit','quit_loop']]
+                ['(A)pply Current Results ','apply_filters'],
+                ['  (B)ack To Result List ','results_list'],
+                ['         (H)ome         ','home'],
+                ['      (N)ew Search      ','new_search'],
+                ['          (Q)uit        ','quit_loop   ']]
             self.quit_loop = []
             self.legend = [
                 ['Prev. Screen', 'Ctrl + ←'],
@@ -315,7 +332,8 @@ class BoxButton(urwid.WidgetWrap):
         self.top = u'┌' + border + u'┐\n'
         self.middle = u'│  ' + label + u'  │\n'
         self.bottom = u'└' + border + u'┘'
-
+        self.on_press_action = on_press
+        self.on_press_user_data = user_data
         # self.widget = urwid.Text([self.top, self.middle, self.bottom])
         self.widget = urwid.Pile([
             urwid.Text(self.top[:-1],align='center'),
@@ -329,7 +347,7 @@ class BoxButton(urwid.WidgetWrap):
         # self.widget = urwid.Filler(self.widget)
 
         # here is a lil hack: use a hidden button for evt handling
-        debug('on_press: %s, user_data: %s', on_press, user_data)
+        #debug('on_press: %s, user_data: %s', on_press, user_data)
         self._hidden_btn = urwid.Button('hidden %s' % label, on_press, user_data)
 
         super(BoxButton, self).__init__(self.widget)
@@ -544,19 +562,28 @@ class MyWidgets():
         debug('menuCol width: %s, menuPadding width:', menuColumns.column_widths)
         legendItems = []
         for legend in s.menus.legend:
-            legendItems.append(w.getText('bold', legend[0] + '\n' + legend[1], 'center'))
-        legendColumns = urwid.Columns(
-            legendItems,
-            dividechars=1,
-            focus_column=None,
-            min_width=1, 
-            box_columns=None)
-        return urwid.Pile([menuGrid, legendColumns])
+            #legendItems.append(w.getText('bold', legend[0] + '\n' + legend[1], 'center'))
+            legendItems.append(w.getText('bold', legend[0], 'center'))
+        legendGrid = urwid.GridFlow(legendItems,21,0,0,'center')
+        legendGridMap = urwid.AttrMap(legendGrid,'bold')
+        legendItems = []
+        for legend in s.menus.legend:
+            legendItems.append(w.getText('highlight', legend[1], 'center'))
+        legendItemsGrid = urwid.GridFlow(legendItems,21,0,0,'center')
+        legendItemsMap = urwid.AttrMap(legendItemsGrid,'highlight')
+        #legendColumns = urwid.Columns(
+        #    legendItems,
+        #    dividechars=1,
+        #    focus_column=None,
+        #    min_width=1, 
+        #    box_columns=None)
+        return urwid.Pile([menuGrid, legendGridMap, legendItemsMap])
 class BodyWidgets():
     def get_body_widget(self, view_name, user_args=None, calling_view=None):
         #debug('BodyWidgets.get_body_widget:: view_name: %s :: args: %s', view_name, args)
         widget_getter = getattr(self, 'get_' + view_name)
-        return widget_getter(user_args=user_args, calling_view=calling_view)
+        body_widget = widget_getter(user_args=user_args, calling_view=calling_view)
+        return body_widget
     def get_choose_logs(self, **kwargs):
         """Page opened on application start to select the 
            logs that will be used in searches / filters
@@ -569,13 +596,15 @@ class BodyWidgets():
                     on_state_change=[logFiles,'update'], 
                     user_data=[log])
                     )
-        logCheckBoxes.append(w.div)
-        logCheckBoxes.append(w.getButton('Continue', views, 'activate', user_data='home'))
+        #logCheckBoxes.append(w.div)
+        #logCheckBoxes.append(w.getButton('Continue', views, 'activate', user_data='home'))
+        logCheckBoxes.append(BoxButton('Continue', on_press=views.activate, user_data='home'))
+        #logCheckBoxes.append(w.div)
         listBox = w.getListBox(logCheckBoxes)[0]
         chooseLogsBox = w.centeredListLineBox(
             listBox, 
             'Choose Your Logs to Search',
-            len(logCheckBoxes) + 3)
+            len(logCheckBoxes) + 4)
         return chooseLogsBox
     def get_home(self, **kwargs):
         """Page displayed as Home Page for the application
@@ -607,7 +636,7 @@ class BodyWidgets():
     def get_results_summary(self, **kwargs):
         debug(' kwargs : %s', kwargs)
         query = state.get_query(ACTIVE)
-        result_list = kwargs['user_args']
+        result_list = state.get_result_list(ACTIVE)
         if s.rl.resultOverflow:
             if state.get_query:
                 summaryRows = [w.getText('header', ' for ' + query, 'center')]
@@ -637,31 +666,38 @@ class BodyWidgets():
             for activeFilter in activeFilters:
                 summaryRows.append(w.getText('body', activeFilter, 'center'))
         summaryRows.append(w.div)
-        summaryRows.append(w.getButton('Show Results', views,'activate', user_data='results_list'))
+        summaryRows.append(BoxButton('Show Results', on_press=views.activate, user_data='results_list'))
+        #summaryRows.append(w.getButton('Show Results', views,'activate', user_data='results_list'))
         summary = urwid.SimpleFocusListWalker(summaryRows)
         summaryList = urwid.ListBox(summary)
         return w.centeredListLineBox(summaryList, 'Search Results', len(summaryRows) + 5)
     def get_results_list(self, **kwargs):
         debug(' kwargs : %s', kwargs)
-        result_list = state.get_result_list(ACTIVE)
-        result_list.set_previous_list()
+        #result_list = state.get_result_list(ACTIVE)
+        #result_list.set_previous_list()
+        list_of_result_entries = entries.get_list_from_active_result_list()
         x = 1
-        listDisplayCols = []
-        for result in result_list.contents:
-            listDisplayCols.append(w.getColRow(
+        self.listDisplayCols = []
+        #for result in result_list.contents:
+        for entry in list_of_result_entries:
+            numColWidth = len(str(x)) + 6
+            self.listDisplayCols.append(w.getColRow(
                 [
-                    (5, w.getButton(
-                        str(x),
-                        views,
-                        'activate',
-                        user_data=['single_entry', 
-                            result_list.contents.index(result), 
-                            result_list])),
-                    w.getText('body',result,'left')
+                    #(5, w.getButton(
+                    #    str(x),
+                    #    views,
+                    #    'activate',
+                    #    user_data=['single_entry', 
+                    #        result_list.contents.index(result), 
+                    #       result_list])),
+                    (numColWidth  , BoxButton(str(x), on_press=views.activate,
+                        user_data=['single_entry',entry])),
+                    urwid.Text(('body','\n' + entry.fullEntryText[2] + '\n'),align='left', wrap='clip'),
+                    (3 , w.getText('body','', 'left'))
                 ]
             ))
             x += 1
-        resultListWalker = urwid.SimpleFocusListWalker(listDisplayCols)
+        resultListWalker = urwid.SimpleFocusListWalker(self.listDisplayCols)
         resultListBox = urwid.ListBox(resultListWalker)
         #resultListFiller = urwid.Filler(resultListBox)
         return resultListBox
@@ -693,9 +729,9 @@ class BodyWidgets():
         debug(' kwargs : %s', kwargs)
     def get_single_entry(self, **kwargs):
         debug(' kwargs : %s', kwargs)
-        entryNo = kwargs['user_args'][0]
-        result_list = kwargs['user_args'][1]
-        single_entry = getattr(result_list,'entry-' + str(entryNo))
+        #entryNo = kwargs['user_args'][0]
+        #result_list = kwargs['user_args'][1]
+        single_entry = kwargs['user_args'][0]
         state.set_entry_on_screen(single_entry)
         entry_fields = single_entry.get_entry_fields()
         entry_fields.sort()
@@ -725,7 +761,7 @@ class State():
         self.active_view = None
         self.previous_view = None
         self.active_result_list = None
-        self.previous_result_list = None
+        self.prev_result_list = None
         self.active_query = None
         self.previous_query = None
         self.active_filters = None
@@ -738,9 +774,9 @@ class State():
     def increment_counter(self):
         self.searchCounter += 1
     def get_new_search_number(self):
-        searchCounterStr = 'search' + str(self.searchCounter).zfill(3)
+        self.searchCounterStr = 'search-' + str(self.searchCounter).zfill(3)
         self.searchCounter += 1
-        return searchCounterStr
+        return self.searchCounterStr
     def set_view(self, view):
         debug('State.set_view: %s', view.view_name)
         #assign current view to previous view and store view as active_view
@@ -757,13 +793,13 @@ class State():
             self.prev_view_name = self.prev_view.view_name
         else:
             self.prev_view_name = None
-        debug('Len view_chain before set_view: %s, view_chain_pos: %s', len(self.view_chain),self.view_chain_pos)
+        #debug('Len view_chain before set_view: %s, view_chain_pos: %s', len(self.view_chain),self.view_chain_pos)
         if len(self.view_chain) > self.view_chain_pos:
             self.view_chain.insert(self.view_chain_pos, view)
         else:
             self.view_chain.append(view)
         self.view_chain = self.view_chain[0:self.view_chain_pos + 1]
-        debug('Len view_chain after set_view: %s, view_chain_pos: %s', len(self.view_chain),self.view_chain_pos)
+        #debug('Len view_chain after set_view: %s, view_chain_pos: %s', len(self.view_chain),self.view_chain_pos)
         #store status of active and prev view as to whether or not it was a result list or single entry
         self.is_active_view_result_list = self.active_view.is_view_result_list
         self.is_active_view_single_entry = self.active_view.is_view_single_entry
@@ -802,9 +838,9 @@ class State():
         self.active_result_list = result_list
 
         #store result_list names in easily accessible attributes
-        self.active_result_list_name = self.active_result_list.listNumber
+        self.active_result_list_name = self.active_result_list.list_name
         if self.prev_result_list:
-            self.prev_result_list_name = self.prev_result_list.listNumber
+            self.prev_result_list_name = self.prev_result_list.list_name
         else:
             self.prev_result_list_name = None
         #store status of result_list as filtered or not.
@@ -825,9 +861,13 @@ class State():
     def get_result_list_name(self,active_prev):
         #debug('State.get_result_list_name: %s', active_prev)
         if active_prev == 'active':
-            return self.active_result_list.list_name
+            if self.active_result_list:
+                return self.active_result_list.list_name
+            return False
         if active_prev == 'prev':
-            return self.prev_result_list.list_name
+            if self.prev_result_list:
+                return self.prev_result_list.list_name
+            return False
         else:
             warning('State.get_result_list_name() active_prev parameter is invalid.')
             sys.exit('State.get_result_list_name() active_prev parameter is invalid.')
@@ -888,6 +928,7 @@ class State():
         if self.set_view_chain_pos(-1):
             x = state.get_view_from_chain(state.get_view_chain_pos())
             x.reload()
+            #debug('Column Button Action: %s, user_data: %s', body.listDisplayCols[0].contents[0][0].on_press_action, body.listDisplayCols[0].contents[0][0].user_data)
     def go_forward(self):
         if self.set_view_chain_pos(1):
             x = state.get_view_from_chain(state.get_view_chain_pos())
@@ -928,6 +969,7 @@ class View():
         self.show_header()
         self.show_body()
         self.show_footer()
+        debug('Body: %s', self.body._body[0])
     def show_header(self):
         frame.contents.__setitem__('header', [self.header, None])
     def show_body(self):
@@ -955,14 +997,19 @@ class ViewSets():
     def get_view(self, view_name):
         return getattr(self,view_name)
     def activate(self,*args, **kwargs):
-        debug('views.activate view_name: args: %s', args)
+        debug('views.activate args: %s', args)
         focus_position = None
         is_threaded = False
         on_join = None
+        user_data = None
         current_view = state.get_view(ACTIVE)
         if len(args) == 2:
             if type(args[0]) == urwid.Button:
-                view_name = args[1]
+                if type(args[1]) == list and len(args[1]) > 1:
+                    view_name = args[1][0]
+                    user_data = args[1][1:]
+                else:
+                    view_name = args[1]
             else:
                 debug('type of urwid.Button: %s', type(args[0]))
                 view_name = args[0]
@@ -988,7 +1035,7 @@ class ViewSets():
             updateThread.join()
             on_join()
         else:
-            activating_view.start(current_view,focus_position=focus_position, user_args=None)
+            activating_view.start(current_view,focus_position=focus_position, user_args=user_data)
     def exit(self):
         debug
         raise urwid.ExitMainLoop()
@@ -1230,24 +1277,28 @@ class Results():
         debug('Results.addFilters args: %s', args)
 class ResultLists():
     def __init__(self,
-        listNumber,resultType,resultContents,
+        list_name,result_type,result_contents,
         count,original_results='',
-        isFiltered=False, filters_applied=[]):
-        self.listNumber = listNumber
-        self.is_filtered = isFiltered
+        is_filtered=False, filters_applied=[]):
+        self.list_name = list_name
+        self.is_filtered = is_filtered
         self.query = state.get_query(ACTIVE)
         self.original_results = original_results
         self.filteredApplied = filters_applied
         self.count = count
         self.previous_results = None
-        if resultType == 'logResults':
-            self.contents = resultContents
-            self.parseEntries()
+        if result_type == 'logResults':
+            i = 0
+            search_number = state.searchCounterStr
+            for result in result_contents:
+                name = 'entry-' + search_number + '-' + str(i)
+                entries.new(name, result)
+                i += 1
         else:
-            resultContents.sort(key=lambda x: str(x.getTimeOrd()), reverse=False)
+            result_contents.sort(key=lambda x: str(x.getTimeOrd()), reverse=False)
             i = 0
             self.contents = []
-            for entry in resultContents:
+            for entry in result_contents:
                 name = 'entry-' + str(i)
                 setattr(self,name,entry)
                 self.contents.append(entry.fullEntryText[2])
@@ -1255,12 +1306,10 @@ class ResultLists():
         #debug('List of Attr in new ResultList: %s', dir(self))
     def parseEntries(self):
         i = 0
+        searchNumber = state.searchCounterStr
         for result in self.contents:
-            name = 'entry-' + str(i)
-            if hasattr(self, name):
-                raise Exception('Entry number {} has already been parsed'.format(name))
-            else:
-                setattr(self,name,Entries(result))
+            name = 'entry-' + searchNumber + '-' + str(i)
+            entries.new(name, result)
             i += 1
     def getListOfEntries(self):
         listOfEntries = []
@@ -1270,13 +1319,32 @@ class ResultLists():
         return listOfEntries
     def set_previous_list(self):
         if self.previous_results:
-            state.previous_result_list = self.previous_results
+            state.prev_result_list = self.previous_results
         else:
-            self.previous_results = state.previous_result_list
+            self.previous_results = state.prev_result_list
 class Entries():
-    def __init__(self, fullEntryText):
+    def new(self ,name, new_entry):
+        if hasattr(self, name):
+            raise Exception('Entry number {} has already been parsed'.format(name))
+        else:
+            setattr(self, name,Entry(new_entry,name))
+    def get_list_from_active_result_list(self):
+        listOfEntries = []
+        active_result_list_name = state.get_result_list_name(ACTIVE)
+        for attr in dir(self):
+            if active_result_list_name in attr:
+                listOfEntries.append(getattr(self,attr))
+        return listOfEntries
+    def get_entry(self,entry_name):
+        if hasattr(self, entry_name):
+            return getattr(self, entry_name)
+        else:
+            return False
+class Entry():
+    def __init__(self, fullEntryText, name):
         """This class is used to create single-view Entry Objects
         """
+        self.name = name
         self.msgType = []
         self.date = []
         self.time = []
@@ -1407,13 +1475,14 @@ class Entries():
         fields = []
         for field in fieldList:
             x = getattr(self,field)
-            if x:
-                fields.append([
-                    x[0],
-                    field,
-                    x[1],
-                    x[2]
-                ])
+            if not x == self.name:
+                if x:
+                    fields.append([
+                        x[0],
+                        field,
+                        x[1],
+                        x[2]
+                    ])
         return fields
 class Testing():
     def set_get_views(self):
@@ -1521,6 +1590,9 @@ if __name__ == '__main__':
     #Initiatlize Views and BodyWidgets
     views = ViewSets()
     body = BodyWidgets()
+
+    #Initialize Entries
+    entries = Entries()
 
     #Initialize Results and Search Container Objects
     results = Results()
