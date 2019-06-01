@@ -150,7 +150,7 @@ class DisplayFrameSettings():
             ('body',    'white',    'default'),
             ('bold',    'dark green, bold' , 'black'),
             ('blue', 'bold', 'dark blue'),
-            ('highlight', 'dark green', 'default')
+            ('highlight', 'dark green', 'default'),
         ]
 class Menus():
         def __init__(self):
@@ -360,7 +360,6 @@ class BoxButton(urwid.WidgetWrap):
 
     def mouse_event(self, *args, **kw):
         return self._hidden_btn.mouse_event(*args, **kw)
-
 class MyWidgets():
     """A collection of functions to simplify creation of
        frequently used widgets """
@@ -410,7 +409,7 @@ class MyWidgets():
             FLOW WIDGET
         """
         return urwid.Text((format, textString), align=alignment, wrap='space', **kwargs)
-    def getColRow(self,items, **kwargs):
+    def getColRow(self,items, dividechars=s.divChars, **kwargs):
         """Creates a single row of columns
         
         Arguments:
@@ -422,11 +421,21 @@ class MyWidgets():
             FLOW / BOX WIDGET
         """
         return urwid.Columns(items,
-            dividechars=s.divChars,
+            dividechars=dividechars,
             focus_column=None,
             min_width=1,
             box_columns=None)
-    def getLineBox(self,contents,title, **kwargs):
+    def getLineBox(self,
+        contents,title,
+        tlcorner='┌',
+        tline='─',
+        lline='│',
+        trcorner='┐',
+        blcorner='└',
+        rline='│',
+        bline='─',
+        brcorner='┘',
+        **kwargs):
         """ Creates a SimpleFocusListWalker using contents as the list,
             adds a centered title, and draws a box around it. If the contents
             are not a list of widgets, then set content_list to False.
@@ -448,7 +457,17 @@ class MyWidgets():
             urwid.LineBox -- urwid.LineBox object
             FLOW / BOX WIDGET
         """
-        return urwid.LineBox(contents, title=str(title), title_align='center')
+        return urwid.LineBox(contents, 
+            title=str(title),
+            title_align='center',
+            tlcorner=tlcorner,
+            tline=tline,
+            lline=lline,
+            trcorner=trcorner,
+            blcorner=blcorner,
+            rline=rline,
+            bline=bline,
+            brcorner=brcorner)
     def getListBox(self,contents):
         """Creates a ListBox using a SimpleFocusListWalker, with the contents
            being a list of widgets
@@ -578,6 +597,7 @@ class MyWidgets():
         #    min_width=1, 
         #    box_columns=None)
         return urwid.Pile([menuGrid, legendGridMap, legendItemsMap])
+w = MyWidgets()
 class BodyWidgets():
     def get_body_widget(self, view_name, user_args=None, calling_view=None):
         #debug('BodyWidgets.get_body_widget:: view_name: %s :: args: %s', view_name, args)
@@ -703,6 +723,66 @@ class BodyWidgets():
         return resultListBox
     def get_add_remove_filters(self, **kwargs):
         debug(' kwargs : %s', kwargs)
+        filter_input = urwid.Edit(align='center')
+        input_box = w.getLineBox(filter_input,'Add New Filter')
+        debug('edit_text: %s', filter_input.get_edit_text())
+        bgroup = []
+        filter_type_select = w.getColRow([
+            w.getLineBox(
+                urwid.RadioButton(
+                    bgroup,'Sender',
+                    on_state_change=state.filter_input_radio,state=False),
+                    '',
+                    brcorner='┴',
+                    trcorner='┬'),
+            w.getLineBox(
+                urwid.RadioButton(
+                    bgroup,'Recipient',
+                    on_state_change=state.filter_input_radio,state=False),
+                    '',
+                    blcorner='─',
+                    brcorner='┴',
+                    tlcorner='─',
+                    trcorner='┬',
+                    lline=''),
+            w.getLineBox(
+                urwid.RadioButton(
+                    bgroup,'Message Type',
+                    on_state_change=state.filter_input_radio,state=False),
+                    '',
+                    blcorner='─',
+                    brcorner='┴',
+                    tlcorner='─',
+                    trcorner='┬',
+                    lline=''),
+            w.getLineBox(
+                urwid.RadioButton(
+                    bgroup,'Date',
+                    on_state_change=state.filter_input_radio,state=False),
+                    '',
+                    blcorner='─',
+                    tlcorner='─',
+                    lline='')
+        ],dividechars=0)
+        filter_type_submit = BoxButton('Add Filter',on_press=filters.add_filters)
+        list_of_active_filters = []
+        current_filters = filters.get_filters_list('all',None)
+        if len(current_filters) > 0:
+            for filter in current_filters:
+                debug('filter: %s', filter)
+                list_of_active_filters.append(
+                    urwid.Filler(w.getColRow([
+                        urwid.Filler(w.getText('body',filter.filter_field,'center')),
+                        urwid.Filler(w.getText('body',filter.filter_criteria,'left'))
+                ])))
+            self.filter_walker = urwid.SimpleFocusListWalker(list_of_active_filters)
+            debug('filter_walker: %s',self.filter_walker)
+            self.filter_list_box = urwid.ListBox(self.filter_walker)
+            debug('filter_list: %s', self.filter_list_box)
+            filter_input_pile = urwid.Pile([input_box,filter_type_select,filter_type_submit,self.filter_list_box])
+        else:
+            filter_input_pile = urwid.Pile([input_box,filter_type_select,filter_type_submit])
+        return urwid.Filler(filter_input_pile,valign='middle')
     def get_clear_applied_filters(self, **kwargs):
         debug(' kwargs : %s', kwargs)
     def get_quit_loop(self, **kwargs):
@@ -743,15 +823,6 @@ class BodyWidgets():
             ]))
         entry_walker = urwid.SimpleFocusListWalker(entry_field_col_rows)
         return urwid.ListBox(entry_walker)
-        #singleEntryFiller = urwid.Filler(singleEntryList)
-        #s.menus.single_entry[2] = [
-        #    '(B)ack To Result List',
-        #    'resultList'
-        #    ]
-        #footers.update('singleEntryMenu', s.df.singleEntryMenu)
-        #self.show(footers.singleEntryMenu, frame, 'footer')
-        #self.show(singleEntryList,frame,'body')
-w = MyWidgets()
 
 """
 STATE MANAGEMENT / TRACKING
@@ -771,12 +842,26 @@ class State():
         self.view_count = -1
         self.view_chain = []
         self.view_chain_pos = -1
+        self.filterCounter = 1
+        self.current_filter_type = None
+        self.current_filter_type_state = None
+        self.current_edit_text = None
     def increment_counter(self):
         self.searchCounter += 1
+    def filter_input_radio(self,*args,**kwargs):
+        debug('args: %s, kwargs: %sa', args[0].state,kwargs)
+        if args[0].state == False:
+            self.current_filter_type = args[0].label
+            self.current_filter_type_state = args[1]
+        self.current_edit_text = self.get_view(ACTIVE).body.original_widget.contents[0][0].original_widget.get_edit_text()
+        debug('edit text: %s', self.current_edit_text)
     def get_new_search_number(self):
         self.searchCounterStr = 'search-' + str(self.searchCounter).zfill(3)
         self.searchCounter += 1
         return self.searchCounterStr
+    def get_new_filter_number(self):
+        self.filterCounter += 1
+        return self.filterCounter
     def set_view(self, view):
         debug('State.set_view: %s', view.view_name)
         #assign current view to previous view and store view as active_view
@@ -1116,7 +1201,6 @@ class LogFiles():
             if file.startswith("exim_mainlog"):
                 loglist.append(os.path.join(logdir, file))
         return loglist
-
 
 """
 DATA PROCESSING / SEARCH AND RESULT CLASSES
@@ -1529,6 +1613,51 @@ class Testing():
         current_filters = state.get_active_filters()
         debug('Current filters:: %s', current_filters)
 
+class Filters():
+    def add(self,filter_field,filter_criteria):
+        filter_number = state.get_new_filter_number()
+        name = 'filter-' + str(filter_number)
+        if hasattr(self, name):
+            raise Exception('Filter number {} has already been created'.format(name))
+        else:
+            setattr(self, name,Filter(name, filter_number, filter_field, filter_criteria))
+            debug('new Filter: %s', Filter(name, filter_number, filter_field, filter_criteria))
+    def rem(self,filter_to_remove):
+        filter_name = filter_to_remove.name
+        if hasattr(self, filter_name):
+            delattr(self,filter_name)
+        else:
+            raise Exception('Filter number {} does not exist'.format(filter_name))
+    def get_filters_list(self,list_by,option):
+        list_of_filters = []
+        all_filters = [a for a in dir(self) if not a.startswith('__') and not callable(getattr(self,a))]
+        if list_by == 'all':
+            debug('all_filters: %s', all_filters)
+            for filters in all_filters:
+                x = getattr(self,filters)
+                if not type(x) == int or not type(x) == str:
+                    list_of_filters.append(x)
+                    debug('type of attr: %s', type(x))
+        else:
+            for filters in all_filters:
+                if hasattr(filters, list_by):
+                    x = getattr(filters,list_by)
+                    if option in x:
+                        list_of_filters.append(filters)
+        debug('list_of_filters: %s', list_of_filters)
+        return list_of_filters
+    def add_filters(self,*args):
+        debug('filters Type: %s', state.current_filter_type)
+        debug('filters Type State: %s', state.current_filter_type_state)
+        debug('filters Edit Text: %s', state.current_edit_text)
+        self.add(state.current_filter_type,state.current_edit_text)
+            
+class Filter():
+    def __init__(self,name,filter_number,filter_field,filter_criteria):
+        self.name = name
+        self.filter_number = filter_number
+        self.filter_field = filter_field
+        self.filter_criteria = filter_criteria
 def queryLogProcess(poolArgs):
     os.nice(20)
     query,log = poolArgs
@@ -1593,6 +1722,9 @@ if __name__ == '__main__':
 
     #Initialize Entries
     entries = Entries()
+
+    #Initialize Filters
+    filters = Filters()
 
     #Initialize Results and Search Container Objects
     results = Results()
