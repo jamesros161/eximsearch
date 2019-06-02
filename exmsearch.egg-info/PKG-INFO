@@ -1,0 +1,12 @@
+Metadata-Version: 1.1
+Name: exmsearch
+Version: 0.7
+Summary: Exim Search Utility 
+Home-page: https://github.com/twmsllc/eximsearch
+Author: James Rosado
+Author-email: dev@twmsllc.com
+License: UNKNOWN
+Description: UNKNOWN
+Platform: UNKNOWN
+Classifier: Programming Language :: Python :: 3.6
+Classifier: License :: GNU General Public License
