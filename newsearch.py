@@ -91,8 +91,10 @@ class GlobalSettings():
                 state.go_forward()
             if key in 'f5':
                 debug('Current View: %s', state.get_view_name(ACTIVE))
+                if state.get_view(PREV):
+                    debug('Previous View: %s', state.get_view_name(PREV))
             if key in 'f6' and state.get_view(PREV):
-                debug('Previous View: %s', state.get_view_name(PREV))
+                debug('Active Filters: %s', state.get_active_filters())
             if key in 'f7':
                 debug('Current Query: %s', state.get_query(ACTIVE))
             if key in 'f8' and state.get_query(PREV):
@@ -157,12 +159,15 @@ class Menus():
             self.choose_logs = [
                 ['(Q)uit','quit_loop']]
 
+            self.coming_soon = [
+                ['         (H)ome         ','home']]
+
             self.home = [
                 ['      (N)ew Search      ', 'new_search'],
                 [' Add / Remove (F)ilters ','add_remove_filters'],
                 ['     (S)tats Summary    ','coming_soon'],
                 ['      (T)est Mailer     ','coming_soon'],
-                ['          (Q)uit        ','quit_loop   ']]
+                ['          (Q)uit        ','quit_loop']]
             self.new_search = self.home
             self.search_progress = self.home
         
@@ -171,7 +176,7 @@ class Menus():
                 [' (C)lear Applied Filters','clear_applied_filters'],
                 ['         (H)ome         ','home'],
                 ['      (N)ew Search      ', 'new_search'],
-                ['          (Q)uit        ','quit_loop   ']]
+                ['          (Q)uit        ','quit_loop']]
             self.results_summary = self.results_list
 
             self.single_entry = [
@@ -179,13 +184,13 @@ class Menus():
                 ['  (B)ack To Result List ','results_list'],
                 ['         (H)ome         ','home'],
                 ['      (N)ew Search      ','new_search'],
-                ['          (Q)uit        ','quit_loop   ']]
+                ['          (Q)uit        ','quit_loop']]
             self.add_remove_filters = [
                 ['(A)pply Current Results ','apply_filters'],
                 ['  (B)ack To Result List ','results_list'],
                 ['         (H)ome         ','home'],
                 ['      (N)ew Search      ','new_search'],
-                ['          (Q)uit        ','quit_loop   ']]
+                ['          (Q)uit        ','quit_loop']]
             self.quit_loop = []
             self.legend = [
                 ['Prev. Screen', 'Ctrl + ←'],
@@ -347,7 +352,7 @@ class BoxButton(urwid.WidgetWrap):
         # self.widget = urwid.Filler(self.widget)
 
         # here is a lil hack: use a hidden button for evt handling
-        #debug('on_press: %s, user_data: %s', on_press, user_data)
+        #debug('on_press: %s, user_data: %s', )
         self._hidden_btn = urwid.Button('hidden %s' % label, on_press, user_data)
 
         super(BoxButton, self).__init__(self.widget)
@@ -577,7 +582,10 @@ class MyWidgets():
             focus_column=None,
             min_width=1, 
             box_columns=None)
-        menuGrid = urwid.GridFlow(menuGridList,itemWidths[-1],0,0,'center')
+        if itemWidths:
+            menuGrid = urwid.GridFlow(menuGridList,itemWidths[-1],0,0,'center')
+        else:
+            menuGrid = w.div
         debug('menuCol width: %s, menuPadding width:', menuColumns.column_widths)
         legendItems = []
         for legend in s.menus.legend:
@@ -723,9 +731,35 @@ class BodyWidgets():
         return resultListBox
     def get_add_remove_filters(self, **kwargs):
         debug(' kwargs : %s', kwargs)
-        filter_input = urwid.Edit(align='center')
-        input_box = w.getLineBox(filter_input,'Add New Filter')
-        debug('edit_text: %s', filter_input.get_edit_text())
+        #Create Active Filters List Headers
+        list_of_active_filters = []
+        current_filters = state.get_active_filters()
+        list_of_active_filters.append(w.getColRow([
+            (12, urwid.AttrMap(w.getText('header','Remove','center'),'header')),
+            urwid.AttrMap(w.getText('header','Filter Type','center'),'header'),
+            urwid.AttrMap(w.getText('header','Filter Criteria','center'),'header')
+        ]))
+        #Populate Columns with filter info
+        i = 1
+        if len(current_filters) > 0:
+            for filter in current_filters:
+                list_of_active_filters.append(
+                    w.getColRow([
+                        BoxButton('Remove',on_press=state.remove_active_filter,user_data=[filter,i,self]),
+                        w.getText('body',"\n"+filter.filter_field+"\n",'center'),
+                        w.getText('body',"\n"+filter.filter_criteria+"\n",'left')
+                ]))
+            i + 1
+        #Create Filter Walker and listbox / linebox
+        self.filter_walker = urwid.SimpleFocusListWalker(list_of_active_filters)
+        self.filter_list_box = urwid.BoxAdapter(urwid.ListBox(self.filter_walker),loop.screen.get_cols_rows()[1]-20)
+        filter_line_box = w.getLineBox(self.filter_list_box,'Active Filters')
+        
+        #Get filter Input
+        self.filter_input = urwid.Edit(align='center')
+        input_box = (w.getLineBox(self.filter_input,'Add New Filter'))
+        debug('edit_text: %s', self.filter_input.get_edit_text())
+        #Get Filter Type
         bgroup = []
         filter_type_select = w.getColRow([
             w.getLineBox(
@@ -764,25 +798,13 @@ class BodyWidgets():
                     tlcorner='─',
                     lline='')
         ],dividechars=0)
-        filter_type_submit = BoxButton('Add Filter',on_press=filters.add_filters)
-        list_of_active_filters = []
-        current_filters = filters.get_filters_list('all',None)
-        if len(current_filters) > 0:
-            for filter in current_filters:
-                debug('filter: %s', filter)
-                list_of_active_filters.append(
-                    urwid.Filler(w.getColRow([
-                        urwid.Filler(w.getText('body',filter.filter_field,'center')),
-                        urwid.Filler(w.getText('body',filter.filter_criteria,'left'))
-                ])))
-            self.filter_walker = urwid.SimpleFocusListWalker(list_of_active_filters)
-            debug('filter_walker: %s',self.filter_walker)
-            self.filter_list_box = urwid.ListBox(self.filter_walker)
-            debug('filter_list: %s', self.filter_list_box)
-            filter_input_pile = urwid.Pile([input_box,filter_type_select,filter_type_submit,self.filter_list_box])
-        else:
-            filter_input_pile = urwid.Pile([input_box,filter_type_select,filter_type_submit])
-        return urwid.Filler(filter_input_pile,valign='middle')
+        #Submit Filter
+        filter_type_submit = BoxButton('Add Filter',on_press=state.add_active_filter, user_data=self)
+        #Create Pile
+        pile_contents = [input_box,filter_type_select,filter_type_submit,('weight',4,filter_line_box)]
+        filter_input_pile = urwid.Pile(pile_contents)
+        #return filter_input_pile
+        return urwid.Filler(filter_input_pile,valign='top')
     def get_clear_applied_filters(self, **kwargs):
         debug(' kwargs : %s', kwargs)
     def get_quit_loop(self, **kwargs):
@@ -807,6 +829,11 @@ class BodyWidgets():
             len(quitList) + 2)
     def get_coming_soon(self, **kwargs):
         debug(' kwargs : %s', kwargs)
+        comingSoonStatus = urwid.Pile([
+            w.getText('body', 'Feature Still under Development. Coming Soon....', 'center')
+            ])
+        comingSoonFiller = urwid.Filler(comingSoonStatus, 'middle')
+        return w.centeredListLineBox(comingSoonFiller, '',10)
     def get_single_entry(self, **kwargs):
         debug(' kwargs : %s', kwargs)
         #entryNo = kwargs['user_args'][0]
@@ -818,11 +845,23 @@ class BodyWidgets():
         entry_field_col_rows = [w.div]
         for field in entry_fields:
             entry_field_col_rows.append(w.getColRow([
-                (30,w.getButton(field[2],search,'new',user_data=field[3], buttonMap='body')),
+                (30,w.getButton(field[2],search,'related',user_data=field[3], buttonMap='body')),
+                #(40,BoxButton(field[2],on_press=search.new,user_data=field[3])),
                 ('weight',4,w.getText('body', field[3], 'left'))
             ]))
         entry_walker = urwid.SimpleFocusListWalker(entry_field_col_rows)
         return urwid.ListBox(entry_walker)
+    def add_filter_to_walker(self,filter_instance):
+        debug('filter to add to walker: %s',filter_instance)
+        i = len(self.filter_walker)
+        self.filter_walker.append(
+            w.getColRow([
+                (12, BoxButton('Remove',on_press=state.remove_active_filter,user_data=[filter_instance,i,self])),
+                w.getText('body',"\n"+filter_instance.filter_field+"\n",'center'),
+                w.getText('body',"\n"+filter_instance.filter_criteria+"\n",'left')
+            ]))
+        self.filter_input.set_edit_text('')
+#    def rem_filter_from_walker(self,walker_index):
 
 """
 STATE MANAGEMENT / TRACKING
@@ -835,7 +874,7 @@ class State():
         self.prev_result_list = None
         self.active_query = None
         self.previous_query = None
-        self.active_filters = None
+        self.active_filters = []
         self.active_entry_on_screen = None
         self.prev_entry_on_screen = None
         self.searchCounter = 1
@@ -969,9 +1008,29 @@ class State():
         else:
             warning('State.get_query() active_prev parameter is invalid.')
             sys.exit('State.get_query() active_prev parameter is invalid.')
-    def set_active_filters(self, active_filters):
-        debug('State.set_active_filters: %s', active_filters)
-        self.active_filters = active_filters
+    def add_active_filter(self,*args):
+        debug('args: %s', args)
+        body_instance = args[1]
+        filter_number = self.get_new_filter_number()
+        name = 'filter-'+ str(filter_number)
+        setattr(self,name,Filter(
+                name,filter_number,self.current_filter_type,
+                self.current_edit_text)
+                )
+        self.active_filters.append(
+            getattr(self,name)
+            )
+        debug('active_filters: %s', self.active_filters)
+        debug('Added New Filter: %s', name)
+        body_instance.add_filter_to_walker(self.active_filters[-1])
+    def remove_active_filter(self,*args):
+        debug('filter: %s, walker_index: %s, body_instance: %s', args[1][0],args[1][1],args[1][2])
+        filter_instance = args[1][0]
+        walker_index = args[1][1]
+        body_instance = args[1][2]
+        self.active_filters.remove(filter_instance)
+        debug('filter_walker length: %s', len(body_instance.filter_walker))
+        del body_instance.filter_walker[walker_index]
     def get_active_filters(self):
         debug('State.get_active_filters: %s', self.active_filters)
         return self.active_filters
@@ -1054,7 +1113,6 @@ class View():
         self.show_header()
         self.show_body()
         self.show_footer()
-        debug('Body: %s', self.body._body[0])
     def show_header(self):
         frame.contents.__setitem__('header', [self.header, None])
     def show_body(self):
@@ -1222,6 +1280,10 @@ class Search():
         result_list = results.get_result_list(searchNumber)
         views.activate('results_summary',focus_position=BODY,user_args=result_list)
         #views.show(views.newSearchSummary(searchNumber,query), frame, 'body')
+    def related(self,related_query):
+        debug('related_query: %s',related_query)
+        state.set_query(related_query)
+        views.activate('search_progress',is_threaded=True,on_join=search.new)
     def filter_results(self,*args):
         global mostRecentSearchNo
         debug("Start Search.filterResults: %s", filters.get())
@@ -1614,14 +1676,14 @@ class Testing():
         debug('Current filters:: %s', current_filters)
 
 class Filters():
-    def add(self,filter_field,filter_criteria):
+    def add(self,filter_field,filter_criteria,body_instance):
         filter_number = state.get_new_filter_number()
         name = 'filter-' + str(filter_number)
         if hasattr(self, name):
             raise Exception('Filter number {} has already been created'.format(name))
         else:
-            setattr(self, name,Filter(name, filter_number, filter_field, filter_criteria))
-            debug('new Filter: %s', Filter(name, filter_number, filter_field, filter_criteria))
+            setattr(self, name,Filter(name, filter_number, filter_field, filter_criteria,body_instance))
+            #debug('new Filter: %s', Filter(name, filter_number, filter_field, filter_criteria,body_instance))
     def rem(self,filter_to_remove):
         filter_name = filter_to_remove.name
         if hasattr(self, filter_name):
@@ -1646,14 +1708,14 @@ class Filters():
                         list_of_filters.append(filters)
         debug('list_of_filters: %s', list_of_filters)
         return list_of_filters
-    def add_filters(self,*args):
-        debug('filters Type: %s', state.current_filter_type)
-        debug('filters Type State: %s', state.current_filter_type_state)
-        debug('filters Edit Text: %s', state.current_edit_text)
-        self.add(state.current_filter_type,state.current_edit_text)
-            
+    #def remove_filters(self,*args, **kwargs):
+    #    debug('args: %s, kwargs: %s', args, kwargs)  
+    #    body_instance = args[1]
+    #    filter_walker_index = args[2]
+    #   self.rem()
 class Filter():
     def __init__(self,name,filter_number,filter_field,filter_criteria):
+        debug('New Filter: %s', self)
         self.name = name
         self.filter_number = filter_number
         self.filter_field = filter_field

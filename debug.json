@@ -1,3 +1,3 @@
 {
-    "command": "dir(state.get_view(ACTIVE).body.original_widget.contents[0][0].original_widget)",
+    "command": "loop.screen. get_cols_rows()-",
     "keycode": "f3"}
