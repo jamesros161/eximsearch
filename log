@@ -21,3 +21,27 @@ Application Start!
 658 :: set_view :: State.set_view: new_search
 673 :: set_view :: Len view_chain before set_view: 2, view_chain_pos: 2
 679 :: set_view :: Len view_chain after set_view: 3, view_chain_pos: 2
+23 :: <module> :: Encoding Type: utf-8
+1777 :: <module> :: 
+****
+Application Start!
+****
+
+1143 :: activate :: views.activate args: ('choose_logs', 'body')
+1157 :: activate :: type of urwid.Button: <type 'str'>
+1096 :: start :: view_name: choose_logs, focus_position: body
+561 :: getFooterWidget :: Getting Footer
+589 :: getFooterWidget :: menuCol width: <bound method Columns.column_widths of <Columns box/flow widget>>, menuPadding width:
+619 :: get_choose_logs ::  kwargs: {'user_args': None, 'calling_view': <__main__.View instance at 0x7f4da94bc098>}
+905 :: set_view :: State.set_view: choose_logs
+1143 :: activate :: views.activate args: (<Button selectable flow widget b'hidden (Q)uit'>, 'quit_loop')
+1096 :: start :: view_name: quit_loop, focus_position: None
+561 :: getFooterWidget :: Getting Footer
+589 :: getFooterWidget :: menuCol width: <bound method Columns.column_widths of <Columns box/flow widget>>, menuPadding width:
+814 :: get_quit_loop ::  kwargs : {'user_args': None, 'calling_view': <__main__.View instance at 0x7f4da94bc050>}
+905 :: set_view :: State.set_view: quit_loop
+1806 :: <module> :: 
+****
+Application Ended Normally!
+****
+

@@ -4,7 +4,7 @@ setuptools.setup(
 
      name='exmsearch',  
 
-     version='0.6',
+     version='0.7',
 
      scripts=['bin/exmsearch'] ,
 
