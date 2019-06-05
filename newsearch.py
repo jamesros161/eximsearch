@@ -718,18 +718,16 @@ class BodyWidgets():
         #for result in result_list.contents:
         for entry in list_of_result_entries:
             numColWidth = len(str(x)) + 6
+            if len(entry.msgType) > 2:
+                msgType = entry.msgType[2]
+            else:
+                msgType = '-'
             self.listDisplayCols.append(w.getColRow(
                 [
-                    #(5, w.getButton(
-                    #    str(x),
-                    #    views,
-                    #    'activate',
-                    #    user_data=['single_entry', 
-                    #        result_list.contents.index(result), 
-                    #       result_list])),
-                    (numColWidth  , BoxButton(str(x), on_press=views.activate,
+                    (numColWidth, BoxButton(str(x), on_press=views.activate,
                         user_data=['single_entry',entry])),
-                    urwid.Text(('body','\n' + entry.fullEntryText[2] + '\n'),align='left', wrap='clip'),
+                    (13, w.getText('body', '\n' + msgType + '\n','center')),
+                    urwid.Text(('body','\n' + entry.fullEntryText[2] + '\n'),align='left'),
                     (3 , w.getText('body','', 'left'))
                 ]
             ))
@@ -1614,11 +1612,18 @@ class Entry():
         self.sendAddr = []
         self.recipient = []
         self.fullEntryText = fullEntryText
+        if 'Warning: "SpamAssassin' in self.fullEntryText:
+            self.msgType = [15, 'Message Type: ', 'Spam Status']
         #debug('Init Entries: %s', self.fullEntryText)
         try:
             shlex.split(self.fullEntryText)
         except:
             m = self.fullEntryText.split()
+            if self.msgType:
+                if self.msgType[2] == 'Spam Status':
+                        if 'detected' in m:
+                            self.spamStatus = [15, 'Spam Status',  ' '.join(m[m.index('detected') + 3: -2])]
+                            self.spamScore = [15, 'Spam Score', m[-1]]
             self.parseError = [15, 'Parsing Error: ', str(Exception)]
             x = 0
             while x <= len(m):
@@ -1643,11 +1648,31 @@ class Entry():
                 if x == 2:
                     self.pid = [12, 'Process ID: ', m[x]]
                 if x == 3:
-                    self.id = [13, 'Message ID: ', m[x]]
+                    if m[x].startswith('cwd'):
+                        self.cwd = [13, 'Source Directory: ', m[x].split('=')[1]]
+                        if self.cwd[2] == '/var/spool/exim':
+                            self.msgType = [15, 'Message Type: ', 'Exim Queue']
+                            self.id = [13, 'Message Id: ', m[-1]]
+                        if 'args:' in m:
+                            args = m.index('args:')
+                            self.script = [13, 'Sending Script: ', m[args + 1]]
+                            if len(m) > args + 2:
+                                self.scriptArgs = [13, 'Script Arguments: ', '\n'.join(m[args + 2:])]
+                    else:
+                        self.id = [13, 'Message ID: ', m[x]]
                 if x == 4:
                     if len(m[x]) == 2:
                         self.entryType = [22, 'Entry Type Symbol: ', m[x]]
+                    if 'Completed' in m[x]:
+                        self.msgType = [15, 'Message Type: ', 'Queue Status']
                 #debug('parseEntries self.fullEntryText: %s', self.fullEntryText)
+                if self.msgType:
+                    if self.msgType[2] == 'Spam Status':
+                        if 'detected' in m[x]:
+                            n = m[x].split()
+                            if 'detected' in n:
+                                self.spamStatus = [15, 'Spam Status',  ' '.join(n[n.index('detected')+3:-1])]
+                                self.spamScore = [15, 'Spam Score', n[-1]]
                 if 'H=' in m[x]:
                     if len(m) > x + 1:
                         if m[x+1][0] == '(':
@@ -1707,16 +1732,42 @@ class Entry():
                             else:
                                 self.fr = [18, 'Sender: ', m[x+1][1:-1]]
                     if m[x] == 'for':
-                        self.recipient = [19, 'Recipient: ', m[x+1]]
+                        if '(' in m[x+1] and ')' in m[x+1]:
+                            y = m[x+1]
+                            stripped_recip = y[y.index('(') + 1:y.index(')')]
+                            self.recipient = [19, 'Recipient: ', stripped_recip]
+                        if '<' in m[x+1] and '>' in m[x+1]:
+                            y = m[x+1]
+                            stripped_recip = y[y.index('<') + 1:y.index('>')]
+                            self.recipient = [19, 'Recipient: ', stripped_recip]
+                        else:
+                            self.recipient = [19, 'Recipient: ', m[x+1]]
                     x += 1
                 else:
                     if x == 5:
                         if '@' in m[x]:
+                            if '(' in m[x] and ')' in m[x]:
+                                y = m[x]
+                                stripped_recip = y[y.index('(') + 1:y.index(')')]
+                                self.recipient = [19, 'Recipient: ', stripped_recip]
+                            if '<' in m[x] and '>' in m[x]:
+                                y = m[x]
+                                stripped_recip = y[y.index('<') + 1:y.index('>')]
+                                self.recipient = [19, 'Recipient: ', stripped_recip]
                             self.recipient = [19, 'Recipient: ', m[x]]
                         else:
                             if len(m) > x + 1:
                                 if '@' in m[x + 1]:
-                                    self.recipient = [19, 'Recipient: ', m[x] + m[x+1]]
+                                    if '(' in m[x+1] and ')' in m[x+1]:
+                                        y = m[x+1]
+                                        stripped_recip = y[y.index('(') + 1:y.index(')')]
+                                        self.recipient = [19, 'Recipient: ', stripped_recip]
+                                    if '<' in m[x+1] and '>' in m[x+1]:
+                                        y = m[x+1]
+                                        stripped_recip = y[y.index('<') + 1:y.index('>')]
+                                        self.recipient = [19, 'Recipient: ', stripped_recip]
+                                    else:
+                                        self.recipient = [19, 'Recipient: ', m[x] + m[x+1]]
                     if 'P=' in m[x]:
                         self.returnPath = [20, 'Return Path: ', m[x][3:-1]]
                     if 'T=' in m[x] and m[x][0] != 'D' and m[x][0] != 'Q':
@@ -1724,7 +1775,12 @@ class Entry():
                         if 'dovecot' in self.mta[1]:
                             self.msgType = [15, 'Type: ', 'local']
                     if ' => ' in fullEntryText:
-                        self.msgType = [15, 'Message Type: ', 'outgoing']
+                        if 'T=dovecot' in fullEntryText:
+                            self.msgType = [15, 'Message Type: ', 'dovecot']
+                        else:
+                            self.msgType = [15, 'Message Type: ', 'outgoing']
+                    if '->' in fullEntryText:
+                        self.msgType = [15, 'Message Type: ', 'forwarder']
                     x += 1
             self.fullEntryText = [14, 'Full Entry: ', self.fullEntryText]
     def getTimeOrd(self):
