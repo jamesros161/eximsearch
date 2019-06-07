@@ -1333,8 +1333,8 @@ class Search():
             original_results=searchNumber
             )
         result_list = results.get_result_list(searchNumber)
-        if state.active_filters:
-            views.activate('filter_')
+        #if state.active_filters:
+        #    views.activate('filter_')
         views.activate('results_summary',focus_position=BODY,user_args=result_list)
         #views.show(views.newSearchSummary(searchNumber,query), frame, 'body')
     def related(self,related_query):
