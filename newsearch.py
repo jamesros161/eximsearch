@@ -59,18 +59,19 @@ class GlobalSettings():
         with open('/home/usirius/git/eximsearch/debug.json', 'a') as outfile:
             json.dump(data, outfile)
     def dyn_debug(self, *args):
-        with open('/home/usirius/git/eximsearch/debug.json', 'r') as debug_file:
-            x = json.load(debug_file,'utf-8')
-            for walker_item in state.get_view(ACTIVE).body.body:
-                if type(walker_item) == urwid.container.Columns:
-                    if type(walker_item.contents[0][0]) == urwid.graphics.ProgressBar:
-                        try:
-                            eval(x['command'])
-                        except Exception as e:
-                            debug('Exception is : %s', e)
-                        else:
-                            pass
-                        #    return eval(x['command'])
+        debug('dynamic_debug_disabled')
+        #with open('/home/usirius/git/eximsearch/debug.json', 'r') as debug_file:
+        #    x = json.load(debug_file,'utf-8')
+        #    for walker_item in state.get_view(ACTIVE).body.body:
+        #        if type(walker_item) == urwid.container.Columns:
+        #            if type(walker_item.contents[0][0]) == urwid.graphics.ProgressBar:
+        #                try:
+        #                   eval(x['command'])
+        #               except Exception as e:
+        #                   debug('Exception is : %s', e)
+        #                else:
+        #                   pass
+        #               #    return eval(x['command'])
     def unhandled_input(self,key):
         if type(key) == str:
             #raw = loop.screen.get_input(raw_keys=True)
