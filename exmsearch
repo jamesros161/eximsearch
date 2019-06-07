@@ -58,15 +58,20 @@ class GlobalSettings():
         }
         with open('/home/usirius/git/eximsearch/debug.json', 'a') as outfile:
             json.dump(data, outfile)
-#    def dyn_debug(self, *args):
-#        with open('/home/usirius/git/eximsearch/debug.json', 'r') as debug_file:
-#            x = json.load(debug_file,'utf-8')
-#            try:
-#                eval(x['command'])
-#            except Exception as e:
-#                debug('Exception is : %s', e)
-#            else:
-#                return eval(x['command'])
+    def dyn_debug(self, *args):
+        debug('dynamic_debug_disabled')
+        #with open('/home/usirius/git/eximsearch/debug.json', 'r') as debug_file:
+        #    x = json.load(debug_file,'utf-8')
+        #    for walker_item in state.get_view(ACTIVE).body.body:
+        #        if type(walker_item) == urwid.container.Columns:
+        #            if type(walker_item.contents[0][0]) == urwid.graphics.ProgressBar:
+        #                try:
+        #                   eval(x['command'])
+        #               except Exception as e:
+        #                   debug('Exception is : %s', e)
+        #                else:
+        #                   pass
+        #               #    return eval(x['command'])
     def unhandled_input(self,key):
         if type(key) == str:
             #raw = loop.screen.get_input(raw_keys=True)
@@ -91,20 +96,21 @@ class GlobalSettings():
                 state.go_forward()
             if key in 'f5':
                 debug('Current View: %s', state.get_view_name(ACTIVE))
-                if state.get_view(PREV):
-                    debug('Previous View: %s', state.get_view_name(PREV))
-            if key in 'f6' and state.get_view(PREV):
+                if hasattr(state,'prev_view'):
+                    if state.prev_view:
+                        debug('Previous View: %s', state.get_view_name(PREV))
+            if key in 'f6':
                 debug('Active Filters: %s', state.get_active_filters())
             if key in 'f7':
                 debug('Current Query: %s', state.get_query(ACTIVE))
-            if key in 'f8' and state.get_query(PREV):
-                debug('PRevious Query: %s', state.get_query(PREV))
-#            if key in 'f3':
-#                debug('Body: %s', self.dyn_debug())
+                if hasattr(state,'prev_query'):
+                    debug('Previous Query: %s', state.get_query(PREV))
+            if key in 'f3':
+                debug('Body: %s', self.dyn_debug())
             if key in 'f1':
                 debug('Current Result List: %s', state.get_result_list_name(ACTIVE))
-                if state.get_result_list_name(PREV):
-                    debug('Previous Result LIst: %s', state.get_result_list_name(PREV))
+                if hasattr(state,'prev_result_list'):
+                    debug('Previous Result List: %s', state.get_result_list_name(PREV))
             if key in 'f2':
                 debug('Current View Chain Position: %s', state.get_view_chain_pos())
                 debug('Current View Chain Name: %s', state.get_view_from_chain(state.get_view_chain_pos()).view_name)
@@ -178,6 +184,8 @@ class Menus():
                 ['      (N)ew Search      ', 'new_search'],
                 ['          (Q)uit        ','quit_loop']]
             self.results_summary = self.results_list
+            self.apply_filters = self.results_list
+            self.clear_applied_filters = self.results_list
 
             self.single_entry = [
                 [' (S)how Related Entries ','show_related_entries'],
@@ -542,6 +550,8 @@ class MyWidgets():
             return urwid.Pile((titleMap, subtitleMap, divMap), focus_item=None)
         else:
             return urwid.Pile((titleMap, divMap), focus_item=None)
+    def getSearchProgress(self):
+        return urwid.ProgressBar('body', 'header', current=0, done=100, satt=None)
     def getFooterWidget(self,view_instance, menuItems):
         """Generates a footer column row containing a list of buttons for a
             basic menu / navigation. This is meant to be used exclusively by
@@ -692,7 +702,7 @@ class BodyWidgets():
         if activeFilters:
             summaryRows.append(w.getText('bold', 'Currently Active Filters:', 'center'))
             for activeFilter in activeFilters:
-                summaryRows.append(w.getText('body', activeFilter, 'center'))
+                summaryRows.append(w.getText('body', activeFilter.filter_field + ' : ' + activeFilter.filter_criteria, 'center'))
         summaryRows.append(w.div)
         summaryRows.append(BoxButton('Show Results', on_press=views.activate, user_data='results_list'))
         #summaryRows.append(w.getButton('Show Results', views,'activate', user_data='results_list'))
@@ -709,18 +719,16 @@ class BodyWidgets():
         #for result in result_list.contents:
         for entry in list_of_result_entries:
             numColWidth = len(str(x)) + 6
+            if len(entry.msgType) > 2:
+                msgType = entry.msgType[2]
+            else:
+                msgType = '-'
             self.listDisplayCols.append(w.getColRow(
                 [
-                    #(5, w.getButton(
-                    #    str(x),
-                    #    views,
-                    #    'activate',
-                    #    user_data=['single_entry', 
-                    #        result_list.contents.index(result), 
-                    #       result_list])),
-                    (numColWidth  , BoxButton(str(x), on_press=views.activate,
+                    (numColWidth, BoxButton(str(x), on_press=views.activate,
                         user_data=['single_entry',entry])),
-                    urwid.Text(('body','\n' + entry.fullEntryText[2] + '\n'),align='left', wrap='clip'),
+                    (13, w.getText('body', '\n' + msgType + '\n','center')),
+                    urwid.Text(('body','\n' + entry.fullEntryText[2] + '\n'),align='left'),
                     (3 , w.getText('body','', 'left'))
                 ]
             ))
@@ -807,26 +815,33 @@ class BodyWidgets():
         return urwid.Filler(filter_input_pile,valign='top')
     def get_clear_applied_filters(self, **kwargs):
         debug(' kwargs : %s', kwargs)
+        state.active_filters = []
+        original_results_list = state.get_result_list(ACTIVE).get_original_results()
+        state.set_result_list(original_results_list)
+        return self.get_results_summary()
     def get_quit_loop(self, **kwargs):
         """Page opened upon a request to quit, and 
             asks for confirmation of quiting
         """
         debug(' kwargs : %s', kwargs)
-        if state.get_view(ACTIVE) == 'choose_logs':
-            noButton = w.getButton('No', views, 'choose_logs')
-        else:
-            noButton = w.getButton('No', views, 'exit')
+        #noButton = BoxButton('No', on_press=state.go_back)
+        #if state.get_view(ACTIVE) == 'choose_logs':
+        #    noButton = w.getButton('No', views, 'choose_logs')
+        #else:
+        #    noButton = w.getButton('No', views, 'exit')
+        s.menuEnabled = True
         quitList = [
             w.div,
             w.getColRow([
-                w.getButton('Yes', views, 'exit'),
-                noButton]),
+                BoxButton('Yes',on_press=views.exit),
+                BoxButton('No', on_press=state.go_back)
+                ]),
             w.div]
         quitBox = w.getListBox(quitList)[0]
         return w.centeredListLineBox(
             quitBox, 
             'Are You Sure You Want to Quit?',
-            len(quitList) + 2)
+            len(quitList) + 4)
     def get_coming_soon(self, **kwargs):
         debug(' kwargs : %s', kwargs)
         comingSoonStatus = urwid.Pile([
@@ -849,6 +864,31 @@ class BodyWidgets():
                 #(40,BoxButton(field[2],on_press=search.new,user_data=field[3])),
                 ('weight',4,w.getText('body', field[3], 'left'))
             ]))
+        entry_field_col_rows.append(w.div)
+        entry_field_col_rows.append(w.getText('header','Related Entries', 'center'))
+        entry_field_col_rows.append(w.div)
+        related_entries = single_entry.get_related_entry_fields()
+        for entry in related_entries:
+            entry_field_col_rows.append(
+                w.getColRow([
+                    w.blankFlow,
+                        w.getColRow([
+                            w.getSearchProgress(),
+                            w.getText('body',entry['field-text'],'left')
+                        ]),
+                    w.blankFlow]
+                )
+            )
+        #for entry in related_entries:
+        #    related_entry_count = single_entry.get_related_entry_count()
+        #    debug('related_entry_count for %s : ', entry['field-text'], related_entry_count)
+            #entry_field_col_rows.append(
+            #    w.getColRow([
+            #    w.getText('body',entry['related-entries'],'right'),
+            #    (25,w.getText('body', 'Entries match ' + entry['field-text'], 'left')),
+            #    w.getText('body',entry['field-contents'],'left')
+            #    ])
+            #)
         entry_walker = urwid.SimpleFocusListWalker(entry_field_col_rows)
         return urwid.ListBox(entry_walker)
     def add_filter_to_walker(self,filter_instance):
@@ -861,7 +901,13 @@ class BodyWidgets():
                 w.getText('body',"\n"+filter_instance.filter_criteria+"\n",'left')
             ]))
         self.filter_input.set_edit_text('')
-#    def rem_filter_from_walker(self,walker_index):
+    def get_apply_filters(self, **kwargs):
+        debug('kwargs: %s', kwargs)
+        if state.get_result_list(ACTIVE):
+            if state.active_filters:
+                search.filter_active_results()
+                #views.activate('results_summary')
+                return self.get_results_summary()
 
 """
 STATE MANAGEMENT / TRACKING
@@ -1030,7 +1076,11 @@ class State():
         body_instance = args[1][2]
         self.active_filters.remove(filter_instance)
         debug('filter_walker length: %s', len(body_instance.filter_walker))
-        del body_instance.filter_walker[walker_index]
+        for row in body_instance.filter_walker:
+            if body_instance.filter_walker.index(row) > 0:
+                if filter_instance.filter_criteria in row.contents[2][0].get_text()[0]:
+                    debug('Current filter walker rows: %s, current filter criteria: %s', row.contents[2][0].get_text()[0], filter_instance.filter_criteria)
+                    body_instance.filter_walker.remove(row)
     def get_active_filters(self):
         debug('State.get_active_filters: %s', self.active_filters)
         return self.active_filters
@@ -1068,7 +1118,7 @@ class State():
             return False
     def get_view_chain_pos(self):
         return self.view_chain_pos
-    def go_back(self):
+    def go_back(self, *args):
         if self.set_view_chain_pos(-1):
             x = state.get_view_from_chain(state.get_view_chain_pos())
             x.reload()
@@ -1133,7 +1183,7 @@ class ViewSets():
         self.results_summary = View('results_summary', BODY)
         self.results_list = View('results_list', BODY, is_view_result_list=True)
         self.add_remove_filters = View('add_remove_filters', BODY, is_view_add_filters=True)
-        self.apply_current_filters = View('apply_current_filters',BODY)
+        self.apply_filters = View('apply_filters',BODY)
         self.clear_applied_filters = View('clear_applied_filters', BODY)
         self.coming_soon = View('coming_soon', FOOTER)
         self.single_entry = View('single_entry', BODY, is_view_single_entry=True)
@@ -1179,7 +1229,12 @@ class ViewSets():
             on_join()
         else:
             activating_view.start(current_view,focus_position=focus_position, user_args=user_data)
-    def exit(self):
+        if view_name == 'single_entry':
+            get_related_entry_thread = threading.Thread(
+                target=entries.get_related_entry_count
+            )
+            get_related_entry_thread.start()
+    def exit(self,*args):
         debug
         raise urwid.ExitMainLoop()
 state = State()
@@ -1278,12 +1333,51 @@ class Search():
             original_results=searchNumber
             )
         result_list = results.get_result_list(searchNumber)
+        if state.active_filters:
+            views.activate('filter_')
         views.activate('results_summary',focus_position=BODY,user_args=result_list)
         #views.show(views.newSearchSummary(searchNumber,query), frame, 'body')
     def related(self,related_query):
         debug('related_query: %s',related_query)
         state.set_query(related_query)
         views.activate('search_progress',is_threaded=True,on_join=search.new)
+    def get_related_entry_count(self,related_field, related_query):
+        results = self.filter_logs_for_related_entry_count(related_field,related_query)
+        debug(' related_query: %s, result count: %s', related_query, results)
+        return results
+    def filter_logs_for_related_entry_count(self,related_field,related_query):
+        starttime = datetime.now()
+        logPoolArgs = []
+        for log in s.lf.selectedLogs:
+            logPoolArgs.append([related_field,related_query,log])
+        queryLogForRelatedEntriesPool = ThreadPool()
+        searchedLogs = queryLogForRelatedEntriesPool.map(queryLogForRelatedEntriesProcess, logPoolArgs)
+        totalResultCount = 0
+        for resultCount in searchedLogs:
+            totalResultCount += resultCount
+        logging.info('QT = %s : filteredLog Pool Result Count: %s',datetime.now() - starttime, totalResultCount)
+        return totalResultCount
+    def filter_active_results(self):
+        results_to_filter = state.get_result_list(ACTIVE)
+        list_of_active_filters = state.get_active_filters()
+        list_of_entries_to_filter = entries.get_list_from_active_result_list()
+        debug('results_to_filter: %s, list_of_active_filters: %s', results_to_filter,list_of_active_filters)
+        search_no = state.get_new_search_number()
+        i = 0
+        list_of_matching_entries = []
+        for entry in list_of_entries_to_filter:
+            #debug('entry_name: %s', entry.name)
+            for result_filter in list_of_active_filters:
+                if hasattr(entry,result_filter.filter_field):
+                    if result_filter.filter_criteria in getattr(entry, result_filter.filter_field):
+                        debug('Matching Entry: %s', entry.msgType)
+                        name = 'entry-' + search_no + '-' + str(i)
+                        i += 1
+                        setattr(entries,name,entry)
+                        debug('New entries.%s, %s', name, getattr(entries,name))
+                        list_of_matching_entries.append(getattr(entries,name))
+        debug('list_of_matching_entries: %s', list_of_matching_entries)
+        results.new(search_no,'filtered_results',list_of_matching_entries,original_results=results_to_filter,isFiltered=True,filters_applied=list_of_active_filters)
     def filter_results(self,*args):
         global mostRecentSearchNo
         debug("Start Search.filterResults: %s", filters.get())
@@ -1325,7 +1419,7 @@ class Search():
                         if filter in x:
                             filteredResults.append(item)
             return filteredResults
-    def filter_logs(self):
+    def filter_logs(self,related_query=False):
         starttime = datetime.now()
         #debug(":filterLogs :: Current Thread:: %s", threading.current_thread().getName())
         #debug('filterLogs filter: %s', query)
@@ -1341,7 +1435,6 @@ class Search():
             results.extend(resultList)
         logging.info('QT = %s : filteredLog Pool Result Count: %s',datetime.now() - starttime, len(results))
         return results
-
 class Results():
     def __init__(self):
         self.currentFilters = {
@@ -1394,7 +1487,7 @@ class Results():
                 resultContents, count,
                 original_results,
                 isFiltered, filters_applied))
-            state.set_result_list(resultContents)
+            state.set_result_list(getattr(self,name))
     def get_single_entry(self,entryNo,searchNo):
         debug('Started Results.getSingleEntry: %s, %s', entryNo, searchNo)
         entryId = 'entry-' + str(entryNo)
@@ -1433,6 +1526,7 @@ class ResultLists():
         self.filteredApplied = filters_applied
         self.count = count
         self.previous_results = None
+        self.contents = []
         if result_type == 'logResults':
             i = 0
             search_number = state.searchCounterStr
@@ -1440,15 +1534,9 @@ class ResultLists():
                 name = 'entry-' + search_number + '-' + str(i)
                 entries.new(name, result)
                 i += 1
+            self.contents = entries.get_list_from_search_no(search_number)
         else:
-            result_contents.sort(key=lambda x: str(x.getTimeOrd()), reverse=False)
-            i = 0
-            self.contents = []
-            for entry in result_contents:
-                name = 'entry-' + str(i)
-                setattr(self,name,entry)
-                self.contents.append(entry.fullEntryText[2])
-                i += 1
+            self.contents = result_contents
         #debug('List of Attr in new ResultList: %s', dir(self))
     def parseEntries(self):
         i = 0
@@ -1463,6 +1551,8 @@ class ResultLists():
             if 'entry-' in attr:
                 listOfEntries.append(getattr(self,attr))
         return listOfEntries
+    def get_original_results(self):
+        return self.original_results
     def set_previous_list(self):
         if self.previous_results:
             state.prev_result_list = self.previous_results
@@ -1481,27 +1571,61 @@ class Entries():
             if active_result_list_name in attr:
                 listOfEntries.append(getattr(self,attr))
         return listOfEntries
+    def get_list_from_search_no(self,search_no):
+        listOfEntries = []
+        active_result_list_name = search_no
+        for attr in dir(self):
+            if active_result_list_name in attr:
+                listOfEntries.append(getattr(self,attr))
+        return listOfEntries
     def get_entry(self,entry_name):
         if hasattr(self, entry_name):
             return getattr(self, entry_name)
         else:
             return False
+    def get_related_entry_count(self):
+        related_entries = state.get_entry_on_screen(ACTIVE).get_related_entry_fields()
+        for entry in related_entries:
+            related_entry_count = search.filter_logs_for_related_entry_count(entry['field-text'],entry['field-contents'])
+            #related_entry_count = state.get_entry_on_screen(ACTIVE).get_related_entry_count()
+            debug('related_entry_count for %s : %s', entry['field-text'], related_entry_count)
+            for walker_item in state.get_view(ACTIVE).body.body:
+                if type(walker_item) == urwid.container.Columns:
+                    if type(walker_item.contents[1][0]) == urwid.container.Columns:
+                        #debug('walker_item: %s',walker_item.contents[1][0])
+                        if type(walker_item.contents[1][0].contents[0][0]) == urwid.graphics.ProgressBar:
+                            if entry['field-text'] in walker_item.contents[1][0].contents[1][0].get_text()[0]:
+                                walker_item_index = state.get_view(ACTIVE).body.body.index(walker_item)
+                                state.get_view(ACTIVE).body.body[walker_item_index] =   w.getColRow([
+                                    w.getText('body',str(related_entry_count),'right'),
+                                    (25,w.getText('body', 'Entries match ' + entry['field-text'], 'left')),
+                                    w.getText('body',entry['field-contents'],'left')
+                                ])
+                                loop.draw_screen()
 class Entry():
     def __init__(self, fullEntryText, name):
         """This class is used to create single-view Entry Objects
         """
         self.name = name
+        self.id = []
         self.msgType = []
         self.date = []
         self.time = []
         self.sendAddr = []
         self.recipient = []
         self.fullEntryText = fullEntryText
+        if 'Warning: "SpamAssassin' in self.fullEntryText:
+            self.msgType = [15, 'Message Type: ', 'Spam Status']
         #debug('Init Entries: %s', self.fullEntryText)
         try:
             shlex.split(self.fullEntryText)
         except:
             m = self.fullEntryText.split()
+            if self.msgType:
+                if self.msgType[2] == 'Spam Status':
+                        if 'detected' in m:
+                            self.spamStatus = [15, 'Spam Status',  ' '.join(m[m.index('detected') + 3: -2])]
+                            self.spamScore = [15, 'Spam Score', m[-1]]
             self.parseError = [15, 'Parsing Error: ', str(Exception)]
             x = 0
             while x <= len(m):
@@ -1513,7 +1637,6 @@ class Entry():
                     self.pid = [12, 'Process ID: ', m[x]]
                 if x == 3:
                     self.id = [13, 'Message ID: ', m[x]]
-                x += 1
             self.fullEntryText = [14, 'Full Entry: ', self.fullEntryText]        
         else:
             m = shlex.split(self.fullEntryText)
@@ -1526,11 +1649,35 @@ class Entry():
                 if x == 2:
                     self.pid = [12, 'Process ID: ', m[x]]
                 if x == 3:
-                    self.id = [13, 'Message ID: ', m[x]]
+                    if m[x].startswith('cwd'):
+                        self.cwd = [13, 'Source Directory: ', m[x].split('=')[1]]
+                        if self.cwd[2] == '/var/spool/exim':
+                            self.msgType = [15, 'Message Type: ', 'Exim Queue']
+                            self.id = [13, 'Message Id: ', m[-1]]
+                        else:
+                            self.msgType = [15, 'Message Type: ', 'Script Mailer']
+                        if 'args:' in m:
+                            args = m.index('args:')
+                            self.script = [13, 'Sending Script: ', m[args + 1]]
+                            if len(m) > args + 2:
+                                self.scriptArgs = [13, 'Script Arguments: ', ' '.join(m[args + 2:])]
+                    else:
+                        self.id = [13, 'Message ID: ', m[x]]
+                    if 'Sender' in m[x]:
+                        self.msgType = [15, 'Message Type: ', 'Sender Id']
                 if x == 4:
                     if len(m[x]) == 2:
                         self.entryType = [22, 'Entry Type Symbol: ', m[x]]
+                    if 'Completed' in m[x]:
+                        self.msgType = [15, 'Message Type: ', 'Queue Status']
                 #debug('parseEntries self.fullEntryText: %s', self.fullEntryText)
+                if self.msgType:
+                    if self.msgType[2] == 'Spam Status':
+                        if 'detected' in m[x]:
+                            n = m[x].split()
+                            if 'detected' in n:
+                                self.spamStatus = [15, 'Spam Status',  ' '.join(n[n.index('detected')+3:-1])]
+                                self.spamScore = [15, 'Spam Score', n[-1]]
                 if 'H=' in m[x]:
                     if len(m) > x + 1:
                         if m[x+1][0] == '(':
@@ -1544,43 +1691,43 @@ class Entry():
                             if s.hostname in self.host:
                                 self.msgType = [15, 'Type: ', 'relay']
                 if m[x] == 'SMTP':
-                    self.smtpError = [22, 'Failure Message: ', " ".join(m[x:])]
-                if 'S=' in m[x] and m[x][0] != 'M':
+                    self.smtpError = [22, 'SMTP Message: ', " ".join(m[x:])]
+                if ' S=' in m[x] and m[x][0] != 'M':
                     self.size = [22, 'Size: ', m[x][2:]]
-                if 'I=' in m[x] and m[x][0] != 'S':
+                if ' I=' in m[x] and m[x][0] != 'S':
                     self.interface = [22, 'Receiving Interface: ', m[x].split(':')[0][2:]]
-                if 'R=' in m[x]:
+                if ' R=' in m[x]:
                     self.bounceId = [22, 'Bounce ID: ', m[x][2:]]
-                if 'U=' in m[x]:
+                if ' U=' in m[x]:
                     self.mta = [22, 'MTA / User: ', m[x][2:]]
-                if 'id=' in m[x]:
+                if ' id=' in m[x]:
                     self.remoteId = [22, 'Sending Server Message ID: ', m[x][3:]]
-                if 'F=<' in m[x]:
+                if ' F=<' in m[x]:
                     self.sendAddr = [18, 'Sender: ', m[x][2:]]
                     if not self.sendAddr[1] == '<>':
                         self.sendAddr = [18, 'Sender: ', m[x][3:-1]]
                     self.fr = self.sendAddr
-                if 'C=' in m[x]:
+                if ' C=' in m[x]:
                     self.delStatus = [22, 'Delivery Status: ', m[x][2:]]
-                if 'QT=' in m[x]:
+                if ' QT=' in m[x]:
                     self.timeInQueue = [22, 'Time Spent in Queue: ', m[x][3:]]
-                if 'DT=' in m[x]:
+                if ' DT=' in m[x]:
                     self.deliveryTime = [22, 'Time Spent being Delivered: ', m[x][3:]]
-                if 'RT=' in m[x]:
+                if ' RT=' in m[x]:
                     self.deliveryTime = [22, 'Time Spent being Delivered: ', m[x][3:]]
                 if ' <= ' in fullEntryText:
                     self.msgType = [15, 'Message Type: ', 'incoming']
-                    if 'A=' in m[x]:
+                    if ' A=' in m[x]:
                         self.smtpAuth = [22, 'Auth. Method: ', m[x][2:]]
                         if 'dovecot' in m[x]:
                             self.msgType = [15, 'Type: ', 'relay']
                     if x == 5:
-                        self.sendAddr = [18, 'Sender', m[x]]
-                    if 'P=' in m[x]:
+                        self.sendAddr = [18, 'Sender: ', m[x]]
+                    if ' P=' in m[x]:
                         self.protocol = [22, 'Protocol: ', m[x][2:]]
                         if 'local' in self.protocol[1]:
                             self.msgtype = [15, 'Type: ', 'local']
-                    if 'T=' in m[x] and m[x][0] != 'R':
+                    if ' T=' in m[x] and m[x][0] != 'R':
                         self.topic = [21, 'Subject: ', m[x][2:]]
                     if m[x] == 'from':
                         if len(m) > x +1:
@@ -1590,16 +1737,41 @@ class Entry():
                             else:
                                 self.fr = [18, 'Sender: ', m[x+1][1:-1]]
                     if m[x] == 'for':
-                        self.receipient = [19, 'Recipient: ', m[x+1]]
-                    x += 1
+                        if '(' in m[x+1] and ')' in m[x+1]:
+                            y = m[x+1]
+                            stripped_recip = y[y.index('(') + 1:y.index(')')]
+                            self.recipient = [19, 'Recipient: ', stripped_recip]
+                        if '<' in m[x+1] and '>' in m[x+1]:
+                            y = m[x+1]
+                            stripped_recip = y[y.index('<') + 1:y.index('>')]
+                            self.recipient = [19, 'Recipient: ', stripped_recip]
+                        else:
+                            self.recipient = [19, 'Recipient: ', m[x+1]]
                 else:
                     if x == 5:
                         if '@' in m[x]:
-                            self.receipient = [19, 'Recipient: ', m[x]]
+                            if '(' in m[x] and ')' in m[x]:
+                                y = m[x]
+                                stripped_recip = y[y.index('(') + 1:y.index(')')]
+                                self.recipient = [19, 'Recipient: ', stripped_recip]
+                            if '<' in m[x] and '>' in m[x]:
+                                y = m[x]
+                                stripped_recip = y[y.index('<') + 1:y.index('>')]
+                                self.recipient = [19, 'Recipient: ', stripped_recip]
+                            self.recipient = [19, 'Recipient: ', m[x]]
                         else:
                             if len(m) > x + 1:
                                 if '@' in m[x + 1]:
-                                    self.receipient = [19, 'Recipient: ', m[x] + m[x+1]]
+                                    if '(' in m[x+1] and ')' in m[x+1]:
+                                        y = m[x+1]
+                                        stripped_recip = y[y.index('(') + 1:y.index(')')]
+                                        self.recipient = [19, 'Recipient: ', stripped_recip]
+                                    if '<' in m[x+1] and '>' in m[x+1]:
+                                        y = m[x+1]
+                                        stripped_recip = y[y.index('<') + 1:y.index('>')]
+                                        self.recipient = [19, 'Recipient: ', stripped_recip]
+                                    else:
+                                        self.recipient = [19, 'Recipient: ', m[x] + m[x+1]]
                     if 'P=' in m[x]:
                         self.returnPath = [20, 'Return Path: ', m[x][3:-1]]
                     if 'T=' in m[x] and m[x][0] != 'D' and m[x][0] != 'Q':
@@ -1607,16 +1779,28 @@ class Entry():
                         if 'dovecot' in self.mta[1]:
                             self.msgType = [15, 'Type: ', 'local']
                     if ' => ' in fullEntryText:
-                        self.msgType = [15, 'Message Type: ', 'outgoing']
-                    x += 1
-            
+                        if 'T=dovecot' in fullEntryText:
+                            self.msgType = [15, 'Message Type: ', 'dovecot']
+                        else:
+                            self.msgType = [15, 'Message Type: ', 'outgoing']
+                    if '-> ' in fullEntryText:
+                        self.msgType = [15, 'Message Type: ', 'forwarder']
+                    if 'rejected' in m:
+                        self.msgType = [15, 'Message Type: ', 'Bounce']
+                        self.id = []
+                    if 'SMTP connection' in fullEntryText:
+                        self.msgType = [15, 'Message Type: ', 'SMTP Connect']
+                    if ' ** ' in fullEntryText:
+                        self.msgType = [15, 'Message Type: ', 'Bounce']
+                    if ' no host name found ' in fullEntryText or ' failed to find host name ' in fullEntryText:
+                        self.msgType = [15, 'Message Type: ', 'Hostname Error']
+                x += 1
             self.fullEntryText = [14, 'Full Entry: ', self.fullEntryText]
     def getTimeOrd(self):
         x = str(self.date[2]) + '_' + str(self.time[2])
         x = datetime.strptime(x, s.dt.logDateTimeFormat)
         return x.toordinal()
     def get_entry_fields(self):
-
         fieldList = [a for a in dir(self) if not a.startswith('__') and not callable(getattr(self,a))]
         fields = []
         for field in fieldList:
@@ -1630,6 +1814,26 @@ class Entry():
                         x[2]
                     ])
         return fields
+    def get_field_text(self,field_name):
+        field = getattr(self,field_name)
+        if len(field) >= 3:
+            return field[2]
+        else:
+            return field
+    def get_related_entry_fields(self):
+        related_entry_fields = [self.pid,self.id,self.sendAddr,self.recipient]
+        related_results = []
+        for field in related_entry_fields:
+            if field:
+                debug('field : %s ', field)
+                related_results.append(
+                {
+                    'field-text' : field[1], 
+                    'field-contents' : field[2],
+                    'related-entries': ''
+                })
+        return related_results
+
 class Testing():
     def set_get_views(self):
         state.set_view(View('Test A', 'Test A Header', 'Test A Header', 'Test A Body'))
@@ -1718,7 +1922,15 @@ class Filter():
         debug('New Filter: %s', self)
         self.name = name
         self.filter_number = filter_number
-        self.filter_field = filter_field
+        if filter_field == 'Message Type':
+            self.filter_field = 'msgType'
+        if filter_field == 'Sender':
+            self.filter_field = 'sendAddr'
+        if filter_field == 'Recipient':
+            self.filter_field = 'recipient'
+        if filter_field == 'Date':
+            self.filter_field = 'date'
+        #self.filter_field = filter_field
         self.filter_criteria = filter_criteria
 def queryLogProcess(poolArgs):
     os.nice(20)
@@ -1731,7 +1943,6 @@ def queryLogProcess(poolArgs):
                 pass
             #debug('Lines in file: %s', i)
             totalLines = i
-        
         #logPoolArgs = []
         with open(log,mode='r') as p:
             for i, line in enumerate(p):
@@ -1772,6 +1983,59 @@ def queryLogProcess(poolArgs):
                     w.searchProgress.set_completion(completion)
                     loop.draw_screen()
     return rawEntries
+def queryLogForRelatedEntriesProcess(poolArgs):
+    os.nice(20)
+    related_field,query,log = poolArgs
+    #debug('Log = %s, filters = %s', log, query)
+    #rawEntries = []
+    if log[-2:] != 'gz':
+        with open(log,mode='r') as f:
+            for i, line in enumerate(f):
+                pass
+            #debug('Lines in file: %s', i)
+            totalLines = i
+        
+        #logPoolArgs = []
+        resultCount = 0
+        with open(log,mode='r') as p:
+            for i, line in enumerate(p):
+                if query in line:
+                        resultCount += 1
+                if i % 1000000 == 0:
+                    percent = float(i) / float(totalLines)
+                    completion = int(percent * 100)
+                    #debug('Total Lines in file: %s', totalLines)
+                    #debug('Current Line Percent: %s', completion)
+                    for walker_item in state.get_view(ACTIVE).body.body:
+                        if type(walker_item) == urwid.container.Columns:
+                            if type(walker_item.contents[1][0]) == urwid.container.Columns:
+                                if type(walker_item.contents[1][0].contents[0][0]) == urwid.graphics.ProgressBar:
+                                    if related_field in walker_item.contents[1][0].contents[1][0].get_text()[0]:
+                                        walker_item.contents[1][0].contents[0][0].set_completion(completion)
+                        loop.draw_screen()
+    else:
+        with gzip.open(log,mode='r') as f:
+            for i, line in enumerate(f):
+                pass
+            #debug('Lines in file: %s', i)
+            totalLines = i
+        with gzip.open(log,mode='r') as f:
+            for i, line in enumerate(f):
+                if query in line:
+                    resultCount += 1
+                if i % 1000000 == 0:
+                    percent = float(i) / float(totalLines)
+                    completion = int(percent * 100)
+                    #debug('Total Lines in file: %s', totalLines)
+                    #debug('Current Line Percent: %s', completion)
+                    for walker_item in state.get_view(ACTIVE).body.body:
+                        if type(walker_item) == urwid.container.Columns:
+                            if type(walker_item.contents[1][0]) == urwid.container.Columns:
+                                if type(walker_item.contents[1][0].contents[0][0]) == urwid.graphics.ProgressBar:
+                                    if related_field in walker_item.contents[1][0].contents[1][0].get_text()[0]:
+                                        walker_item.contents[1][0].contents[0][0].set_completion(completion)
+                        loop.draw_screen()
+    return resultCount
 s = GlobalSettings()
 if __name__ == '__main__':
     debug("\n****\nApplication Start!\n****\n")
