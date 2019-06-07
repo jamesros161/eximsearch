@@ -51,13 +51,13 @@ class GlobalSettings():
             'date',
             'type'
         ]
-    def dyn_store_debug(self):
-        data = {
-            "keycode": "f3",
-            "command": "state.get_view_name(ACTIVE)"
-        }
-        with open('/home/usirius/git/eximsearch/debug.json', 'a') as outfile:
-            json.dump(data, outfile)
+    #def dyn_store_debug(self):
+        #data = {
+        #    "keycode": "f3",
+        #    "command": "state.get_view_name(ACTIVE)"
+        #}
+        #with open('/home/usirius/git/eximsearch/debug.json', 'a') as outfile:
+        #    json.dump(data, outfile)
     def dyn_debug(self, *args):
         debug('dynamic_debug_disabled')
         #with open('/home/usirius/git/eximsearch/debug.json', 'r') as debug_file:
@@ -1614,6 +1614,7 @@ class Entry():
         self.sendAddr = []
         self.recipient = []
         self.fullEntryText = fullEntryText
+        self.entryType = []
         if 'Warning: "SpamAssassin' in self.fullEntryText:
             self.msgType = [15, 'Message Type: ', 'Spam Status']
         #debug('Init Entries: %s', self.fullEntryText)
@@ -1668,7 +1669,7 @@ class Entry():
                 if x == 4:
                     if len(m[x]) == 2:
                         self.entryType = [22, 'Entry Type Symbol: ', m[x]]
-                    if 'Completed' in m[x]:
+                    elif 'Completed' in m[x]:
                         self.msgType = [15, 'Message Type: ', 'Queue Status']
                 #debug('parseEntries self.fullEntryText: %s', self.fullEntryText)
                 if self.msgType:
@@ -1692,42 +1693,42 @@ class Entry():
                                 self.msgType = [15, 'Type: ', 'relay']
                 if m[x] == 'SMTP':
                     self.smtpError = [22, 'SMTP Message: ', " ".join(m[x:])]
-                if ' S=' in m[x] and m[x][0] != 'M':
+                if 'S=' in m[x] and m[x][0] != 'M':
                     self.size = [22, 'Size: ', m[x][2:]]
-                if ' I=' in m[x] and m[x][0] != 'S':
+                if 'I=' in m[x] and m[x][0] != 'S':
                     self.interface = [22, 'Receiving Interface: ', m[x].split(':')[0][2:]]
-                if ' R=' in m[x]:
+                if 'R=' in m[x]:
                     self.bounceId = [22, 'Bounce ID: ', m[x][2:]]
-                if ' U=' in m[x]:
+                if 'U=' in m[x]:
                     self.mta = [22, 'MTA / User: ', m[x][2:]]
-                if ' id=' in m[x]:
+                if 'id=' in m[x]:
                     self.remoteId = [22, 'Sending Server Message ID: ', m[x][3:]]
-                if ' F=<' in m[x]:
+                if 'F=<' in m[x]:
                     self.sendAddr = [18, 'Sender: ', m[x][2:]]
                     if not self.sendAddr[1] == '<>':
                         self.sendAddr = [18, 'Sender: ', m[x][3:-1]]
                     self.fr = self.sendAddr
-                if ' C=' in m[x]:
+                if 'C=' in m[x]:
                     self.delStatus = [22, 'Delivery Status: ', m[x][2:]]
-                if ' QT=' in m[x]:
+                if 'QT=' in m[x]:
                     self.timeInQueue = [22, 'Time Spent in Queue: ', m[x][3:]]
-                if ' DT=' in m[x]:
+                if 'DT=' in m[x]:
                     self.deliveryTime = [22, 'Time Spent being Delivered: ', m[x][3:]]
-                if ' RT=' in m[x]:
+                if 'RT=' in m[x]:
                     self.deliveryTime = [22, 'Time Spent being Delivered: ', m[x][3:]]
                 if ' <= ' in fullEntryText:
                     self.msgType = [15, 'Message Type: ', 'incoming']
-                    if ' A=' in m[x]:
+                    if 'A=' in m[x]:
                         self.smtpAuth = [22, 'Auth. Method: ', m[x][2:]]
                         if 'dovecot' in m[x]:
                             self.msgType = [15, 'Type: ', 'relay']
                     if x == 5:
                         self.sendAddr = [18, 'Sender: ', m[x]]
-                    if ' P=' in m[x]:
+                    if 'P=' in m[x]:
                         self.protocol = [22, 'Protocol: ', m[x][2:]]
                         if 'local' in self.protocol[1]:
                             self.msgtype = [15, 'Type: ', 'local']
-                    if ' T=' in m[x] and m[x][0] != 'R':
+                    if 'T=' in m[x] and m[x][0] != 'R':
                         self.topic = [21, 'Subject: ', m[x][2:]]
                     if m[x] == 'from':
                         if len(m) > x +1:
@@ -1783,9 +1784,9 @@ class Entry():
                             self.msgType = [15, 'Message Type: ', 'dovecot']
                         else:
                             self.msgType = [15, 'Message Type: ', 'outgoing']
-                    if '-> ' in fullEntryText:
+                    if ' -> ' in fullEntryText:
                         self.msgType = [15, 'Message Type: ', 'forwarder']
-                    if 'rejected' in m:
+                    if not self.entryType and ' rejected ' in fullEntryText:
                         self.msgType = [15, 'Message Type: ', 'Bounce']
                         self.id = []
                     if 'SMTP connection' in fullEntryText:
