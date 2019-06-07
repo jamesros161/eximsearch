@@ -1606,6 +1606,7 @@ class Entry():
         """This class is used to create single-view Entry Objects
         """
         self.name = name
+        self.id = []
         self.msgType = []
         self.date = []
         self.time = []
@@ -1635,7 +1636,6 @@ class Entry():
                     self.pid = [12, 'Process ID: ', m[x]]
                 if x == 3:
                     self.id = [13, 'Message ID: ', m[x]]
-                x += 1
             self.fullEntryText = [14, 'Full Entry: ', self.fullEntryText]        
         else:
             m = shlex.split(self.fullEntryText)
@@ -1653,13 +1653,17 @@ class Entry():
                         if self.cwd[2] == '/var/spool/exim':
                             self.msgType = [15, 'Message Type: ', 'Exim Queue']
                             self.id = [13, 'Message Id: ', m[-1]]
+                        else:
+                            self.msgType = [15, 'Message Type: ', 'Script Mailer']
                         if 'args:' in m:
                             args = m.index('args:')
                             self.script = [13, 'Sending Script: ', m[args + 1]]
                             if len(m) > args + 2:
-                                self.scriptArgs = [13, 'Script Arguments: ', '\n'.join(m[args + 2:])]
+                                self.scriptArgs = [13, 'Script Arguments: ', ' '.join(m[args + 2:])]
                     else:
                         self.id = [13, 'Message ID: ', m[x]]
+                    if 'Sender' in m[x]:
+                        self.msgType = [15, 'Message Type: ', 'Sender Id']
                 if x == 4:
                     if len(m[x]) == 2:
                         self.entryType = [22, 'Entry Type Symbol: ', m[x]]
@@ -1686,43 +1690,43 @@ class Entry():
                             if s.hostname in self.host:
                                 self.msgType = [15, 'Type: ', 'relay']
                 if m[x] == 'SMTP':
-                    self.smtpError = [22, 'Failure Message: ', " ".join(m[x:])]
-                if 'S=' in m[x] and m[x][0] != 'M':
+                    self.smtpError = [22, 'SMTP Message: ', " ".join(m[x:])]
+                if ' S=' in m[x] and m[x][0] != 'M':
                     self.size = [22, 'Size: ', m[x][2:]]
-                if 'I=' in m[x] and m[x][0] != 'S':
+                if ' I=' in m[x] and m[x][0] != 'S':
                     self.interface = [22, 'Receiving Interface: ', m[x].split(':')[0][2:]]
-                if 'R=' in m[x]:
+                if ' R=' in m[x]:
                     self.bounceId = [22, 'Bounce ID: ', m[x][2:]]
-                if 'U=' in m[x]:
+                if ' U=' in m[x]:
                     self.mta = [22, 'MTA / User: ', m[x][2:]]
-                if 'id=' in m[x]:
+                if ' id=' in m[x]:
                     self.remoteId = [22, 'Sending Server Message ID: ', m[x][3:]]
-                if 'F=<' in m[x]:
+                if ' F=<' in m[x]:
                     self.sendAddr = [18, 'Sender: ', m[x][2:]]
                     if not self.sendAddr[1] == '<>':
                         self.sendAddr = [18, 'Sender: ', m[x][3:-1]]
                     self.fr = self.sendAddr
-                if 'C=' in m[x]:
+                if ' C=' in m[x]:
                     self.delStatus = [22, 'Delivery Status: ', m[x][2:]]
-                if 'QT=' in m[x]:
+                if ' QT=' in m[x]:
                     self.timeInQueue = [22, 'Time Spent in Queue: ', m[x][3:]]
-                if 'DT=' in m[x]:
+                if ' DT=' in m[x]:
                     self.deliveryTime = [22, 'Time Spent being Delivered: ', m[x][3:]]
-                if 'RT=' in m[x]:
+                if ' RT=' in m[x]:
                     self.deliveryTime = [22, 'Time Spent being Delivered: ', m[x][3:]]
                 if ' <= ' in fullEntryText:
                     self.msgType = [15, 'Message Type: ', 'incoming']
-                    if 'A=' in m[x]:
+                    if ' A=' in m[x]:
                         self.smtpAuth = [22, 'Auth. Method: ', m[x][2:]]
                         if 'dovecot' in m[x]:
                             self.msgType = [15, 'Type: ', 'relay']
                     if x == 5:
                         self.sendAddr = [18, 'Sender: ', m[x]]
-                    if 'P=' in m[x]:
+                    if ' P=' in m[x]:
                         self.protocol = [22, 'Protocol: ', m[x][2:]]
                         if 'local' in self.protocol[1]:
                             self.msgtype = [15, 'Type: ', 'local']
-                    if 'T=' in m[x] and m[x][0] != 'R':
+                    if ' T=' in m[x] and m[x][0] != 'R':
                         self.topic = [21, 'Subject: ', m[x][2:]]
                     if m[x] == 'from':
                         if len(m) > x +1:
@@ -1742,7 +1746,6 @@ class Entry():
                             self.recipient = [19, 'Recipient: ', stripped_recip]
                         else:
                             self.recipient = [19, 'Recipient: ', m[x+1]]
-                    x += 1
                 else:
                     if x == 5:
                         if '@' in m[x]:
@@ -1779,9 +1782,18 @@ class Entry():
                             self.msgType = [15, 'Message Type: ', 'dovecot']
                         else:
                             self.msgType = [15, 'Message Type: ', 'outgoing']
-                    if '->' in fullEntryText:
+                    if '-> ' in fullEntryText:
                         self.msgType = [15, 'Message Type: ', 'forwarder']
-                    x += 1
+                    if 'rejected' in m:
+                        self.msgType = [15, 'Message Type: ', 'Bounce']
+                        self.id = []
+                    if 'SMTP connection' in fullEntryText:
+                        self.msgType = [15, 'Message Type: ', 'SMTP Connect']
+                    if ' ** ' in fullEntryText:
+                        self.msgType = [15, 'Message Type: ', 'Bounce']
+                    if ' no host name found ' in fullEntryText or ' failed to find host name ' in fullEntryText:
+                        self.msgType = [15, 'Message Type: ', 'Hostname Error']
+                x += 1
             self.fullEntryText = [14, 'Full Entry: ', self.fullEntryText]
     def getTimeOrd(self):
         x = str(self.date[2]) + '_' + str(self.time[2])
