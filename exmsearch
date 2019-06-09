@@ -1907,7 +1907,7 @@ class UAPI():
             ).communicate()
 
         data = json.loads(reqOutput)
-        debug(self, [reqOutput,reqError])
+        debug("uapi call Results: %s,%s,%s",self, reqOutput,reqError)
         resultCode = data['metadata']['result']
         resultReason = data['metadata']['reason']
 
@@ -1923,6 +1923,7 @@ class UAPI():
             And reconsider whether or not you 
             know what you are doing...""")
             debug('Result Code: %s --- %s', resultCode, resultReason)
+        return (resultCode, resultReason)
     def list_email_accounts(self, user):
         result = self.call(user, 'Email', 'list_pops')
         return result
