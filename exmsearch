@@ -866,7 +866,7 @@ class BodyWidgets():
     def get_stat_summary(self, **kwargs):
         debug(' kwargs : %s', kwargs)
         select_user = urwid.Edit('Enter the cPanel UserName Below\n',align='center')
-        select_filler = QuestionBox(select_user, 'middle')
+        select_filler = UserBox(select_user, 'middle')
         return w.centeredListLineBox(select_filler, 'cPanel User Stat Summary', 5)
     def get_single_entry(self, **kwargs):
         debug(' kwargs : %s', kwargs)
