@@ -1910,7 +1910,7 @@ class UAPI():
         debug("uapi call Results: %s", data)
         debug("uapi data metadata: %s", data['result']['data'])
         resultCode = data['result']['status']
-        resultReason = data['metadata']['errors']
+        resultReason = data['result']['errors']
 
         #if the result is successfull, pass the result's data as return value
         if resultCode == 1:
