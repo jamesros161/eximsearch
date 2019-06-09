@@ -175,7 +175,7 @@ class Menus():
             self.home = [
                 ['      (N)ew Search      ', 'new_search'],
                 [' Add / Remove (F)ilters ','add_remove_filters'],
-                ['     (S)tats Summary    ','coming_soon'],
+                ['     (S)tats Summary    ','stat_summary'],
                 ['      (T)est Mailer     ','coming_soon'],
                 ['          (Q)uit        ','quit_loop']]
             self.new_search = self.home
