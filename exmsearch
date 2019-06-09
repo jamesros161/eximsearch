@@ -1932,7 +1932,7 @@ class UAPI():
             email = item['email']
             if email == user:
                 email = email + '@' + s.hostname
-            email_list.append(item['email'])
+            email_list.append(email)
         return email_list
 def queryLogProcess(poolArgs):
     os.nice(20)
