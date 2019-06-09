@@ -180,6 +180,7 @@ class Menus():
                 ['          (Q)uit        ','quit_loop']]
             self.new_search = self.home
             self.search_progress = self.home
+            self.stat_summary = self.home
         
             self.results_list = [
                 ['(F)ilter Current Results','add_remove_filters'],
