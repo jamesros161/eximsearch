@@ -1,13 +1,13 @@
 #!/opt/imh-python/bin/python
 # -*- coding: utf-8 -*-
 
-import urwid, datetime, os, subprocess, sys, json, re, shlex, gzip, time, logging, collections, socket, threading
+import urwid, datetime, os, subprocess, sys, json, re, shlex, gzip, time, logging, collections, socket, threading, getpass
 from multiprocessing import Pool, Queue, current_process
 from multiprocessing.pool import ThreadPool
 from datetime import datetime, timedelta
 os.nice(20)
 FORMAT = '%(lineno)d :: %(funcName)s :: %(message)s'
-logging.basicConfig(format=FORMAT,filename='log',filemode='a', level=logging.DEBUG)
+logging.basicConfig(format=FORMAT,filename='/home/' + getpass.getuser() + '/logs/eximsearch.log',filemode='a', level=logging.DEBUG)
 ACTIVE = 'active'
 PREV = 'prev'
 BODY = 'body'
