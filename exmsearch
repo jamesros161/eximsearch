@@ -1986,6 +1986,7 @@ def queryLogProcess(poolArgs):
     return rawEntries
 def queryLogForRelatedEntriesProcess(poolArgs):
     os.nice(20)
+    resultCount = 0
     related_field,query,log = poolArgs
     #debug('Log = %s, filters = %s', log, query)
     #rawEntries = []
