@@ -1907,14 +1907,15 @@ class UAPI():
             ).communicate()
 
         data = json.loads(reqOutput)
-        debug("uapi call Results: %s", dir(data))
-        resultCode = data['metadata']['result']
-        resultReason = data['metadata']['reason']
+        debug("uapi call Results: %s", data)
+        debug("uapi data metadata: %s", data['result']['data'])
+        resultCode = data['result']['status']
+        resultReason = data['metadata']['errors']
 
         #if the result is successfull, pass the result's data as return value
         if resultCode == 1:
-            resultData = data['data']
-            return(resultData)
+            resultData = data['result']['data']
+            return resultData 
 
         #If the result is not successfull, print error message and exit with code 1
         else:
@@ -1925,8 +1926,11 @@ class UAPI():
             debug('Result Code: %s --- %s', resultCode, resultReason)
         return (resultCode, resultReason)
     def list_email_accounts(self, user):
-        result = self.call(user, 'Email', 'list_pops')
-        return result
+        data = self.call(user, 'Email', 'list_pops')
+        email_list = []
+        for item in data:
+            email_list.append(item['email'])
+        return email_list
 def queryLogProcess(poolArgs):
     os.nice(20)
     query,log = poolArgs
