@@ -332,7 +332,16 @@ class QuestionBox(urwid.Filler):
         debug('%s Entry String: %s', self.original_widget, entry)
         state.set_query(entry)
         views.activate('search_progress',is_threaded=True,on_join=search.new)
-
+class UserBox(urwid.Filler):
+    def keypress(self, size, key):
+        if key != 'enter':
+            return super(UserBox, self).keypress(size, key)
+        entry = self.original_widget.get_edit_text()
+        self.original_widget.set_edit_text('')
+        debug('%s Entry String: %s', self.original_widget, entry)
+        state.cpanel_user = entry
+        state.list_of_users_emails = uapi.list_email_accounts(entry)
+        views.activate('search_progress',is_threaded=True,on_join=search.cpanel_summary)
 def show_or_exit(key):
     if key in ('q', 'Q', 'esc'):
         raise urwid.ExitMainLoop()
@@ -671,7 +680,7 @@ class BodyWidgets():
     def get_search_progress(self, **kwargs):
         debug(' kwargs : %s', kwargs)
         searchingStatus = urwid.Pile([
-            w.getText('body', 'Searching Logs Now. Please wait....', 'center'),
+            w.getText('body', 'Processing Your Request. Please wait....', 'center'),
             w.searchProgress
             ])
         statusFiller = urwid.Filler(searchingStatus, 'middle')
@@ -856,12 +865,9 @@ class BodyWidgets():
         return w.centeredListLineBox(comingSoonFiller, '',10)
     def get_stat_summary(self, **kwargs):
         debug(' kwargs : %s', kwargs)
-        comingSoonStatus = urwid.Pile([
-            w.getText('body', 'Feature Still under Development. Coming Soon....', 'center')
-            ])
-        comingSoonFiller = urwid.Filler(comingSoonStatus, 'middle')
-        debug('Email Account List: %s', uapi.list_email_accounts('twmsllc'))
-        return w.centeredListLineBox(comingSoonFiller, '',10)
+        select_user = urwid.Edit('Enter the cPanel UserName Below\n',align='center')
+        select_filler = QuestionBox(select_user, 'middle')
+        return w.centeredListLineBox(select_filler, 'cPanel User Stat Summary', 5)
     def get_single_entry(self, **kwargs):
         debug(' kwargs : %s', kwargs)
         #entryNo = kwargs['user_args'][0]
@@ -929,6 +935,7 @@ class State():
     def __init__(self):
         self.active_view = None
         self.previous_view = None
+        self.cpanel_user = None
         self.active_result_list = None
         self.prev_result_list = None
         self.active_query = None
@@ -1355,6 +1362,15 @@ class Search():
         debug('related_query: %s',related_query)
         state.set_query(related_query)
         views.activate('search_progress',is_threaded=True,on_join=search.new)
+    def cpanel_summary(self,email_list):
+        #summary = {}
+        logPoolArgs = []
+        for log in s.lf.selectedLogs:
+            logPoolArgs.append([email_list,log])
+        cpanel_summary_pool = ThreadPool()
+        results = cpanel_summary_pool.map(query_for_cpanel_summary, logPoolArgs)
+        debug('searchdlogs: %s', results)
+        views.activate('coming_soon')
     def get_related_entry_count(self,related_field, related_query):
         results = self.filter_logs_for_related_entry_count(related_field,related_query)
         debug(' related_query: %s, result count: %s', related_query, results)
@@ -1986,6 +2002,72 @@ def queryLogProcess(poolArgs):
                     loop.draw_screen()
     return rawEntries
 def queryLogForRelatedEntriesProcess(poolArgs):
+    os.nice(20)
+    email_list,log = poolArgs
+    results = {}
+    for email in email_list:
+        results[email] = {
+            'was_sender':0,
+            'was_recipient':0
+        }
+    #debug('Log = %s, filters = %s', log, query)
+    #rawEntries = []
+    if log[-2:] != 'gz':
+        with open(log,mode='r') as f:
+            for i, line in enumerate(f):
+                pass
+            #debug('Lines in file: %s', i)
+            totalLines = i
+        with open(log,mode='r') as p:
+            for i, line in enumerate(p):
+                for email in email_list:
+                    if email in line:
+                        x = Entry(line,'temp')
+                        if email in x.recipient[2]:
+                            results[email]['was_recipient'] += 1
+                        if email in x.sendAddr[2]:
+                            results[email]['was_sender'] += 1
+                #if i % 1000000 == 0:
+                #    percent = float(i) / float(totalLines)
+                #    completion = int(percent * 100)
+                #    #debug('Total Lines in file: %s', totalLines)
+                #    #debug('Current Line Percent: %s', completion)
+                #    for walker_item in state.get_view(ACTIVE).body.body:
+                #        if type(walker_item) == urwid.container.Columns:
+                #            if type(walker_item.contents[1][0]) == urwid.container.Columns:
+                #                if type(walker_item.contents[1][0].contents[0][0]) == urwid.graphics.ProgressBar:
+                #                    if related_field in walker_item.contents[1][0].contents[1][0].get_text()[0]:
+                #                        walker_item.contents[1][0].contents[0][0].set_completion(completion)
+                #        loop.draw_screen()
+    else:
+        with gzip.open(log,mode='r') as f:
+            for i, line in enumerate(f):
+                pass
+            #debug('Lines in file: %s', i)
+            totalLines = i
+        with gzip.open(log,mode='r') as f:
+            for i, line in enumerate(f):
+                for email in email_list:
+                    if email in line:
+                        x = Entry(line,'temp')
+                        if email in x.recipient[2]:
+                            results[email]['was_recipient'] += 1
+                        if email in x.sendAddr[2]:
+                            results[email]['was_sender'] += 1
+                #if i % 1000000 == 0:
+                #    percent = float(i) / float(totalLines)
+                #    completion = int(percent * 100)
+                #    #debug('Total Lines in file: %s', totalLines)
+                #    #debug('Current Line Percent: %s', completion)
+                #    for walker_item in state.get_view(ACTIVE).body.body:
+                #        if type(walker_item) == urwid.container.Columns:
+                #            if type(walker_item.contents[1][0]) == urwid.container.Columns:
+                #                if type(walker_item.contents[1][0].contents[0][0]) == urwid.graphics.ProgressBar:
+                #                    if related_field in walker_item.contents[1][0].contents[1][0].get_text()[0]:
+                #                        walker_item.contents[1][0].contents[0][0].set_completion(completion)
+                #        loop.draw_screen()
+    return results
+def query_for_cpanel_summary(poolArgs):
     os.nice(20)
     resultCount = 0
     related_field,query,log = poolArgs
