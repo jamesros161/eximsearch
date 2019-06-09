@@ -7,7 +7,11 @@ from multiprocessing.pool import ThreadPool
 from datetime import datetime, timedelta
 os.nice(20)
 FORMAT = '%(lineno)d :: %(funcName)s :: %(message)s'
-logging.basicConfig(format=FORMAT,filename='/home/' + getpass.getuser() + '/logs/eximsearch.log',filemode='a', level=logging.DEBUG)
+if getpass.getuser() == 'root':
+    logpath = '/root/eximsearch.log'
+else:
+    logpath = '/home/' + getpass.getuser() + '/logs/eximsearch.log'
+logging.basicConfig(format=FORMAT,filename=logpath,filemode='a', level=logging.DEBUG)
 ACTIVE = 'active'
 PREV = 'prev'
 BODY = 'body'
