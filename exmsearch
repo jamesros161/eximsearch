@@ -1362,8 +1362,9 @@ class Search():
         debug('related_query: %s',related_query)
         state.set_query(related_query)
         views.activate('search_progress',is_threaded=True,on_join=search.new)
-    def cpanel_summary(self,email_list):
+    def cpanel_summary(self):
         #summary = {}
+        email_list = state.list_of_users_emails
         logPoolArgs = []
         for log in s.lf.selectedLogs:
             logPoolArgs.append([email_list,log])
