@@ -1929,6 +1929,9 @@ class UAPI():
         data = self.call(user, 'Email', 'list_pops')
         email_list = []
         for item in data:
+            email = item['email']
+            if email == user:
+                email = email + '@' + s.hostname
             email_list.append(item['email'])
         return email_list
 def queryLogProcess(poolArgs):
