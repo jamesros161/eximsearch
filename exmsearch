@@ -1907,7 +1907,7 @@ class UAPI():
             ).communicate()
 
         data = json.loads(reqOutput)
-        debug("uapi call Results: %s", data)
+        debug("uapi call Results: %s", dir(data))
         resultCode = data['metadata']['result']
         resultReason = data['metadata']['reason']
 
