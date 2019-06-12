@@ -1438,7 +1438,19 @@ class CpanelUserStats():
     def __init__(self,cpanel_user_name,list_of_email_accounts,stat_results):
         self.cpanel_user_name = cpanel_user_name
         self.list_of_email_accounts = list_of_email_accounts
+        self.stats = {}
+        for email in self.list_of_email_accounts:
+            self.stats[email] = {
+                'was_recipient': 0,
+                'was_sender': 0
+            }
+            for item in stat_results:
+                if email in item:
+                    for key in self.stats[email].keys():
+                        if key in item[email]:
+                            self.stats[email][key] += item[email][key]
         debug('Stat Results: %s', stat_results)
+        debug('self.stats: %s', self.stats)
 class Results():
     def __init__(self):
         self.currentFilters = {
