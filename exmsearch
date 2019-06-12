@@ -951,15 +951,15 @@ class BodyWidgets():
                 ])
             )
         stat_columns_pile = urwid.Pile(stat_columns)
-        stat_columns_filler = urwid.Filler(stat_columns_pile,valign='middle',height=len(stat_columns) + 4)
+        #stat_columns_filler = urwid.Filler(stat_columns_pile,valign='middle',height=len(stat_columns) + 4)
         stat_inner_column = w.getColRow([
             w.blankFlow,
-            ('weight', 3, stat_columns_filler),
+            ('weight', 3, stat_columns_pile),
             w.blankFlow
         ])
-        stat_columns_filler = urwid.Filler(stat_inner_column)
+        #stat_columns_filler = urwid.Filler(stat_inner_column)
         #stat_list_box = w.getListBox(stat_columns)
-        stat_line_box = w.getLineBox(stat_columns_filler,'cPanel User ' + state.cpanel_user + ' Stat Summary')
+        stat_line_box = w.getLineBox(stat_inner_column,'cPanel User ' + state.cpanel_user + ' Stat Summary')
         stat_filler = urwid.Filler(stat_line_box,valign='middle',height=len(stat_columns) + 4)
         return stat_filler  
 """
