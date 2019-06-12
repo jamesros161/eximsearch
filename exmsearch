@@ -2099,24 +2099,30 @@ def query_for_cpanel_summary(poolArgs):
         }
     #rawEntries = []
     if log[-2:] != 'gz':
-        with open(log,mode='r') as f:
+        with open(log,mode='rb') as f:
             for i, line in enumerate(f):
                 pass
             #debug('Lines in file: %s', i)
             totalLines = i
-        with open(log,mode='r') as p:
+        with open(log,mode='rb') as p:
             for i, line in enumerate(p):
-                for email in email_list:
-                    if email in line:
-                        x = Entry(line,'temp')
-                        if len(x.recipient) > 2:
-                            if email in x.recipient[2]:
-                                debug('%s was found in in line %s as a recipient', email, i)
-                                result_counts[email]['was_recipient'] += 1
-                        if len(x.sendAddr) > 2:
-                            if email in x.sendAddr[2]:
-                                debug('%s was found in in line %s as a sender', email, i)
-                                result_counts[email]['was_sender'] += 1
+                try:
+                    line.decode('utf-8')
+                except UnicodeDecodeError as e:
+                    debug('Line: %s, Offset: %s, %s', i, e.start, e.reason)
+                else:
+                    line.decode('utf-8')
+                    for email in email_list:
+                        if email in line:
+                            x = Entry(line,'temp')
+                            if len(x.recipient) > 2:
+                                if email in x.recipient[2]:
+                                    debug('%s was found in in line %s as a recipient', email, i)
+                                    result_counts[email]['was_recipient'] += 1
+                            if len(x.sendAddr) > 2:
+                                if email in x.sendAddr[2]:
+                                    debug('%s was found in in line %s as a sender', email, i)
+                                    result_counts[email]['was_sender'] += 1
                 if i % 1000000 == 0:
                     percent = float(i) / float(totalLines)
                     completion = int(percent * 100)
@@ -2132,18 +2138,24 @@ def query_for_cpanel_summary(poolArgs):
             totalLines = i
         with gzip.open(log,mode='r') as f:
             for i, line in enumerate(f):
-                for email in email_list:
-                    if email in line:
-                        debug('%s was found in in line %s', email, i)
-                        x = Entry(line,'temp')
-                        if len(x.recipient) > 2:
-                            if email in x.recipient[2]:
-                                debug('%s was found in in line %s as a recipient', email, i)
-                                result_counts[email]['was_recipient'] += 1
-                        if len(x.sendAddr) > 2:
-                            if email in x.sendAddr[2]:
-                                debug('%s was found in in line %s as a sender', email, i)
-                                result_counts[email]['was_sender'] += 1
+                try:
+                    line.decode('utf-8')
+                except UnicodeDecodeError as e:
+                    debug('Line: %s, Offset: %s, %s', i, e.start, e.reason)
+                else:
+                    line.decode('utf-8')
+                    for email in email_list:
+                        if email in line:
+                            debug('%s was found in in line %s', email, i)
+                            x = Entry(line,'temp')
+                            if len(x.recipient) > 2:
+                                if email in x.recipient[2]:
+                                    debug('%s was found in in line %s as a recipient', email, i)
+                                    result_counts[email]['was_recipient'] += 1
+                            if len(x.sendAddr) > 2:
+                                if email in x.sendAddr[2]:
+                                    debug('%s was found in in line %s as a sender', email, i)
+                                    result_counts[email]['was_sender'] += 1
                 if i % 1000000 == 0:
                     percent = float(i) / float(totalLines)
                     completion = int(percent * 100)
