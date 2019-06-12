@@ -939,7 +939,7 @@ class BodyWidgets():
         for email in user_stats.list_of_email_accounts:
             stat_columns.append(
                 w.getColRow([
-                    w.getText('body',email,'center'),
+                    ('weight',4,w.getText('body',email,'center')),
                     w.getText('body',str(user_stats.stats[email]['was_recipient']), 'center'),
                     w.getText('body',str(user_stats.stats[email]['was_sender']), 'center')
                 ])
