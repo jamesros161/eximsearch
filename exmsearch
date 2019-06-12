@@ -1896,7 +1896,7 @@ class UAPI():
             req_params {dict} -- [dictionary of key + values]
         """
 
-        debug(self.call)
+        debug(self)
 
         popen_args = ["/usr/local/cpanel/bin/uapi", '--user='+user, module ,function ,'--output=json']
         if req_params:
@@ -1908,7 +1908,7 @@ class UAPI():
             stdout=subprocess.PIPE, 
             stderr=subprocess.PIPE
             ).communicate()
-
+        debug('reqOutput: %s', reqOutput)
         data = json.loads(reqOutput)
         debug("uapi call Results: %s", data)
         debug("uapi data metadata: %s", data['result']['data'])
