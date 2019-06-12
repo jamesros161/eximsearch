@@ -171,6 +171,7 @@ class Menus():
 
             self.coming_soon = [
                 ['         (H)ome         ','home']]
+            self.stat_summary_results = self.coming_soon
 
             self.home = [
                 ['      (N)ew Search      ', 'new_search'],
@@ -929,7 +930,21 @@ class BodyWidgets():
                 search.filter_active_results()
                 #views.activate('results_summary')
                 return self.get_results_summary()
-
+    def get_stat_summary_results(self, kwargs):
+        debug(' kwargs : %s', kwargs)
+        user_stats = cpanel_stats.get_cpanel_user_stats(state.cpanel_user)
+        stat_columns = []
+        for email in user_stats.list_of_email_accounts:
+            stat_columns.append(
+                w.getColRow([
+                    w.getText('body',email,'center'),
+                    w.getText('body',str(user_stats.stats[email]['was_recipient']), 'center'),
+                    w.getText('body',str(user_stats.stats[email]['was_sender']), 'center')
+                ])
+            )
+        stat_columns_pile = urwid.Pile(stat_columns.append)
+        stat_line_box = w.centeredListLineBox(stat_columns_pile,'cPanel User ' + state.cpanel_user + ' Stats Summary',len(stat_columns) + 3)
+        return stat_line_box
 """
 STATE MANAGEMENT / TRACKING
 """
@@ -1211,6 +1226,7 @@ class ViewSets():
         self.coming_soon = View('coming_soon', FOOTER)
         self.single_entry = View('single_entry', BODY, is_view_single_entry=True)
         self.stat_summary = View('stat_summary', BODY)
+        self.stat_summary_results = View('stat_summary_results',FOOTER)
     def get_view(self, view_name):
         return getattr(self,view_name)
     def activate(self,*args, **kwargs):
