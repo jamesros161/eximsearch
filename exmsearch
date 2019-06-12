@@ -342,10 +342,10 @@ class UserBox(urwid.Filler):
         state.cpanel_user = entry
         state.list_of_users_emails = uapi.list_email_accounts(entry)
         if not state.cpanel_user:
-            self.original_widget.set_caption('That is not a valid cPanel User\n Please Try Again')
+            self.original_widget.set_caption('That is not a valid cPanel User\n Please Try Again\n')
         else:
             if not state.list_of_users_emails:
-                self.original_widget.set_caption(state.cpanel_user + ' user does not have any email addresses')
+                self.original_widget.set_caption(state.cpanel_user + ' user does not have any email addresses\n')
             else:
                 views.activate('search_progress',is_threaded=True,on_join=search.cpanel_summary)
 
