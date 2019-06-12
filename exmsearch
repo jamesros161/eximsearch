@@ -944,8 +944,8 @@ class BodyWidgets():
                     w.getText('body',str(user_stats.stats[email]['was_sender']), 'center')
                 ])
             )
-        stat_columns_pile = urwid.Pile(stat_columns)
-        stat_columns_filler = urwid.Filler(stat_columns_pile)
+        #stat_columns_pile = urwid.Pile(stat_columns)
+        #stat_columns_filler = urwid.Filler(stat_columns_pile)
         stat_list_box = w.getListBox(stat_columns)
         stat_line_box = w.getLineBox(stat_list_box,'cPanel User ' + state.cpanel_user + ' Stat Summary')
         return stat_line_box
