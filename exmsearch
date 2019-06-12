@@ -1369,6 +1369,7 @@ class Search():
         for log in s.lf.selectedLogs:
             logPoolArgs.append([email_list,log])
         cpanel_summary_pool = ThreadPool()
+        debug('logPoolArgs: %s',logPoolArgs)
         results = cpanel_summary_pool.map(query_for_cpanel_summary, logPoolArgs)
         debug('searchdlogs: %s', results)
         views.activate('coming_soon')
@@ -1409,22 +1410,6 @@ class Search():
                         list_of_matching_entries.append(getattr(entries,name))
         debug('list_of_matching_entries: %s', list_of_matching_entries)
         results.new(search_no,'filtered_results',list_of_matching_entries,original_results=results_to_filter,isFiltered=True,filters_applied=list_of_active_filters)
-    def filter_input(self, filterType, input=None):
-        if not self.currentFilters[filterType]:
-            return input
-        else:
-            filteredResults = []
-            filterSet = self.currentFilters[filterType]
-            #debug('filterInput filters: %s', filterSet)
-            for item in input[:]:
-                x = getattr(item,filterType)
-                #debug('filterInput x.filterType: %s', x)
-                for filters in filterSet:
-                    for filter in filters:
-                        #debug('filterInput filter: %s', filter)
-                        if filter in x:
-                            filteredResults.append(item)
-            return filteredResults
     def filter_logs(self,related_query=False):
         starttime = datetime.now()
         #debug(":filterLogs :: Current Thread:: %s", threading.current_thread().getName())
@@ -1847,7 +1832,7 @@ class Filters():
         if hasattr(self, name):
             raise Exception('Filter number {} has already been created'.format(name))
         else:
-            setattr(self, name,Filter(name, filter_number, filter_field, filter_criteria,body_instance))
+            setattr(self, name,Filter(name, filter_number, filter_field, filter_criteria))
             #debug('new Filter: %s', Filter(name, filter_number, filter_field, filter_criteria,body_instance))
     def rem(self,filter_to_remove):
         filter_name = filter_to_remove.name
