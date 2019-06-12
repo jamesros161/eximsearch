@@ -1911,7 +1911,8 @@ class UAPI():
             ).communicate()
         debug('reqOutput: %s', reqOutput)
         if 'reqError':
-            warning('Error Returned when Attempting to call cpanel for email list: %s', reqError)
+            error = json.loads(reqError)
+            warning('Error Returned when Attempting to call cpanel for email list: %s', error)
             if 'UserNotFound' in 'reqError':
                 warning('Cpanel User Selected does not exist!')
                 state.cpanel_user = None
