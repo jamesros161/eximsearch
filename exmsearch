@@ -938,8 +938,8 @@ class BodyWidgets():
         stat_columns = [
             w.getColRow([
                 ('weight',4,w.getText('body','Email Address','center')),
-                w.getText('body','Was \nRecipient', 'center'),
-                w.getText('body','Was \nSender', 'center')
+                (10, w.getText('body','Was \nRecipient', 'center')),
+                (10, w.getText('body','Was \nSender', 'center'))
             ])
         ]
         for email in user_stats.list_of_email_accounts:
