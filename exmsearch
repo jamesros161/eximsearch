@@ -1910,9 +1910,10 @@ class UAPI():
             stderr=subprocess.PIPE
             ).communicate()
         debug('reqOutput: %s', reqOutput)
-        debug('reqError: %s', reqError)
         if 'reqError':
+            warning('Error Returned when Attempting to call cpanel for email list: %s', reqError)
             if 'UserNotFound' in 'reqError':
+                warning('Cpanel User Selected does not exist!')
                 state.cpanel_user = None
             return False
         data = json.loads(reqOutput)
