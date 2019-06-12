@@ -2107,7 +2107,7 @@ def query_for_cpanel_summary(poolArgs):
         with open(log,mode='rb') as p:
             for i, line in enumerate(p):
                 try:
-                    line.decode('utf-8')
+                    line.encode('utf-8').strip()
                 except UnicodeDecodeError as e:
                     debug('Log: %s, Line: %s, Offset: %s, %s', log, i, e.start, e.reason)
                 #else:
@@ -2139,7 +2139,7 @@ def query_for_cpanel_summary(poolArgs):
         with gzip.open(log,mode='r') as f:
             for i, line in enumerate(f):
                 try:
-                    line.decode('utf-8')
+                    line.encode('utf-8').strip()
                 except UnicodeDecodeError as e:
                     debug('Log: %s, Line: %s, Offset: %s, %s', log, i, e.start, e.reason)
                 #else:
