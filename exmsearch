@@ -2117,18 +2117,13 @@ def query_for_cpanel_summary(poolArgs):
                             if email in x.sendAddr[2]:
                                 debug('%s was found in in line %s as a sender', email, i)
                                 result_counts[email]['was_sender'] += 1
-                #if i % 1000000 == 0:
-                #    percent = float(i) / float(totalLines)
-                #    completion = int(percent * 100)
-                #    #debug('Total Lines in file: %s', totalLines)
-                #    #debug('Current Line Percent: %s', completion)
-                #    for walker_item in state.get_view(ACTIVE).body.body:
-                #        if type(walker_item) == urwid.container.Columns:
-                #            if type(walker_item.contents[1][0]) == urwid.container.Columns:
-                #                if type(walker_item.contents[1][0].contents[0][0]) == urwid.graphics.ProgressBar:
-                #                    if related_field in walker_item.contents[1][0].contents[1][0].get_text()[0]:
-                #                        walker_item.contents[1][0].contents[0][0].set_completion(completion)
-                #        loop.draw_screen()
+                if i % 1000000 == 0:
+                    percent = float(i) / float(totalLines)
+                    completion = int(percent * 100)
+                    #debug('Total Lines in file: %s', totalLines)
+                    #debug('Current Line Percent: %s', completion)
+                    w.searchProgress.set_completion(completion)
+                    loop.draw_screen()
     else:
         with gzip.open(log,mode='r') as f:
             for i, line in enumerate(f):
@@ -2149,18 +2144,13 @@ def query_for_cpanel_summary(poolArgs):
                             if email in x.sendAddr[2]:
                                 debug('%s was found in in line %s as a sender', email, i)
                                 result_counts[email]['was_sender'] += 1
-                #if i % 1000000 == 0:
-                #    percent = float(i) / float(totalLines)
-                #    completion = int(percent * 100)
-                #    #debug('Total Lines in file: %s', totalLines)
-                #    #debug('Current Line Percent: %s', completion)
-                #    for walker_item in state.get_view(ACTIVE).body.body:
-                #        if type(walker_item) == urwid.container.Columns:
-                #            if type(walker_item.contents[1][0]) == urwid.container.Columns:
-                #                if type(walker_item.contents[1][0].contents[0][0]) == urwid.graphics.ProgressBar:
-                #                    if related_field in walker_item.contents[1][0].contents[1][0].get_text()[0]:
-                #                        walker_item.contents[1][0].contents[0][0].set_completion(completion)
-                #        loop.draw_screen()
+                if i % 1000000 == 0:
+                    percent = float(i) / float(totalLines)
+                    completion = int(percent * 100)
+                    #debug('Total Lines in file: %s', totalLines)
+                    #debug('Current Line Percent: %s', completion)
+                    w.searchProgress.set_completion(completion)
+                    loop.draw_screen()
     debug('Result_counts: %s',result_counts)
     return result_counts
 s = GlobalSettings()
