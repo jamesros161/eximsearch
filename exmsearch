@@ -932,7 +932,9 @@ class BodyWidgets():
                 return self.get_results_summary()
     def get_stat_summary_results(self, **kwargs):
         debug(' kwargs : %s', kwargs)
+        debug('cPanel User: %s', state.cpanel_user)
         user_stats = cpanel_stats.get_cpanel_user_stats(state.cpanel_user)
+        debug('user_stats instance: %s', user_stats)
         stat_columns = []
         for email in user_stats.list_of_email_accounts:
             stat_columns.append(
