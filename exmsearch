@@ -1909,6 +1909,7 @@ class UAPI():
             stderr=subprocess.PIPE
             ).communicate()
         debug('reqOutput: %s', reqOutput)
+        debug('reqError: %s', reqError)
         data = json.loads(reqOutput)
         debug("uapi call Results: %s", data)
         debug("uapi data metadata: %s", data['result']['data'])
