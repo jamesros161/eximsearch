@@ -2109,7 +2109,7 @@ def query_for_cpanel_summary(poolArgs):
                 try:
                     line.decode('utf-8')
                 except UnicodeDecodeError as e:
-                    debug('Line: %s, Offset: %s, %s', i, e.start, e.reason)
+                    debug('Log: %s, Line: %s, Offset: %s, %s', log, i, e.start, e.reason)
                 #else:
                 #    line.decode('utf-8')
                 #    for email in email_list:
@@ -2141,7 +2141,7 @@ def query_for_cpanel_summary(poolArgs):
                 try:
                     line.decode('utf-8')
                 except UnicodeDecodeError as e:
-                    debug('Line: %s, Offset: %s, %s', i, e.start, e.reason)
+                    debug('Log: %s, Line: %s, Offset: %s, %s', log, i, e.start, e.reason)
                 #else:
                 #    line.decode('utf-8')
                 #    for email in email_list:
