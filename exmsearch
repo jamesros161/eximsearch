@@ -1451,7 +1451,8 @@ class CpanelStats():
     def new(self, cpanel_user_name,list_of_email_accounts,stat_results):
         setattr(self, cpanel_user_name, CpanelUserStats(cpanel_user_name,list_of_email_accounts,stat_results))
     def get(self,cpanel_user_name):
-        getattr(self,cpanel_user_name)
+        debug('cpanel_user_name: %s', cpanel_user_name)
+        return getattr(self,cpanel_user_name)
 class CpanelUserStats():
     def __init__(self,cpanel_user_name,list_of_email_accounts,stat_results):
         debug('Init cPanelUserStats: %s', cpanel_user_name)
