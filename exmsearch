@@ -2108,11 +2108,12 @@ def query_for_cpanel_summary(poolArgs):
             for i, line in enumerate(p):
                 for email in email_list:
                     if email in line:
-                        debug('%s was found in in line %s', email, i)
                         x = Entry(line,'temp')
                         if email in x.recipient[2]:
+                            debug('%s was found in in line %s as a recipient', email, i)
                             result_counts[email]['was_recipient'] += 1
                         if email in x.sendAddr[2]:
+                            debug('%s was found in in line %s as a sender', email, i)
                             result_counts[email]['was_sender'] += 1
                 #if i % 1000000 == 0:
                 #    percent = float(i) / float(totalLines)
@@ -2139,8 +2140,10 @@ def query_for_cpanel_summary(poolArgs):
                         debug('%s was found in in line %s', email, i)
                         x = Entry(line,'temp')
                         if email in x.recipient[2]:
+                            debug('%s was found in in line %s as a recipient', email, i)
                             result_counts[email]['was_recipient'] += 1
                         if email in x.sendAddr[2]:
+                            debug('%s was found in in line %s as a sender', email, i)
                             result_counts[email]['was_sender'] += 1
                 #if i % 1000000 == 0:
                 #    percent = float(i) / float(totalLines)
