@@ -2109,7 +2109,7 @@ def query_for_cpanel_summary(poolArgs):
     result_counts = {}
     log = poolArgs
     email_list = state.list_of_users_emails
-    debug('Log = %s, email_list = %s', log, email_list)
+    #debug('Log = %s, email_list = %s', log, email_list)
     for email in email_list:
         result_counts[email] = {
             'was_sender':0,
@@ -2135,11 +2135,11 @@ def query_for_cpanel_summary(poolArgs):
                             x = Entry(line,'temp')
                             if len(x.recipient) > 2:
                                 if email in x.recipient[2]:
-                                    debug('%s was found in in line %s as a recipient', email, i)
+                                    #debug('%s was found in in line %s as a recipient', email, i)
                                     result_counts[email]['was_recipient'] += 1
                             if len(x.sendAddr) > 2:
                                 if email in x.sendAddr[2]:
-                                    debug('%s was found in in line %s as a sender', email, i)
+                                    #debug('%s was found in in line %s as a sender', email, i)
                                     result_counts[email]['was_sender'] += 1
                 if i % 1000000 == 0:
                     percent = float(i) / float(totalLines)
@@ -2164,15 +2164,15 @@ def query_for_cpanel_summary(poolArgs):
                     line.encode('utf-8').strip()
                     for email in email_list:
                         if email in line:
-                            debug('%s was found in in line %s', email, i)
+                            #debug('%s was found in in line %s', email, i)
                             x = Entry(line,'temp')
                             if len(x.recipient) > 2:
                                 if email in x.recipient[2]:
-                                    debug('%s was found in in line %s as a recipient', email, i)
+                                    #debug('%s was found in in line %s as a recipient', email, i)
                                     result_counts[email]['was_recipient'] += 1
                             if len(x.sendAddr) > 2:
                                 if email in x.sendAddr[2]:
-                                    debug('%s was found in in line %s as a sender', email, i)
+                                    #debug('%s was found in in line %s as a sender', email, i)
                                     result_counts[email]['was_sender'] += 1
                 if i % 1000000 == 0:
                     percent = float(i) / float(totalLines)
