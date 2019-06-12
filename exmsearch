@@ -1391,7 +1391,7 @@ class Search():
         results = cpanel_summary_pool.map(query_for_cpanel_summary, logPoolArgs)
         if state.cpanel_user:
             cpanel_stats.new(state.cpanel_user,state.list_of_users_emails, results)
-        views.activate('coming_soon')
+        views.activate('stat_summary_results')
     def get_related_entry_count(self,related_field, related_query):
         results = self.filter_logs_for_related_entry_count(related_field,related_query)
         debug(' related_query: %s, result count: %s', related_query, results)
