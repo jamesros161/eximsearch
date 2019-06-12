@@ -933,7 +933,7 @@ class BodyWidgets():
     def get_stat_summary_results(self, **kwargs):
         debug(' kwargs : %s', kwargs)
         debug('cPanel User: %s', state.cpanel_user)
-        user_stats = cpanel_stats.get_cpanel_user_stats(state.cpanel_user)
+        user_stats = cpanel_stats.get(state.cpanel_user)
         debug('user_stats instance: %s', user_stats)
         stat_columns = []
         for email in user_stats.list_of_email_accounts:
@@ -1450,10 +1450,11 @@ class Search():
 class CpanelStats():
     def new(self, cpanel_user_name,list_of_email_accounts,stat_results):
         setattr(self, cpanel_user_name, CpanelUserStats(cpanel_user_name,list_of_email_accounts,stat_results))
-    def get_cpanel_user_stats(self,cpanel_user_name):
+    def get(self,cpanel_user_name):
         getattr(self,cpanel_user_name)
 class CpanelUserStats():
     def __init__(self,cpanel_user_name,list_of_email_accounts,stat_results):
+        debug('Init cPanelUserStats: %s', cpanel_user_name)
         self.cpanel_user_name = cpanel_user_name
         self.list_of_email_accounts = list_of_email_accounts
         self.stats = {}
