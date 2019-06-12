@@ -2151,6 +2151,7 @@ def query_for_cpanel_summary(poolArgs):
                 #                    if related_field in walker_item.contents[1][0].contents[1][0].get_text()[0]:
                 #                        walker_item.contents[1][0].contents[0][0].set_completion(completion)
                 #        loop.draw_screen()
+    debug('Result_counts: %s',result_counts)
     return result_counts
 s = GlobalSettings()
 if __name__ == '__main__':
