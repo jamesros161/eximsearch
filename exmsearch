@@ -951,14 +951,15 @@ class BodyWidgets():
                 ])
             )
         stat_columns_pile = urwid.Pile(stat_columns)
-        #stat_columns_filler = urwid.Filler(stat_columns_pile)
+        stat_columns_filler = urwid.Filler(stat_columns_pile)
         stat_inner_column = w.getColRow([
             w.blankFlow,
             ('weight', 3, stat_columns_pile),
             w.blankFlow
         ])
-        stat_list_box = w.getListBox(stat_columns)
-        stat_line_box = w.getLineBox(stat_inner_column,'cPanel User ' + state.cpanel_user + ' Stat Summary')
+        stat_columns_filler = urwid.Filler(stat_inner_column)
+        #stat_list_box = w.getListBox(stat_columns)
+        stat_line_box = w.getLineBox(stat_columns_filler,'cPanel User ' + state.cpanel_user + ' Stat Summary')
         return stat_line_box
 """
 STATE MANAGEMENT / TRACKING
