@@ -935,13 +935,19 @@ class BodyWidgets():
         debug('cPanel User: %s', state.cpanel_user)
         user_stats = cpanel_stats.get(state.cpanel_user)
         debug('user_stats instance: %s', user_stats)
-        stat_columns = []
+        stat_columns = [
+            w.getColRow([
+                ('weight',4,w.getText('body','Email Address','center')),
+                w.getText('body','Was \nRecipient', 'center'),
+                w.getText('body','Was \nSender', 'center')
+            ])
+        ]
         for email in user_stats.list_of_email_accounts:
             stat_columns.append(
                 w.getColRow([
                     ('weight',4,w.getText('body',email,'center')),
-                    w.getText('body',str(user_stats.stats[email]['was_recipient']), 'center'),
-                    w.getText('body',str(user_stats.stats[email]['was_sender']), 'center')
+                    (10,w.getText('body',str(user_stats.stats[email]['was_recipient']), 'center')),
+                    (10,w.getText('body',str(user_stats.stats[email]['was_sender']), 'center'))
                 ])
             )
         #stat_columns_pile = urwid.Pile(stat_columns)
