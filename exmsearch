@@ -341,11 +341,11 @@ class UserBox(urwid.Filler):
         debug('%s Entry String: %s', self.original_widget, entry)
         state.cpanel_user = entry
         state.list_of_users_emails = uapi.list_email_accounts(entry)
+        if not state.cpanel_user:
+            self.original_widget.set_label('That is not a valid cPanel User\n Please Try Again')
+        if not state.list_of_users_emails:
+            self.original_widget.set_label(state.cpanel_user + ' user does not have any email addresses')
         views.activate('search_progress',is_threaded=True,on_join=search.cpanel_summary)
-def show_or_exit(key):
-    if key in ('q', 'Q', 'esc'):
-        raise urwid.ExitMainLoop()
-
 
 class CustomButton(urwid.Button):
     button_left = urwid.Text('[')
@@ -1365,7 +1365,6 @@ class Search():
         views.activate('search_progress',is_threaded=True,on_join=search.new)
     def cpanel_summary(self):
         #summary = {}
-        email_list = state.list_of_users_emails
         logPoolArgs = []
         for log in s.lf.selectedLogs:
             logPoolArgs.append(log)
@@ -1910,12 +1909,15 @@ class UAPI():
             ).communicate()
         debug('reqOutput: %s', reqOutput)
         debug('reqError: %s', reqError)
+        if 'reqError':
+            if 'UserNotFound' in 'reqError':
+                state.cpanel_user = None
+            return False
         data = json.loads(reqOutput)
         debug("uapi call Results: %s", data)
         debug("uapi data metadata: %s", data['result']['data'])
         resultCode = data['result']['status']
         resultReason = data['result']['errors']
-
         #if the result is successfull, pass the result's data as return value
         if resultCode == 1:
             resultData = data['result']['data']
@@ -1932,11 +1934,12 @@ class UAPI():
     def list_email_accounts(self, user):
         data = self.call(user, 'Email', 'list_pops')
         email_list = []
-        for item in data:
-            email = item['email']
-            if email == user:
-                email = email + '@' + s.hostname
-            email_list.append(email)
+        if data:
+            for item in data:
+                email = item['email']
+                if email == user:
+                    email = email + '@' + s.hostname
+                email_list.append(email)
         return email_list
 def queryLogProcess(poolArgs):
     os.nice(20)
