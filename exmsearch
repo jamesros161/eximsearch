@@ -1373,7 +1373,8 @@ class Search():
         cpanel_summary_pool = ThreadPool()
         debug('logPoolArgs: %s',logPoolArgs)
         results = cpanel_summary_pool.map(query_for_cpanel_summary, logPoolArgs)
-        debug('searchdlogs: %s', results)
+        if state.cpanel_user:
+            cpanel_stats.new(state.cpanel_user,state.list_of_users_emails, results)
         views.activate('coming_soon')
     def get_related_entry_count(self,related_field, related_query):
         results = self.filter_logs_for_related_entry_count(related_field,related_query)
@@ -1428,6 +1429,16 @@ class Search():
             results.extend(resultList)
         logging.info('QT = %s : filteredLog Pool Result Count: %s',datetime.now() - starttime, len(results))
         return results
+class CpanelStats():
+    def new(self, cpanel_user_name,list_of_email_accounts,stat_results):
+        setattr(self, cpanel_user_name, CpanelUserStats(cpanel_user_name,list_of_email_accounts,stat_results)
+    def get_cpanel_user_stats(self,cpanel_user_name):
+        getattr(self,cpanel_user_name)
+class CpanelUserStats():
+    def __init__(self,cpanel_user_name,list_of_email_accounts,stat_results):
+        self.cpanel_user_name = cpanel_user_name
+        self.list_of_email_accounts = list_of_email_accounts
+        debug('Stat Results: %s', stat_results)
 class Results():
     def __init__(self):
         self.currentFilters = {
@@ -2135,7 +2146,7 @@ if __name__ == '__main__':
     #Initialize LogFiles
     logFiles = LogFiles()
     uapi = UAPI()
-    
+    cpanel_stats = CpanelStats()
     #Initiatlize Views and BodyWidgets
     views = ViewSets()
     body = BodyWidgets()
