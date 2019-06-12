@@ -944,7 +944,7 @@ class BodyWidgets():
                     w.getText('body',str(user_stats.stats[email]['was_sender']), 'center')
                 ])
             )
-        stat_columns_pile = urwid.Pile(stat_columns.append)
+        stat_columns_pile = urwid.Pile(stat_columns)
         stat_line_box = w.centeredListLineBox(stat_columns_pile,'cPanel User ' + state.cpanel_user + ' Stats Summary',len(stat_columns) + 3)
         return stat_line_box
 """
