@@ -946,7 +946,8 @@ class BodyWidgets():
             )
         stat_columns_pile = urwid.Pile(stat_columns)
         stat_columns_filler = urwid.Filler(stat_columns_pile)
-        stat_line_box = w.centeredListLineBox(stat_columns_filler,'cPanel User ' + state.cpanel_user + ' Stats Summary',len(stat_columns) + 3)
+        stat_list_box = w.getListBox(stat_columns)
+        stat_line_box = w.getLineBox(stat_list_box,'cPanel User ' + state.cpanel_user + ' Stat Summary')
         return stat_line_box
 """
 STATE MANAGEMENT / TRACKING
