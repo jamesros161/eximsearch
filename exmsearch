@@ -2121,7 +2121,7 @@ def queryLogForRelatedEntriesProcess(poolArgs):
                                 if type(walker_item.contents[1][0].contents[0][0]) == urwid.graphics.ProgressBar:
                                     if related_field in walker_item.contents[1][0].contents[1][0].get_text()[0]:
                                         walker_item.contents[1][0].contents[0][0].set_completion(completion)
-                        loop.draw_screen()
+                        #loop.draw_screen()
     else:
         with gzip.open(log,mode='r') as f:
             for i, line in enumerate(f):
@@ -2143,7 +2143,7 @@ def queryLogForRelatedEntriesProcess(poolArgs):
                                 if type(walker_item.contents[1][0].contents[0][0]) == urwid.graphics.ProgressBar:
                                     if related_field in walker_item.contents[1][0].contents[1][0].get_text()[0]:
                                         walker_item.contents[1][0].contents[0][0].set_completion(completion)
-                        loop.draw_screen()
+                        #loop.draw_screen()
     return resultCount
 def query_for_cpanel_summary(poolArgs):
     os.nice(20)
