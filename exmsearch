@@ -2118,6 +2118,7 @@ def queryLogForRelatedEntriesProcess(poolArgs):
                     completion = int(percent * 100)
                     single_entry_view = views.get_view('single_entry')
                     write_fd = single_entry_view.write_fd
+                    debug('Completion: %s', completion)
                     os.write(write_fd,str(completion))
                     #debug('Total Lines in file: %s', totalLines)
                     #debug('Current Line Percent: %s', completion)
