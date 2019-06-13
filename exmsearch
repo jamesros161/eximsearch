@@ -1421,6 +1421,8 @@ class Search():
         for log in s.lf.selectedLogs:
             logPoolArgs.append([related_field,related_query,log])
         #queryLogForRelatedEntriesPool = ThreadPool()
+        delattr(self,'process_pool')
+        self.process_pool = Pool(maxtasksperchild=1)
         searchedLogs = self.process_pool.map(queryLogForRelatedEntriesProcess, logPoolArgs)
         totalResultCount = 0
         for resultCount in searchedLogs:
