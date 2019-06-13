@@ -2228,7 +2228,6 @@ def query_for_cpanel_summary(poolArgs):
 s = GlobalSettings()
 if __name__ == '__main__':
     debug("\n****\nApplication Start!\n****\n")
-        
     #Initialize Loop object
     loop = urwid.MainLoop(frame, s.df.palette, unhandled_input=s.unhandled_input,handle_mouse=False)
     #Initialize LogFiles
