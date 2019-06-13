@@ -1378,7 +1378,7 @@ DATA PROCESSING / SEARCH AND RESULT CLASSES
 class Search():
     def new(self, *args):
         if hasattr(self,'process_pool'):
-            delattr(self,'proscess_pool')
+            delattr(self,'process_pool')
             self.process_pool = Pool(maxtasksperchild=1)
         else:
             self.process_pool = Pool(maxtasksperchild=1)
@@ -1411,7 +1411,7 @@ class Search():
             logPoolArgs.append(log)
         #cpanel_summary_pool = ThreadPool()
         if hasattr(self,'process_pool'):
-            delattr(self,'proscess_pool')
+            delattr(self,'process_pool')
             self.process_pool = Pool(maxtasksperchild=1)
         else:
             self.process_pool = Pool(maxtasksperchild=1)
@@ -1419,6 +1419,7 @@ class Search():
         results = self.process_pool.map(query_for_cpanel_summary, logPoolArgs)
         if state.cpanel_user:
             cpanel_stats.new(state.cpanel_user,state.list_of_users_emails, results)
+        delattr(self,'process_pool')
         views.activate('stat_summary_results')
     def get_related_entry_count(self,related_field, related_query):
         results = self.filter_logs_for_related_entry_count(related_field,related_query)
@@ -1431,7 +1432,7 @@ class Search():
             logPoolArgs.append([related_field,related_query,log])
         #queryLogForRelatedEntriesPool = ThreadPool()
         if hasattr(self,'process_pool'):
-            delattr(self,'proscess_pool')
+            delattr(self,'process_pool')
             self.process_pool = Pool(maxtasksperchild=1)
         else:
             self.process_pool = Pool(maxtasksperchild=1)
@@ -1440,6 +1441,7 @@ class Search():
         for resultCount in searchedLogs:
             totalResultCount += resultCount
         logging.info('QT = %s : filteredLog Pool Result Count: %s',datetime.now() - starttime, totalResultCount)
+        delattr(self,'process_pool')
         return totalResultCount
     def filter_active_results(self):
         results_to_filter = state.get_result_list(ACTIVE)
@@ -1473,7 +1475,7 @@ class Search():
             logPoolArgs.append([query,log])
         #queryLogProcessPool = Pool()
         if hasattr(self,'process_pool'):
-            delattr(self,'proscess_pool')
+            delattr(self,'process_pool')
             self.process_pool = Pool(maxtasksperchild=1)
         else:
             self.process_pool = Pool(maxtasksperchild=1)
@@ -1482,6 +1484,7 @@ class Search():
         for resultList in searchedLogs:
             results.extend(resultList)
         logging.info('QT = %s : filteredLog Pool Result Count: %s',datetime.now() - starttime, len(results))
+        delattr(self,'process_pool')
         return results
 class CpanelStats():
     def new(self, cpanel_user_name,list_of_email_accounts,stat_results):
