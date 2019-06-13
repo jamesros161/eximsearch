@@ -2117,7 +2117,7 @@ def queryLogForRelatedEntriesProcess(poolArgs):
         #logPoolArgs = []
         resultCount = 0
         percent = 0
-        ten_percent_of_lines = i / 10
+        ten_percent_of_lines = totalLines / 10
         with open(log,mode='r') as p:
             for i, line in enumerate(p):
                 if query in line:
@@ -2138,6 +2138,9 @@ def queryLogForRelatedEntriesProcess(poolArgs):
                 pass
             #debug('Lines in file: %s', i)
             totalLines = i
+            resultCount = 0
+            percent = 0
+            ten_percent_of_lines = totalLines / 10 
         with gzip.open(log,mode='r') as f:
             for i, line in enumerate(f):
                 if query in line:
