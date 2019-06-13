@@ -1496,7 +1496,7 @@ class Search():
         logging.info('QT = %s : filteredLog Pool Result Count: %s',datetime.now() - starttime, len(results))
         if hasattr(self,'process_pool'):
             self.process_pool.terminate()
-            tedel(self.process_pool)
+            del(self.process_pool)
         return results
 class CpanelStats():
     def new(self, cpanel_user_name,list_of_email_accounts,stat_results):
