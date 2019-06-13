@@ -2143,17 +2143,11 @@ def queryLogForRelatedEntriesProcess(poolArgs):
                 if query in line:
                     resultCount += 1
                 if i % 1000000 == 0:
-                    percent = float(i) / float(totalLines)
-                    completion = int(percent * 100)
-                    #debug('Total Lines in file: %s', totalLines)
-                    #debug('Current Line Percent: %s', completion)
-                    for walker_item in state.get_view(ACTIVE).body.body:
-                        if type(walker_item) == urwid.container.Columns:
-                            if type(walker_item.contents[1][0]) == urwid.container.Columns:
-                                if type(walker_item.contents[1][0].contents[0][0]) == urwid.graphics.ProgressBar:
-                                    if related_field in walker_item.contents[1][0].contents[1][0].get_text()[0]:
-                                        walker_item.contents[1][0].contents[0][0].set_completion(completion)
-                        #loop.draw_screen()
+                    percent += 10
+                    completion = int(percent)
+                    single_entry_view = views.get_view('single_entry')
+                    write_fd = single_entry_view.write_fd
+                    os.write(write_fd,str(completion) + ',' + related_field)    
     return resultCount
 def query_for_cpanel_summary(poolArgs):
     os.nice(20)
