@@ -1221,7 +1221,15 @@ class View():
             )
             get_related_entry_thread.start()
     def received_output(self,data):
-        debug('Received Output: %s', data)
+        #debug('Received Output: %s', data)
+        completion, related_field = data.split(',')
+        debug('completion: %s, field: %s',completion, related_field)
+        for walker_item in state.get_view(ACTIVE).body.body:
+                        if type(walker_item) == urwid.container.Columns:
+                            if type(walker_item.contents[1][0]) == urwid.container.Columns:
+                                if type(walker_item.contents[1][0].contents[0][0]) == urwid.graphics.ProgressBar:
+                                    if related_field in walker_item.contents[1][0].contents[1][0].get_text()[0]:
+                                        walker_item.contents[1][0].contents[0][0].set_completion(completion)
     def reload(self):
         self.show_header()
         self.show_body()
@@ -2105,13 +2113,11 @@ def queryLogForRelatedEntriesProcess(poolArgs):
         with open(log,mode='r') as f:
             for i, line in enumerate(f):
                 pass
-            debug('Lines in file: %s', i)
             totalLines = i
         #logPoolArgs = []
         resultCount = 0
         percent = 0
         ten_percent_of_lines = i / 10
-        debug('Ten Percent of Lines: %s', ten_percent_of_lines)
         with open(log,mode='r') as p:
             for i, line in enumerate(p):
                 if query in line:
@@ -2121,16 +2127,10 @@ def queryLogForRelatedEntriesProcess(poolArgs):
                     completion = int(percent)
                     single_entry_view = views.get_view('single_entry')
                     write_fd = single_entry_view.write_fd
-                    debug('Completion: %s', completion)
-                    os.write(write_fd,str(completion))
+                    os.write(write_fd,str(completion) + ',' + related_field)
                     #debug('Total Lines in file: %s', totalLines)
                     #debug('Current Line Percent: %s', completion)
-                    for walker_item in state.get_view(ACTIVE).body.body:
-                        if type(walker_item) == urwid.container.Columns:
-                            if type(walker_item.contents[1][0]) == urwid.container.Columns:
-                                if type(walker_item.contents[1][0].contents[0][0]) == urwid.graphics.ProgressBar:
-                                    if related_field in walker_item.contents[1][0].contents[1][0].get_text()[0]:
-                                        walker_item.contents[1][0].contents[0][0].set_completion(completion)
+                    
                         #loop.draw_screen()
     else:
         with gzip.open(log,mode='r') as f:
