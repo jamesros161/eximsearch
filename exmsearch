@@ -2057,6 +2057,7 @@ def queryLogProcess(poolArgs):
 def queryLogForRelatedEntriesProcess(poolArgs):
     os.nice(20)
     related_field,query,log = poolArgs
+    resultCount = 0
     #debug('Log = %s, filters = %s', log, query)
     #rawEntries = []
     if log[-2:] != 'gz':
