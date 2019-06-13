@@ -2063,13 +2063,13 @@ def queryLogForRelatedEntriesProcess(poolArgs):
     resultCount = 0
     #debug('Log = %s, filters = %s', log, query)
     #rawEntries = []
+    debug('state.get_view(ACTIVE).body.body: %s', state.get_view(ACTIVE).body.body)
     if log[-2:] != 'gz':
         with open(log,mode='r') as f:
             for i, line in enumerate(f):
                 pass
             #debug('Lines in file: %s', i)
             totalLines = i
-        
         #logPoolArgs = []
         resultCount = 0
         with open(log,mode='r') as p:
