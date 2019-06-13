@@ -1376,6 +1376,7 @@ DATA PROCESSING / SEARCH AND RESULT CLASSES
 """
 class Search():
     def new(self, *args):
+        self.process_pool = Pool()
         s.rl.resultOverflow = False
         if args:
             debug('Search Has special arguments: %s', args)
@@ -1404,7 +1405,7 @@ class Search():
             logPoolArgs.append(log)
         #cpanel_summary_pool = ThreadPool()
         debug('logPoolArgs: %s',logPoolArgs)
-        results = process_pool.map(query_for_cpanel_summary, logPoolArgs)
+        results = self.process_pool.map(query_for_cpanel_summary, logPoolArgs)
         if state.cpanel_user:
             cpanel_stats.new(state.cpanel_user,state.list_of_users_emails, results)
         views.activate('stat_summary_results')
@@ -1418,7 +1419,7 @@ class Search():
         for log in s.lf.selectedLogs:
             logPoolArgs.append([related_field,related_query,log])
         #queryLogForRelatedEntriesPool = ThreadPool()
-        searchedLogs = process_pool.map(queryLogForRelatedEntriesProcess, logPoolArgs)
+        searchedLogs = self.process_pool.map(queryLogForRelatedEntriesProcess, logPoolArgs)
         totalResultCount = 0
         for resultCount in searchedLogs:
             totalResultCount += resultCount
@@ -1455,7 +1456,7 @@ class Search():
         for log in s.lf.selectedLogs:
             logPoolArgs.append([query,log])
         #queryLogProcessPool = Pool()
-        searchedLogs = process_pool.map(queryLogProcess, logPoolArgs)
+        searchedLogs = self.process_pool.map(queryLogProcess, logPoolArgs)
         results = []
         for resultList in searchedLogs:
             results.extend(resultList)
@@ -2218,7 +2219,6 @@ if __name__ == '__main__':
     loop = urwid.MainLoop(frame, s.df.palette, unhandled_input=s.unhandled_input,handle_mouse=False)
 
     #Initialize Thread and Process Pools
-    process_pool = Pool()
 
     #Run Forest Run.
     loop.run()
