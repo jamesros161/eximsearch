@@ -1377,7 +1377,11 @@ DATA PROCESSING / SEARCH AND RESULT CLASSES
 """
 class Search():
     def new(self, *args):
-        self.process_pool = Pool(maxtasksperchild=1)
+        if hasattr(self,'process_pool'):
+            delattr(self,'proscess_pool')
+            self.process_pool = Pool(maxtasksperchild=1)
+        else:
+            self.process_pool = Pool(maxtasksperchild=1)
         s.rl.resultOverflow = False
         if args:
             debug('Search Has special arguments: %s', args)
@@ -1391,6 +1395,7 @@ class Search():
             original_results=searchNumber
             )
         result_list = results.get_result_list(searchNumber)
+        delattr(self,'process_pool')
         if state.active_filters:
             views.activate('apply_filters')
         views.activate('results_summary',focus_position=BODY,user_args=result_list)
@@ -1405,6 +1410,11 @@ class Search():
         for log in s.lf.selectedLogs:
             logPoolArgs.append(log)
         #cpanel_summary_pool = ThreadPool()
+        if hasattr(self,'process_pool'):
+            delattr(self,'proscess_pool')
+            self.process_pool = Pool(maxtasksperchild=1)
+        else:
+            self.process_pool = Pool(maxtasksperchild=1)
         debug('logPoolArgs: %s',logPoolArgs)
         results = self.process_pool.map(query_for_cpanel_summary, logPoolArgs)
         if state.cpanel_user:
@@ -1420,8 +1430,11 @@ class Search():
         for log in s.lf.selectedLogs:
             logPoolArgs.append([related_field,related_query,log])
         #queryLogForRelatedEntriesPool = ThreadPool()
-        delattr(self,'process_pool')
-        self.process_pool = Pool(maxtasksperchild=1)
+        if hasattr(self,'process_pool'):
+            delattr(self,'proscess_pool')
+            self.process_pool = Pool(maxtasksperchild=1)
+        else:
+            self.process_pool = Pool(maxtasksperchild=1)
         searchedLogs = self.process_pool.map(queryLogForRelatedEntriesProcess, logPoolArgs)
         totalResultCount = 0
         for resultCount in searchedLogs:
@@ -1459,6 +1472,11 @@ class Search():
         for log in s.lf.selectedLogs:
             logPoolArgs.append([query,log])
         #queryLogProcessPool = Pool()
+        if hasattr(self,'process_pool'):
+            delattr(self,'proscess_pool')
+            self.process_pool = Pool(maxtasksperchild=1)
+        else:
+            self.process_pool = Pool(maxtasksperchild=1)
         searchedLogs = self.process_pool.map(queryLogProcess, logPoolArgs)
         results = []
         for resultList in searchedLogs:
