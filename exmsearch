@@ -194,7 +194,6 @@ class Menus():
             self.clear_applied_filters = self.results_list
 
             self.single_entry = [
-                [' (S)how Related Entries ','show_related_entries'],
                 ['  (B)ack To Result List ','results_list'],
                 ['         (H)ome         ','home'],
                 ['      (N)ew Search      ','new_search'],
@@ -1127,7 +1126,7 @@ class State():
     def remove_active_filter(self,*args):
         debug('filter: %s, walker_index: %s, body_instance: %s', args[1][0],args[1][1],args[1][2])
         filter_instance = args[1][0]
-        walker_index = args[1][1]
+        #walker_index = args[1][1]
         body_instance = args[1][2]
         self.active_filters.remove(filter_instance)
         debug('filter_walker length: %s', len(body_instance.filter_walker))
@@ -2215,7 +2214,7 @@ if __name__ == '__main__':
     views.activate('choose_logs',BODY)
 
     #Initialize Loop object
-    loop = urwid.MainLoop(frame, s.df.palette, unhandled_input=s.unhandled_input)
+    loop = urwid.MainLoop(frame, s.df.palette, unhandled_input=s.unhandled_input,handle_mouse=False)
 
     #Run Forest Run.
     loop.run()
