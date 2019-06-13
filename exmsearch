@@ -2228,6 +2228,8 @@ def query_for_cpanel_summary(poolArgs):
 s = GlobalSettings()
 if __name__ == '__main__':
     debug("\n****\nApplication Start!\n****\n")
+    #Initialize Frame Widget
+    frame = urwid.Frame(urwid.Filler(w.getText('body','Loading...Please Wait', 'center')))
     #Initialize Loop object
     loop = urwid.MainLoop(frame, s.df.palette, unhandled_input=s.unhandled_input,handle_mouse=False)
     #Initialize LogFiles
@@ -2247,9 +2249,6 @@ if __name__ == '__main__':
     #Initialize Results and Search Container Objects
     results = Results()
     search = Search()
-
-    #Initialize Frame Widget
-    frame = urwid.Frame(urwid.Filler(w.getText('body','Loading...Please Wait', 'center')))
     
     #Activate initial screen 'choose_logs'
     views.activate('choose_logs',BODY)
