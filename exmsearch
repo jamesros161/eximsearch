@@ -1402,9 +1402,9 @@ class Search():
         logPoolArgs = []
         for log in s.lf.selectedLogs:
             logPoolArgs.append(log)
-        cpanel_summary_pool = ThreadPool()
+        #cpanel_summary_pool = ThreadPool()
         debug('logPoolArgs: %s',logPoolArgs)
-        results = cpanel_summary_pool.map(query_for_cpanel_summary, logPoolArgs)
+        results = process_pool.map(query_for_cpanel_summary, logPoolArgs)
         if state.cpanel_user:
             cpanel_stats.new(state.cpanel_user,state.list_of_users_emails, results)
         views.activate('stat_summary_results')
@@ -1417,8 +1417,8 @@ class Search():
         logPoolArgs = []
         for log in s.lf.selectedLogs:
             logPoolArgs.append([related_field,related_query,log])
-        queryLogForRelatedEntriesPool = ThreadPool()
-        searchedLogs = queryLogForRelatedEntriesPool.map(queryLogForRelatedEntriesProcess, logPoolArgs)
+        #queryLogForRelatedEntriesPool = ThreadPool()
+        searchedLogs = process_pool.map(queryLogForRelatedEntriesProcess, logPoolArgs)
         totalResultCount = 0
         for resultCount in searchedLogs:
             totalResultCount += resultCount
@@ -1454,8 +1454,8 @@ class Search():
         query = state.get_query(ACTIVE)
         for log in s.lf.selectedLogs:
             logPoolArgs.append([query,log])
-        queryLogProcessPool = ThreadPool()
-        searchedLogs = queryLogProcessPool.map(queryLogProcess, logPoolArgs)
+        #queryLogProcessPool = Pool()
+        searchedLogs = process_pool.map(queryLogProcess, logPoolArgs)
         results = []
         for resultList in searchedLogs:
             results.extend(resultList)
@@ -2002,6 +2002,7 @@ class UAPI():
                 email_list.append(email)
         debug('Email_List: %s', email_list)
         return email_list
+
 def queryLogProcess(poolArgs):
     os.nice(20)
     query,log = poolArgs
@@ -2189,6 +2190,8 @@ def query_for_cpanel_summary(poolArgs):
 s = GlobalSettings()
 if __name__ == '__main__':
     debug("\n****\nApplication Start!\n****\n")
+    #Initialize Thread and Process Pools
+    process_pool = Pool()
     #Initialize LogFiles
     logFiles = LogFiles()
     uapi = UAPI()
