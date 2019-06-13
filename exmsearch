@@ -2105,17 +2105,20 @@ def queryLogForRelatedEntriesProcess(poolArgs):
         with open(log,mode='r') as f:
             for i, line in enumerate(f):
                 pass
-            #debug('Lines in file: %s', i)
+            debug('Lines in file: %s', i)
             totalLines = i
         #logPoolArgs = []
         resultCount = 0
+        percent = 0
+        ten_percent_of_lines = i / 10
+        debug('Ten Percent of Lines: %s', ten_percent_of_lines)
         with open(log,mode='r') as p:
             for i, line in enumerate(p):
                 if query in line:
                         resultCount += 1
-                if i % 1000000 == 0:
-                    percent = float(i) / float(totalLines)
-                    completion = int(percent * 100)
+                if i % ten_percent_of_lines == 0:
+                    percent += 10
+                    completion = int(percent)
                     single_entry_view = views.get_view('single_entry')
                     write_fd = single_entry_view.write_fd
                     debug('Completion: %s', completion)
