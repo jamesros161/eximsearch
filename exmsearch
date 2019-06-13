@@ -2056,14 +2056,7 @@ def queryLogProcess(poolArgs):
     return rawEntries
 def queryLogForRelatedEntriesProcess(poolArgs):
     os.nice(20)
-    query,log = poolArgs
-    results = {}
-    email_list = state.list_of_users_emails
-    for email in email_list:
-        results[email] = {
-            'was_sender':0,
-            'was_recipient':0
-        }
+    related_field,query,log = poolArgs
     #debug('Log = %s, filters = %s', log, query)
     #rawEntries = []
     if log[-2:] != 'gz':
@@ -2072,27 +2065,25 @@ def queryLogForRelatedEntriesProcess(poolArgs):
                 pass
             #debug('Lines in file: %s', i)
             totalLines = i
+        
+        #logPoolArgs = []
+        resultCount = 0
         with open(log,mode='r') as p:
             for i, line in enumerate(p):
-                for email in email_list:
-                    if email in line:
-                        x = Entry(line,'temp')
-                        if email in x.recipient[2]:
-                            results[email]['was_recipient'] += 1
-                        if email in x.sendAddr[2]:
-                            results[email]['was_sender'] += 1
-                #if i % 1000000 == 0:
-                #    percent = float(i) / float(totalLines)
-                #    completion = int(percent * 100)
-                #    #debug('Total Lines in file: %s', totalLines)
-                #    #debug('Current Line Percent: %s', completion)
-                #    for walker_item in state.get_view(ACTIVE).body.body:
-                #        if type(walker_item) == urwid.container.Columns:
-                #            if type(walker_item.contents[1][0]) == urwid.container.Columns:
-                #                if type(walker_item.contents[1][0].contents[0][0]) == urwid.graphics.ProgressBar:
-                #                    if related_field in walker_item.contents[1][0].contents[1][0].get_text()[0]:
-                #                        walker_item.contents[1][0].contents[0][0].set_completion(completion)
-                #        loop.draw_screen()
+                if query in line:
+                        resultCount += 1
+                if i % 1000000 == 0:
+                    percent = float(i) / float(totalLines)
+                    completion = int(percent * 100)
+                    #debug('Total Lines in file: %s', totalLines)
+                    #debug('Current Line Percent: %s', completion)
+                    for walker_item in state.get_view(ACTIVE).body.body:
+                        if type(walker_item) == urwid.container.Columns:
+                            if type(walker_item.contents[1][0]) == urwid.container.Columns:
+                                if type(walker_item.contents[1][0].contents[0][0]) == urwid.graphics.ProgressBar:
+                                    if related_field in walker_item.contents[1][0].contents[1][0].get_text()[0]:
+                                        walker_item.contents[1][0].contents[0][0].set_completion(completion)
+                        loop.draw_screen()
     else:
         with gzip.open(log,mode='r') as f:
             for i, line in enumerate(f):
@@ -2101,26 +2092,21 @@ def queryLogForRelatedEntriesProcess(poolArgs):
             totalLines = i
         with gzip.open(log,mode='r') as f:
             for i, line in enumerate(f):
-                for email in email_list:
-                    if email in line:
-                        x = Entry(line,'temp')
-                        if email in x.recipient[2]:
-                            results[email]['was_recipient'] += 1
-                        if email in x.sendAddr[2]:
-                            results[email]['was_sender'] += 1
-                #if i % 1000000 == 0:
-                #    percent = float(i) / float(totalLines)
-                #    completion = int(percent * 100)
-                #    #debug('Total Lines in file: %s', totalLines)
-                #    #debug('Current Line Percent: %s', completion)
-                #    for walker_item in state.get_view(ACTIVE).body.body:
-                #        if type(walker_item) == urwid.container.Columns:
-                #            if type(walker_item.contents[1][0]) == urwid.container.Columns:
-                #                if type(walker_item.contents[1][0].contents[0][0]) == urwid.graphics.ProgressBar:
-                #                    if related_field in walker_item.contents[1][0].contents[1][0].get_text()[0]:
-                #                        walker_item.contents[1][0].contents[0][0].set_completion(completion)
-                #        loop.draw_screen()
-    return results
+                if query in line:
+                    resultCount += 1
+                if i % 1000000 == 0:
+                    percent = float(i) / float(totalLines)
+                    completion = int(percent * 100)
+                    #debug('Total Lines in file: %s', totalLines)
+                    #debug('Current Line Percent: %s', completion)
+                    for walker_item in state.get_view(ACTIVE).body.body:
+                        if type(walker_item) == urwid.container.Columns:
+                            if type(walker_item.contents[1][0]) == urwid.container.Columns:
+                                if type(walker_item.contents[1][0].contents[0][0]) == urwid.graphics.ProgressBar:
+                                    if related_field in walker_item.contents[1][0].contents[1][0].get_text()[0]:
+                                        walker_item.contents[1][0].contents[0][0].set_completion(completion)
+                        loop.draw_screen()
+    return resultCount
 def query_for_cpanel_summary(poolArgs):
     os.nice(20)
     result_counts = {}
