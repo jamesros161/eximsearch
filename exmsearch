@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import urwid, datetime, os, subprocess, sys, json, re, shlex, gzip, time, logging, collections, socket, threading, getpass
-from multiprocessing import Pool, Queue, current_process
+from multiprocessing import Pool, Queue, current_process, connection
 from multiprocessing.pool import ThreadPool
 from datetime import datetime, timedelta
 os.nice(20)
@@ -1215,10 +1215,13 @@ class View():
             state.view_chain_pos += 1
             state.set_view(self)
         if self.view_name == 'single_entry':
+            self.write_fd = loop.watch_pipe(self.received_output)
             get_related_entry_thread = threading.Thread(
                 target=entries.get_related_entry_count
             )
             get_related_entry_thread.start()
+    def received_output(self,data):
+        debug('Received Output: %s', data)
     def reload(self):
         self.show_header()
         self.show_body()
@@ -2113,6 +2116,9 @@ def queryLogForRelatedEntriesProcess(poolArgs):
                 if i % 1000000 == 0:
                     percent = float(i) / float(totalLines)
                     completion = int(percent * 100)
+                    single_entry_view = views.get_view('single_entry')
+                    write_fd = single_entry_view.write_fd
+                    os.write(write_fd,str(completion))
                     #debug('Total Lines in file: %s', totalLines)
                     #debug('Current Line Percent: %s', completion)
                     for walker_item in state.get_view(ACTIVE).body.body:
