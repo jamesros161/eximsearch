@@ -1286,11 +1286,11 @@ class ViewSets():
         else:
             activating_view.start(current_view,focus_position=focus_position, user_args=user_data)
         if view_name == 'single_entry':
-            #get_related_entry_thread = threading.Thread(
-            #    target=entries.get_related_entry_count
-            #)
-            #get_related_entry_thread.start()
-            entries.get_related_entry_count()
+            get_related_entry_thread = threading.Thread(
+                target=entries.get_related_entry_count
+            )
+            get_related_entry_thread.start()
+            #entries.get_related_entry_count()
     def exit(self,*args):
         debug
         raise urwid.ExitMainLoop()
@@ -1407,7 +1407,6 @@ class Search():
         #cpanel_summary_pool = ThreadPool()
         debug('logPoolArgs: %s',logPoolArgs)
         results = self.process_pool.map(query_for_cpanel_summary, logPoolArgs)
-
         if state.cpanel_user:
             cpanel_stats.new(state.cpanel_user,state.list_of_users_emails, results)
         views.activate('stat_summary_results')
