@@ -1204,9 +1204,9 @@ class View():
         loop.screen.clear()
         self.footer = w.getFooterWidget(self, menuItems)
         self.body = body.get_body_widget(self.view_name, user_args=user_args, calling_view=self)
-        self.show_header()
         self.show_body()
         self.show_footer()
+        self.show_header()
         if focus_position:
             frame.set_focus(focus_position)
         else:
@@ -1277,7 +1277,7 @@ class ViewSets():
         if is_threaded:
             debug('view.activate is threaded')
             updateThread = threading.Thread(
-                target=activating_view.start(activating_view,
+                target=activating_view.start(current_view,
                    focus_position=focus_position, 
                     user_args=passed_args,
                     add_to_view_chain=False))
@@ -1285,7 +1285,7 @@ class ViewSets():
             updateThread.join()
             on_join()
         else:
-            activating_view.start(activating_view,focus_position=focus_position, user_args=user_data)
+            activating_view.start(current_view,focus_position=focus_position, user_args=user_data)
         if view_name == 'single_entry':
             get_related_entry_thread = threading.Thread(
                 target=entries.get_related_entry_count
