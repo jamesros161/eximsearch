@@ -1223,7 +1223,7 @@ class View():
     def received_output(self,data):
         debug('Received Output: %s', data)
         data = data.split(',')
-        debug('completion: %s',data)
+        debug('completion: %s, data: %s',data[0],data[1])
         #or walker_item in state.get_view(ACTIVE).body.body:
         #                if type(walker_item) == urwid.container.Columns:
         #                    if type(walker_item.contents[1][0]) == urwid.container.Columns:
@@ -2127,7 +2127,7 @@ def queryLogForRelatedEntriesProcess(poolArgs):
                     completion = int(percent)
                     single_entry_view = views.get_view('single_entry')
                     write_fd = single_entry_view.write_fd
-                    os.write(write_fd,str(completion) + ',' + related_field)
+                    os.write(write_fd,str(completion) + ',' + related_field + ',')
                     #debug('Total Lines in file: %s', totalLines)
                     #debug('Current Line Percent: %s', completion)
                     
