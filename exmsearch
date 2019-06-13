@@ -1201,7 +1201,7 @@ class View():
         self.header = w.getHeaderWidget(self.header_title,subtitle=self.header_subtitle)
         self.previous_view = previous_view
         menuItems = getattr(s.menus,self.view_name)
-        loop.screen.flush()
+        loop.screen.clear()
         self.footer = w.getFooterWidget(self, menuItems)
         self.body = body.get_body_widget(self.view_name, user_args=user_args, calling_view=self)
         self.show_header()
