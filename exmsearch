@@ -18,6 +18,9 @@ BODY = 'body'
 HEADER = 'header'
 FOOTER = 'footer'
 
+#Initialize Thread and Process Pools
+process_pool = Pool()
+
 urwid.set_encoding("UTF-8")
 info = logging.info
 debug = logging.debug
@@ -2190,8 +2193,6 @@ def query_for_cpanel_summary(poolArgs):
 s = GlobalSettings()
 if __name__ == '__main__':
     debug("\n****\nApplication Start!\n****\n")
-    #Initialize Thread and Process Pools
-    process_pool = Pool()
     #Initialize LogFiles
     logFiles = LogFiles()
     uapi = UAPI()
