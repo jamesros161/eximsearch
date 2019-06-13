@@ -1221,15 +1221,15 @@ class View():
             )
             get_related_entry_thread.start()
     def received_output(self,data):
-        #debug('Received Output: %s', data)
-        completion, related_field = data.split(',')
-        debug('completion: %s, field: %s',completion, related_field)
-        for walker_item in state.get_view(ACTIVE).body.body:
-                        if type(walker_item) == urwid.container.Columns:
-                            if type(walker_item.contents[1][0]) == urwid.container.Columns:
-                                if type(walker_item.contents[1][0].contents[0][0]) == urwid.graphics.ProgressBar:
-                                    if related_field in walker_item.contents[1][0].contents[1][0].get_text()[0]:
-                                        walker_item.contents[1][0].contents[0][0].set_completion(completion)
+        debug('Received Output: %s', data)
+        data = data.split(',')
+        debug('completion: %s',data)
+        #or walker_item in state.get_view(ACTIVE).body.body:
+        #                if type(walker_item) == urwid.container.Columns:
+        #                    if type(walker_item.contents[1][0]) == urwid.container.Columns:
+        #                        if type(walker_item.contents[1][0].contents[0][0]) == urwid.graphics.ProgressBar:
+        #                            if related_field in walker_item.contents[1][0].contents[1][0].get_text()[0]:
+        #                                walker_item.contents[1][0].contents[0][0].set_completion(completion)
     def reload(self):
         self.show_header()
         self.show_body()
