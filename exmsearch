@@ -2228,6 +2228,9 @@ def query_for_cpanel_summary(poolArgs):
 s = GlobalSettings()
 if __name__ == '__main__':
     debug("\n****\nApplication Start!\n****\n")
+        
+    #Initialize Loop object
+    loop = urwid.MainLoop(frame, s.df.palette, unhandled_input=s.unhandled_input,handle_mouse=False)
     #Initialize LogFiles
     logFiles = LogFiles()
     uapi = UAPI()
@@ -2251,9 +2254,6 @@ if __name__ == '__main__':
     
     #Activate initial screen 'choose_logs'
     views.activate('choose_logs',BODY)
-
-    #Initialize Loop object
-    loop = urwid.MainLoop(frame, s.df.palette, unhandled_input=s.unhandled_input,handle_mouse=False)
 
     #Initialize Thread and Process Pools
 
