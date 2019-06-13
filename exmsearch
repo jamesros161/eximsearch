@@ -1214,6 +1214,11 @@ class View():
         if add_to_view_chain:
             state.view_chain_pos += 1
             state.set_view(self)
+        if self.view_name == 'single_entry':
+            get_related_entry_thread = threading.Thread(
+                target=entries.get_related_entry_count
+            )
+            get_related_entry_thread.start()
     def reload(self):
         self.show_header()
         self.show_body()
@@ -1286,12 +1291,6 @@ class ViewSets():
             on_join()
         else:
             activating_view.start(current_view,focus_position=focus_position, user_args=user_data)
-        if view_name == 'single_entry':
-            get_related_entry_thread = threading.Thread(
-                target=entries.get_related_entry_count
-            )
-            get_related_entry_thread.start()
-            #entries.get_related_entry_count()
     def exit(self,*args):
         debug
         raise urwid.ExitMainLoop()
