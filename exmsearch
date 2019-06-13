@@ -2207,10 +2207,7 @@ if __name__ == '__main__':
     #Initialize Results and Search Container Objects
     results = Results()
     search = Search()
-    
-    #Initialize Thread and Process Pools
-    process_pool = Pool()
-    
+
     #Initialize Frame Widget
     frame = urwid.Frame(urwid.Filler(w.getText('body','Loading...Please Wait', 'center')))
     
@@ -2219,6 +2216,9 @@ if __name__ == '__main__':
 
     #Initialize Loop object
     loop = urwid.MainLoop(frame, s.df.palette, unhandled_input=s.unhandled_input,handle_mouse=False)
+
+    #Initialize Thread and Process Pools
+    process_pool = Pool()
 
     #Run Forest Run.
     loop.run()
