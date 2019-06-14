@@ -1456,20 +1456,21 @@ class Search():
         for log in s.lf.selectedLogs:
             logPoolArgs.append([related_field,related_query,log])
         #queryLogForRelatedEntriesPool = ThreadPool()
-        if hasattr(self,'process_pool'):
-            self.process_pool.terminate()
-            del(self.process_pool)
-            self.process_pool = Pool(maxtasksperchild=1)
-        else:
-            self.process_pool = Pool(maxtasksperchild=1)
-        searchedLogs = self.process_pool.map(queryLogForRelatedEntriesProcess, logPoolArgs)
+        #if hasattr(self,'process_pool'):
+        #    self.process_pool.terminate()
+        #    del(self.process_pool)
+        #    self.process_pool = Pool(maxtasksperchild=1)
+        #else:
+        process_pool = Pool(maxtasksperchild=1)
+        searchedLogs = process_pool.map(queryLogForRelatedEntriesProcess, logPoolArgs)
         totalResultCount = 0
         for resultCount in searchedLogs:
             totalResultCount += resultCount
         logging.info('QT = %s : filteredLog Pool Result Count: %s',datetime.now() - starttime, totalResultCount)
-        if hasattr(self,'process_pool'):
-            self.process_pool.terminate()
-            del(self.process_pool)
+        process_pool.terminate()
+        #f hasattr(self,'process_pool'):
+        #    self.process_pool.terminate()
+        #    del(self.process_pool)
         return totalResultCount
     def filter_active_results(self):
         results_to_filter = state.get_result_list(ACTIVE)
