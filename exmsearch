@@ -1216,6 +1216,7 @@ class View():
             state.set_view(self)
         if self.view_name == 'single_entry':
             self.write_fd = loop.watch_pipe(self.received_output)
+            self.write_fd2 = loop.watch_pipe(self.received_count)
             get_related_entry_thread = threading.Thread(
                 target=entries.get_related_entry_count
             )
@@ -1224,12 +1225,16 @@ class View():
         debug('Received Output: %s', data)
         data = data.split(',')
         debug('completion: %s, data: %s',data[0],data[1])
-        #or walker_item in state.get_view(ACTIVE).body.body:
-        #                if type(walker_item) == urwid.container.Columns:
-        #                    if type(walker_item.contents[1][0]) == urwid.container.Columns:
-        #                        if type(walker_item.contents[1][0].contents[0][0]) == urwid.graphics.ProgressBar:
-        #                            if related_field in walker_item.contents[1][0].contents[1][0].get_text()[0]:
-        #                                walker_item.contents[1][0].contents[0][0].set_completion(completion)
+        related_field = data[1]
+        completion = data[0]
+        for walker_item in state.get_view(ACTIVE).body.body:
+                        if type(walker_item) == urwid.container.Columns:
+                            if type(walker_item.contents[1][0]) == urwid.container.Columns:
+                                if type(walker_item.contents[1][0].contents[0][0]) == urwid.graphics.ProgressBar:
+                                    if related_field in walker_item.contents[1][0].contents[1][0].get_text()[0]:
+                                        walker_item.contents[1][0].contents[0][0].set_completion(completion)
+    def received_count(self,data):
+        debug('entry: %s, count: %s', data[0], data[1])
     def reload(self):
         self.show_header()
         self.show_body()
@@ -1687,6 +1692,8 @@ class Entries():
             related_entry_count = search.filter_logs_for_related_entry_count(entry['field-text'],entry['field-contents'])
             #related_entry_count = state.get_entry_on_screen(ACTIVE).get_related_entry_count()
             debug('related_entry_count for %s : %s', entry['field-text'], related_entry_count)
+            single_entry_view = views.get_view('single_entry')
+            os.write(single_entry_view.write_fd2,entry + ',' + related_entry_count + ',')
             for walker_item in state.get_view(ACTIVE).body.body:
                 if type(walker_item) == urwid.container.Columns:
                     if type(walker_item.contents[1][0]) == urwid.container.Columns:
