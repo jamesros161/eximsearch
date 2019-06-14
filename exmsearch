@@ -1234,7 +1234,7 @@ class View():
                                     if related_field in walker_item.contents[1][0].contents[1][0].get_text()[0]:
                                         walker_item.contents[1][0].contents[0][0].set_completion(completion)
     def received_count(self,data):
-        debug('entry: %s, count: %s', data[0], data[1])
+        debug('entry-field: %s, entry-contents: %s, count: %s', data[0], data[1], data[2])
     def reload(self):
         self.show_header()
         self.show_body()
@@ -1693,7 +1693,7 @@ class Entries():
             #related_entry_count = state.get_entry_on_screen(ACTIVE).get_related_entry_count()
             debug('related_entry_count for %s : %s', entry['field-text'], related_entry_count)
             single_entry_view = views.get_view('single_entry')
-            os.write(single_entry_view.write_fd2,entry + ',' + related_entry_count + ',')
+            os.write(single_entry_view.write_fd2,entry['field-text'] + ',' + entry['field-contents'] + ',' + related_entry_count + ',')
             for walker_item in state.get_view(ACTIVE).body.body:
                 if type(walker_item) == urwid.container.Columns:
                     if type(walker_item.contents[1][0]) == urwid.container.Columns:
