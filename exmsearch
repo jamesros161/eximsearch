@@ -1227,7 +1227,7 @@ class View():
         data = data.split(',')
         debug('completion: %s, data: %s',data[0],data[1])
         related_field = data[1]
-        completion = data[0]
+        completion = int(data[0])
         for walker_item in state.get_view(ACTIVE).body.body:
                         if type(walker_item) == urwid.container.Columns:
                             if type(walker_item.contents[1][0]) == urwid.container.Columns:
