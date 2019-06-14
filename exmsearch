@@ -1223,9 +1223,9 @@ class View():
             )
             get_related_entry_thread.start()
     def received_output(self,data):
-        debug('Received Output: %s', data)
+        debug('Raw Output: %s', data)
         data = data.split(',')
-        debug('completion: %s, data: %s',data[0],data[1])
+        debug('Split Output: completion: %s, data: %s',data[0],data[1])
         related_field = data[1]
         completion = int(data[0])
         for walker_item in state.get_view(ACTIVE).body.body:
@@ -1235,6 +1235,8 @@ class View():
                                     if related_field in walker_item.contents[1][0].contents[1][0].get_text()[0]:
                                         walker_item.contents[1][0].contents[0][0].set_completion(completion)
     def received_count(self,data):
+        debug('Raw Output: %s', data)
+        data = data.split(',')
         debug('entry-field: %s, entry-contents: %s, count: %s', data[0], data[1], data[2])
     def reload(self):
         self.show_header()
