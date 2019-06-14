@@ -1695,19 +1695,19 @@ class Entries():
             debug('related_entry_count for %s : %s', entry['field-text'], related_entry_count)
             single_entry_view = views.get_view('single_entry')
             os.write(single_entry_view.write_fd2,entry['field-text'] + ',' + entry['field-contents'] + ',' + str(related_entry_count) + ',')
-            for walker_item in state.get_view(ACTIVE).body.body:
-                if type(walker_item) == urwid.container.Columns:
-                    if type(walker_item.contents[1][0]) == urwid.container.Columns:
-                        #debug('walker_item: %s',walker_item.contents[1][0])
-                        if type(walker_item.contents[1][0].contents[0][0]) == urwid.graphics.ProgressBar:
-                            if entry['field-text'] in walker_item.contents[1][0].contents[1][0].get_text()[0]:
-                                walker_item_index = state.get_view(ACTIVE).body.body.index(walker_item)
-                                state.get_view(ACTIVE).body.body[walker_item_index] =   w.getColRow([
-                                    w.getText('body',str(related_entry_count),'right'),
-                                    (25,w.getText('body', 'Entries match ' + entry['field-text'], 'left')),
-                                    w.getText('body',entry['field-contents'],'left')
-                                ])
-                                loop.draw_screen()
+            #for walker_item in state.get_view(ACTIVE).body.body:
+            #    if type(walker_item) == urwid.container.Columns:
+            #        if type(walker_item.contents[1][0]) == urwid.container.Columns:
+            #            #debug('walker_item: %s',walker_item.contents[1][0])
+            #            if type(walker_item.contents[1][0].contents[0][0]) == urwid.graphics.ProgressBar:
+            #                if entry['field-text'] in walker_item.contents[1][0].contents[1][0].get_text()[0]:
+            #                    walker_item_index = state.get_view(ACTIVE).body.body.index(walker_item)
+            #                    state.get_view(ACTIVE).body.body[walker_item_index] =   w.getColRow([
+            #                        w.getText('body',str(related_entry_count),'right'),
+            #                        (25,w.getText('body', 'Entries match ' + entry['field-text'], 'left')),
+            #                        w.getText('body',entry['field-contents'],'left')
+            #                   ])
+            #                    loop.draw_screen()
 class Entry():
     def __init__(self, fullEntryText, name):
         """This class is used to create single-view Entry Objects
