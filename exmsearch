@@ -1493,16 +1493,15 @@ class CpanelUserStats():
         self.cpanel_user_name = cpanel_user_name
         self.list_of_email_accounts = list_of_email_accounts
         self.stats = {}
-        self.sending_scripts = []
+        self.sending_scripts = collections.Counter()
         for item in stat_results:
             debug('item["sending_scripts"]: %s', item['sending_scripts'])
-            self.sending_scripts.extend(item['sending_scripts'])
-        for line in self.sending_scripts:
-            x = line.split()
-            for y in x:
-                if 'cwd=' in y:
-                    debug('sending_script: %s', y[3:])
-                    self.sending_scripts.append(y[3:])
+            for line in item['sending_scripts']:
+                x = line.split()
+                for y in x:
+                    if 'cwd=' in y:
+                        debug('sending_script: %s', y[4:])
+                        self.sending_scripts[y[4:]] += 1
         for email in self.list_of_email_accounts:
             self.stats[email] = {
                 'was_recipient': 0,
@@ -1514,6 +1513,7 @@ class CpanelUserStats():
                         if key in item[email]:
                             self.stats[email][key] += item[email][key]
         debug('Stat Results: %s', stat_results)
+        debug('Most Common Sending Script Directories: %s', self.sending_scripts.most_common(5))
         debug('self.stats: %s', self.stats)
 class Results():
     def __init__(self):
