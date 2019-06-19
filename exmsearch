@@ -1493,18 +1493,19 @@ class CpanelUserStats():
         self.cpanel_user_name = cpanel_user_name
         self.list_of_email_accounts = list_of_email_accounts
         self.stats = {}
-        list_of_sending_scripts = []
+        self.sending_scripts = []
+        self.stats['sending_scripts'] = stat_results['sending_scripts']
         for line in self.stats['sending_scripts']:
             x = line.split()
             for y in x:
                 if 'cwd=' in y:
                     debug('sending_script: ', y[3:])
-                    list_of_sending_scripts.append(y[3:])
+                    self.sending_scripts.append(y[3:])
         for email in self.list_of_email_accounts:
             self.stats[email] = {
                 'was_recipient': 0,
                 'was_sender': 0
-            }
+            } 
             for item in stat_results:
                 if email in item:
                     for key in self.stats[email].keys():
