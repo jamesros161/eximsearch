@@ -1493,6 +1493,13 @@ class CpanelUserStats():
         self.cpanel_user_name = cpanel_user_name
         self.list_of_email_accounts = list_of_email_accounts
         self.stats = {}
+        list_of_sending_scripts = []
+        for line in self.stats['sending_scripts']:
+            x = line.split()
+            for y in x:
+                if 'cwd=' in y:
+                    debug('sending_script: ', y[3:])
+                    list_of_sending_scripts.append(y[3:])
         for email in self.list_of_email_accounts:
             self.stats[email] = {
                 'was_recipient': 0,
@@ -2048,6 +2055,7 @@ def query_for_cpanel_summary(poolArgs):
             'was_sender':0,
             'was_recipient':0
         }
+    result_counts['sending_scripts'] = []
     #rawEntries = []
     if log[-2:] != 'gz':
         with open(log,mode='rb') as f:
@@ -2074,6 +2082,9 @@ def query_for_cpanel_summary(poolArgs):
                                 if email in x.sendAddr[2]:
                                     #debug('%s was found in in line %s as a sender', email, i)
                                     result_counts[email]['was_sender'] += 1
+                    if state.cpanel_user in line:
+                        if 'cwd=' in line:
+                            result_counts['sending_scripts'].append(line)
                 if i % 1000000 == 0:
                     percent = float(i) / float(totalLines)
                     completion = int(percent * 100)
@@ -2107,6 +2118,9 @@ def query_for_cpanel_summary(poolArgs):
                                 if email in x.sendAddr[2]:
                                     #debug('%s was found in in line %s as a sender', email, i)
                                     result_counts[email]['was_sender'] += 1
+                    if state.cpanel_user in line:
+                        if 'cwd=' in line:
+                            result_counts['sending_scripts'].append(line)
                 if i % 1000000 == 0:
                     percent = float(i) / float(totalLines)
                     completion = int(percent * 100)
