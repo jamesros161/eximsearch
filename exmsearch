@@ -970,7 +970,7 @@ class BodyWidgets():
             stat_columns.append(
                 w.getColRow([
                     w.getText('body',str(script[0]),'left'),
-                    w.getText('body',str(script[1]),'center')
+                    w.getText('body',str(script[1]),'tcenter')
                 ])
             )
         debug('user_stats["sending_scripts"]: %s', user_stats.sending_scripts.most_common(5))
@@ -1508,7 +1508,8 @@ class CpanelUserStats():
                 x = line.split()
                 for y in x:
                     if 'cwd=' in y:
-                        debug('sending_script: %s', y[4:])
+                        debug('sending_script directory: %s', y[4:])
+                        debug('sending_script: %s', x[x.index(y) + 3])
                         self.sending_scripts[y[4:]] += 1
         for email in self.list_of_email_accounts:
             self.stats[email] = {
