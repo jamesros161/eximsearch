@@ -969,7 +969,7 @@ class BodyWidgets():
             debug('Script Dir: %s, Script Count: %s', script[0],script[1])
             stat_columns.append(
                 w.getColRow([
-                    w.getText('body',str(script[0]),'center'),
+                    w.getText('body',str(script[0]),'left'),
                     w.getText('body',str(script[1]),'center')
                 ])
             )
