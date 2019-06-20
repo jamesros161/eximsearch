@@ -967,8 +967,8 @@ class BodyWidgets():
         stat_columns.append(w.div)
         for script in user_stats.sending_scripts.most_common(10):
             w.getColRow([
-                w.getText('body',script[0],'center'),
-                w.getText('body',script[1],'center')
+                w.getText('body',str(script[0]),'center'),
+                w.getText('body',str(script[1]),'center')
             ])
         debug('user_stats["sending_scripts"]: %s', user_stats.sending_scripts.most_common(5))
         stat_columns_pile = urwid.Pile(stat_columns)
