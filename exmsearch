@@ -970,7 +970,7 @@ class BodyWidgets():
             stat_columns.append(
                 w.getColRow([
                     w.getText('body',str(script[0]),'left'),
-                    w.getText('body',str(script[1]),'tcenter')
+                    w.getText('body',str(script[1]),'center')
                 ])
             )
         debug('user_stats["sending_scripts"]: %s', user_stats.sending_scripts.most_common(5))
