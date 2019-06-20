@@ -398,6 +398,8 @@ class MyWidgets():
         self.blankFlow = self.getText('body','','center')
         self.blankBox = urwid.Filler(self.blankFlow)
         self.searchProgress = urwid.ProgressBar('body', 'header', current=0, done=100, satt=None)
+    def getDiv(self,divider=' '):
+        return urwid.Divider(divider,top=0,bottom=0)
     def getButton(self, thisLabel, callingObject, callback, user_data=None, buttonMap='bold', focus_map='header'):
         """Creates and returns a FixedButton object.
         
@@ -950,7 +952,7 @@ class BodyWidgets():
                     (10,w.getText('body',str(user_stats.stats[email]['was_sender']), 'center'))
                 ])
             )
-        stat_columns.append(w.div)
+        stat_columns.append(w.getDiv(divider='─'))
         stat_columns.append(
             w.getColRow([
                 w.blankFlow,
@@ -958,6 +960,7 @@ class BodyWidgets():
                 w.blankFlow
             ])
         )
+        stat_columns.append(w.getDiv(divider='─'))
         stat_columns.append(
             w.getColRow([
                 ('weight', 2, w.getText('body','Script Source Directory','left')),
