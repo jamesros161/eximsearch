@@ -982,7 +982,7 @@ class BodyWidgets():
                 urwid.AttrMap(w.blankFlow,'header'),
                 ('weight', 2, urwid.AttrMap(w.getText('header','Script Source Directory','left'),'header')),
                 urwid.AttrMap(w.getText('header','Sending Script','left'),'header'),
-                ('weight', 2, urwid.AttrMap(w.getText('header','Sending Address','right'),'header')),
+                ('weight', 2, urwid.AttrMap(w.getText('header','Sending Address','center'),'header')),
                 (12,urwid.AttrMap(w.getText('header','Times Sent', 'center'),'header')),
                 urwid.AttrMap(w.blankFlow,'header')
             ],dividechars=0)
@@ -995,14 +995,19 @@ class BodyWidgets():
             if not script_dir[2] in state.list_of_users_emails and script_dir[2] != 'N/A':
                 debug('Address not owned by cPanel User!')
                 script_sender_format = 'alert'
+                script_sender_align = 'right'
+            elif script_dir[2] == 'N/A':
+                script_sender_align = 'center'
+                script_sender_format = 'body'
             else:
+                script_sender_align = 'right'
                 script_sender_format = 'body'
             stat_columns.append(
                 w.getColRow([
                     w.blankFlow,
                     ('weight',2,w.getText('body',script_dir[0],'left')),
                     w.getText('body',script_dir[1],'left'),
-                    ('weight', 2, w.getText(script_sender_format,script_dir[2],'right')),
+                    ('weight', 2, w.getText(script_sender_format,script_dir[2],script_sender_align)),
                     (12,w.getText('body',str(script[1]),'center')),
                     w.blankFlow
                 ],dividechars=3)
