@@ -992,23 +992,17 @@ class BodyWidgets():
             debug('Script Count: %s',script[1])
             script_dir = script[0].split()
             debug('Script Dir: %s', script_dir)
-            if not script_dir[2] in state.list_of_users_emails and not 'N/A' in script_dir[2]:
+            if not script_dir[2] in state.list_of_users_emails:
                 debug('Address not owned by cPanel User!')
                 script_sender_format = 'alert'
-                script_sender_align = 'right'
             else:
-                script_sender_align = 'right'
-                script_sender_format = 'body'
-            if 'N/A' in script_dir[2]:
-                script_dir[2] == ''
-                script_sender_align = 'center'
                 script_sender_format = 'body'
             stat_columns.append(
                 w.getColRow([
                     w.blankFlow,
                     ('weight',2,w.getText('body',script_dir[0],'left')),
                     w.getText('body',script_dir[1],'left'),
-                    ('weight', 2, w.getText(script_sender_format,script_dir[2],script_sender_align)),
+                    ('weight', 2, w.getText(script_sender_format,script_dir[2],'right')),
                     (12,w.getText('body',str(script[1]),'center')),
                     w.blankFlow
                 ],dividechars=3)
@@ -1554,7 +1548,7 @@ class CpanelUserStats():
                         debug('sending_script: %s', x[x.index(y) + 3])
                         debug('Sending_script PID: %s', x[x.index(y) - 1])
                         pid = x[x.index(y) - 1]
-                        sending_email = 'N/A'
+                        sending_email = ''
                         for line in item['script_related_lines']:
                             if pid in line:
                                 i = line.split()
