@@ -997,6 +997,7 @@ class BodyWidgets():
                 script_sender_format = 'alert'
                 script_sender_align = 'right'
             elif script_dir[2] == 'N/A':
+                script_dir[2] == ''
                 script_sender_align = 'center'
                 script_sender_format = 'body'
             else:
