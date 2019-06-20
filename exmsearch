@@ -1529,8 +1529,13 @@ class CpanelUserStats():
         self.sending_scripts = collections.Counter()
         for item in stat_results:
             #debug('item Keys: %s', item.keys())
-            debug('item["sending_scripts"]: %s', item['sending_scripts'])
-            debug('item["script_related_lines"]: %s', item['script_related_lines'])
+            #debug('item["sending_scripts"]: %s', item['sending_scripts'])
+            #debug('item["script_related_lines"]: %s', item['script_related_lines'])
+            for line in item['script_related_lines']:
+                x = line.split()
+                for y in x:
+                    if 'from' in y:
+                        debug('script_sending_email: %s', x[x.index[y + 1]])
             for line in item['sending_scripts']:
                 x = line.split()
                 for y in x:
@@ -2127,7 +2132,7 @@ def query_for_cpanel_summary(poolArgs):
                     if state.cpanel_user in line:
                         if 'cwd=' in line:
                             result_counts['sending_scripts'].append(line)
-                            debug('script sending PID: %s', line[line.index('['):line.index(']')])
+                            #debug('script sending PID: %s', line[line.index('['):line.index(']')])
                             pid = line[line.index('['):line.index(']')]
                     if pid and pid in line:
                         result_counts['script_related_lines'].append(line)
