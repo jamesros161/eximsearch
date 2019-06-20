@@ -975,7 +975,7 @@ class BodyWidgets():
                     w.getText('body',script_dir[0],'left'),
                     w.getText('body',script_dir[1],'left'),
                     w.getText('body',str(script[1]),'center')
-                ])
+                ],dividechars=3)
             )
         debug('user_stats["sending_scripts"]: %s', user_stats.sending_scripts.most_common(5))
         stat_columns_pile = urwid.Pile(stat_columns)
