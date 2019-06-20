@@ -1513,7 +1513,7 @@ class CpanelUserStats():
                     if 'cwd=' in y:
                         debug('sending_script directory: %s', y[4:])
                         debug('sending_script: %s', x[x.index(y) + 3])
-                        z = y[4:] + x[x.index(y) + 3]
+                        z = y[4:] + ' ' + x[x.index(y) + 3]
                         self.sending_scripts[z] += 1
         for email in self.list_of_email_accounts:
             self.stats[email] = {
