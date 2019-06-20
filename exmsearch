@@ -996,12 +996,12 @@ class BodyWidgets():
                 debug('Address not owned by cPanel User!')
                 script_sender_format = 'alert'
                 script_sender_align = 'right'
+            else:
+                script_sender_align = 'right'
+                script_sender_format = 'body'
             if 'N/A' in script_dir[2]:
                 script_dir[2] == ''
                 script_sender_align = 'center'
-                script_sender_format = 'body'
-            else:
-                script_sender_align = 'right'
                 script_sender_format = 'body'
             stat_columns.append(
                 w.getColRow([
