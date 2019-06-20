@@ -1531,18 +1531,24 @@ class CpanelUserStats():
             #debug('item Keys: %s', item.keys())
             #debug('item["sending_scripts"]: %s', item['sending_scripts'])
             #debug('item["script_related_lines"]: %s', item['script_related_lines'])
-            for line in item['script_related_lines']:
-                i = line.split()
-                for j in i:
-                    if 'from' in j:
-                        debug('script_sending_email: %s', i[i.index(j) + 1][1:-1])
             for line in item['sending_scripts']:
                 x = line.split()
                 for y in x:
                     if 'cwd=' in y:
                         debug('sending_script directory: %s', y[4:])
                         debug('sending_script: %s', x[x.index(y) + 3])
+                        debug('Sending_script PID: %s', x[x.index(y) - 1])
+                        pid = x[x.index(y) - 1]
+                        sending_email = 'None'
+                        for line in item['script_related_lines']:
+                            if pid in line:
+                                i = line.split()
+                                for j in i:
+                                    if 'from' in j:
+                                        debug('script_sending_email: %s', i[i.index(j) + 1][1:-1])
+                                        sending_email = i[i.index(j) + 1][1:-1]
                         z = y[4:] + ' ' + x[x.index(y) + 3]
+                        z = z + ' ' + sending_email
                         self.sending_scripts[z] += 1
         for email in self.list_of_email_accounts:
             self.stats[email] = {
