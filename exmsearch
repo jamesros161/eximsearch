@@ -941,6 +941,7 @@ class BodyWidgets():
                 (10, w.getText('body','Was \nSender', 'center'))
             ])
         ]
+        stat_columns.append(w.div)
         for email in user_stats.list_of_email_accounts:
             stat_columns.append(
                 w.getColRow([
@@ -949,6 +950,7 @@ class BodyWidgets():
                     (10,w.getText('body',str(user_stats.stats[email]['was_sender']), 'center'))
                 ])
             )
+        stat_columns.append(w.div)
         stat_columns.append(
             w.getColRow([
                 w.blankFlow,
@@ -956,12 +958,13 @@ class BodyWidgets():
                 w.blankFlow
             ])
         )
+        stat_columns.append(w.div)
         debug('user_stats["sending_scripts"]: %s', user_stats.sending_scripts.most_common(5))
         stat_columns_pile = urwid.Pile(stat_columns)
         #stat_columns_filler = urwid.Filler(stat_columns_pile,valign='middle',height=len(stat_columns) + 4)
         stat_inner_column = w.getColRow([
             w.blankFlow,
-            ('weight', 3, stat_columns_pile),
+            ('weight', 4, stat_columns_pile),
             w.blankFlow
         ])
         #stat_columns_filler = urwid.Filler(stat_inner_column)
