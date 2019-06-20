@@ -956,7 +956,7 @@ class BodyWidgets():
                 w.blankFlow
             ])
         )
-        debug('user_stats["sending_scripts"]: %s', user_stats.sending_scripts)
+        debug('user_stats["sending_scripts"]: %s', user_stats.sending_scripts.most_common(5))
         stat_columns_pile = urwid.Pile(stat_columns)
         #stat_columns_filler = urwid.Filler(stat_columns_pile,valign='middle',height=len(stat_columns) + 4)
         stat_inner_column = w.getColRow([
