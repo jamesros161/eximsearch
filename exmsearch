@@ -956,9 +956,18 @@ class BodyWidgets():
                 w.blankFlow,
                 w.getText('body','Top Sending Script Directories', 'center'),
                 w.blankFlow
+            ]),
+            w.getColRow([
+                w.getText('body','Script Directory','center'),
+                w.getText('body','Number of Times Sent', 'center')
             ])
         )
         stat_columns.append(w.div)
+        for script in user_stats.sending_scripts.most_common(10):
+            w.getColRow([
+                w.getText('body',script[0],'center'),
+                w.getText('body',script[1],'center')
+            ])
         debug('user_stats["sending_scripts"]: %s', user_stats.sending_scripts.most_common(5))
         stat_columns_pile = urwid.Pile(stat_columns)
         #stat_columns_filler = urwid.Filler(stat_columns_pile,valign='middle',height=len(stat_columns) + 4)
