@@ -967,7 +967,7 @@ class BodyWidgets():
                     w.blankFlow
                 ])
             )
-        stat_columns.append(w.getDiv(divider='─'))
+        stat_columns.append(w.getDiv(divider='_'))
         stat_columns.append(
             w.getColRow([
                 w.blankFlow,
@@ -975,7 +975,7 @@ class BodyWidgets():
                 w.blankFlow
             ])
         )
-        stat_columns.append(w.getDiv(divider='─'))
+        stat_columns.append(w.getDiv(divider='_'))
         stat_columns.append(
             w.getColRow([
                 urwid.AttrMap(w.blankFlow,'header'),
@@ -984,7 +984,7 @@ class BodyWidgets():
                 ('weight', 2, urwid.AttrMap(w.getText('header','Sending Address','right'),'header')),
                 (12,urwid.AttrMap(w.getText('header','Times Sent', 'center'),'header')),
                 urwid.AttrMap(w.blankFlow,'header')
-            ])
+            ],dividechars=0)
         )
         stat_columns.append(w.div)
         for script in user_stats.sending_scripts.most_common(10):
