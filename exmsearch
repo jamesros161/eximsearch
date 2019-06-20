@@ -936,7 +936,17 @@ class BodyWidgets():
         debug('cPanel User: %s', state.cpanel_user)
         user_stats = cpanel_stats.get(state.cpanel_user)
         debug('user_stats instance: %s', user_stats)
-        stat_columns = [
+        stat_columns = [w.div]
+        stat_columns.append(w.getDiv(divider='─'))
+        stat_columns.append(
+            w.getColRow([
+                w.blankFlow,
+                w.getText('body','Top Sending Script Directories', 'center'),
+                w.blankFlow
+            ])
+        )
+        stat_columns.append(w.getDiv(divider='─'))
+        stat_columns.append(
             w.getColRow([
                 w.blankFlow,
                 ('weight',4,w.getText('body','Email Address','center')),
@@ -944,7 +954,7 @@ class BodyWidgets():
                 (10, w.getText('body','Was \nSender', 'center')),
                 w.blankFlow
             ])
-        ]
+        )
         stat_columns.append(w.div)
         for email in user_stats.list_of_email_accounts:
             stat_columns.append(
