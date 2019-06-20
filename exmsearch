@@ -982,7 +982,7 @@ class BodyWidgets():
         #stat_columns_filler = urwid.Filler(stat_columns_pile,valign='middle',height=len(stat_columns) + 4)
         stat_inner_column = w.getColRow([
             w.blankFlow,
-            ('weight', 4, stat_columns_pile),
+            ('weight', 5, stat_columns_pile),
             w.blankFlow
         ])
         #stat_columns_filler = urwid.Filler(stat_inner_column)
