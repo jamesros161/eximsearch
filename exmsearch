@@ -1423,23 +1423,6 @@ class Search():
             self.process_pool.terminate()
             del(self.process_pool)
         views.activate('stat_summary_results')
-    def get_related_entry_count(self,related_field, related_query):
-        results = self.filter_logs_for_related_entry_count(related_field,related_query)
-        debug(' related_query: %s, result count: %s', related_query, results)
-        return results
-    def filter_logs_for_related_entry_count(self,related_field,related_query):
-        starttime = datetime.now()
-        logPoolArgs = []
-        for log in s.lf.selectedLogs:
-            logPoolArgs.append([related_field,related_query,log])
-        process_pool = Pool(maxtasksperchild=1)
-        searchedLogs = process_pool.map(queryLogForRelatedEntriesProcess, logPoolArgs)
-        totalResultCount = 0
-        for resultCount in searchedLogs:
-            totalResultCount += resultCount
-        logging.info('QT = %s : filteredLog Pool Result Count: %s',datetime.now() - starttime, totalResultCount)
-        process_pool.terminate()
-        return totalResultCount
     def filter_active_results(self):
         results_to_filter = state.get_result_list(ACTIVE)
         list_of_active_filters = state.get_active_filters()
