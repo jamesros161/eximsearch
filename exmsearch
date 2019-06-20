@@ -941,7 +941,7 @@ class BodyWidgets():
         stat_columns.append(
             w.getColRow([
                 w.blankFlow,
-                w.getText('body','Top Sending Script Directories', 'center'),
+                w.getText('body','Email Addresses Owned by ' + state.cpanel_user, 'center'),
                 w.blankFlow
             ])
         )
@@ -1535,6 +1535,7 @@ class CpanelUserStats():
                     if 'cwd=' in y:
                         debug('sending_script directory: %s', y[4:])
                         debug('sending_script: %s', x[x.index(y) + 3])
+                        debug('Sending_script PID: %s', x[x.index(y) - 1])
                         z = y[4:] + ' ' + x[x.index(y) + 3]
                         self.sending_scripts[z] += 1
         for email in self.list_of_email_accounts:
