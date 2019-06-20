@@ -981,7 +981,7 @@ class BodyWidgets():
                 w.blankFlow,
                 ('weight', 2, w.getText('body','Script Source Directory','left')),
                 w.getText('body','Sending Script','left'),
-                w.getText('body','Sending Address','left'),
+                ('weight', 2, w.getText('body','Sending Address','left')),
                 (12,w.getText('body','Times Sent', 'center')),
                 w.blankFlow
             ])
@@ -991,7 +991,7 @@ class BodyWidgets():
             debug('Script Count: %s',script[1])
             script_dir = script[0].split()
             debug('Script Dir: %s', script_dir)
-            if not script_dir[2] in state.list_of_users_emails:
+            if not script_dir[2] in state.list_of_users_emails and script_dir[2] != 'N/A':
                 debug('Address not owned by cPanel User!')
                 script_sender_format = 'alert'
             else:
@@ -1001,7 +1001,7 @@ class BodyWidgets():
                     w.blankFlow,
                     ('weight',2,w.getText('body',script_dir[0],'left')),
                     w.getText('body',script_dir[1],'left'),
-                    w.getText(script_sender_format,script_dir[2],'right'),
+                    ('weight', 2, w.getText(script_sender_format,script_dir[2],'right')),
                     (12,w.getText('body',str(script[1]),'center')),
                     w.blankFlow
                 ],dividechars=3)
