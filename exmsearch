@@ -938,7 +938,7 @@ class BodyWidgets():
         user_stats = cpanel_stats.get(state.cpanel_user)
         debug('user_stats instance: %s', user_stats)
         stat_columns = [w.div]
-        stat_columns.append(w.getDiv(divider='─'))
+        #stat_columns.append(w.getDiv(divider='─'))
         stat_columns.append(
             w.getColRow([
                 w.blankFlow,
@@ -949,12 +949,12 @@ class BodyWidgets():
         #stat_columns.append(w.getDiv(divider='─'))
         stat_columns.append(
             w.getColRow([
-                w.blankFlow,
+                urwid.AttrMap(w.blankFlow,'header'),
                 ('weight',4,urwid.AttrMap(w.getText('header','Email Address','center'),'header')),
                 (10, urwid.AttrMap(w.getText('header','Recipient', 'center'),'header')),
                 (10, urwid.AttrMap(w.getText('header','Sender', 'center'),'header')),
-                w.blankFlow
-            ])
+                urwid.AttrMap(w.blankFlow, 'header')
+            ],dividechars=0)
         )
         stat_columns.append(w.div)
         for email in user_stats.list_of_email_accounts:
@@ -968,6 +968,7 @@ class BodyWidgets():
                 ])
             )
         stat_columns.append(w.getDiv(divider='─'))
+        stat_columns.append(w.div)
         stat_columns.append(
             w.getColRow([
                 w.blankFlow,
