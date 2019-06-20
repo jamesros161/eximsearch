@@ -163,7 +163,7 @@ class DisplayFrameSettings():
             ('bold',    'dark green, bold' , 'black'),
             ('blue', 'bold', 'dark blue'),
             ('highlight', 'dark green', 'default'),
-            ('alert', 'bold red', 'default'),
+            ('alert', 'dark red, bold', 'default'),
         ]
 class Menus():
         def __init__(self):
