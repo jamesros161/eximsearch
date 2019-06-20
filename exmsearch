@@ -1001,11 +1001,11 @@ class BodyWidgets():
         debug('user_stats["sending_scripts"]: %s', user_stats.sending_scripts.most_common(5))
         stat_columns_pile = urwid.Pile(stat_columns)
         #stat_columns_filler = urwid.Filler(stat_columns_pile,valign='middle',height=len(stat_columns) + 4)
-        stat_inner_column = w.getColRow([
-            w.blankFlow,
-            ('weight', 5, stat_columns_pile),
-            w.blankFlow
-        ])
+        #stat_inner_column = w.getColRow([
+        #    w.blankFlow,
+        #    ('weight', 5, stat_columns_pile),
+        #    w.blankFlow
+        #])
         #stat_columns_filler = urwid.Filler(stat_inner_column)
         #stat_list_box = w.getListBox(stat_columns)
         stat_line_box = w.getLineBox(stat_columns_pile,'cPanel User ' + state.cpanel_user + ' Stat Summary')
