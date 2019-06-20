@@ -949,6 +949,14 @@ class BodyWidgets():
                     (10,w.getText('body',str(user_stats.stats[email]['was_sender']), 'center'))
                 ])
             )
+        stat_columns.append(
+            w.getColRow([
+                w.blankFlow,
+                w.getText('body','Top Sending Script Directories', 'center'),
+                w.blankFlow
+            ])
+        )
+        debug('user_stats["sending_scripts"]: %s', user_stats.stats['sending_scripts'])
         stat_columns_pile = urwid.Pile(stat_columns)
         #stat_columns_filler = urwid.Filler(stat_columns_pile,valign='middle',height=len(stat_columns) + 4)
         stat_inner_column = w.getColRow([
