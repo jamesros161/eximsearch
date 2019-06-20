@@ -1532,10 +1532,10 @@ class CpanelUserStats():
             #debug('item["sending_scripts"]: %s', item['sending_scripts'])
             #debug('item["script_related_lines"]: %s', item['script_related_lines'])
             for line in item['script_related_lines']:
-                x = line.split()
-                for z in x:
-                    if 'from' in z:
-                        debug('script_sending_email: %s', z)
+                i = line.split()
+                for j in i:
+                    if 'from' in j:
+                        debug('script_sending_email: %s', i[i.index(j + 1)][1:-1])
             for line in item['sending_scripts']:
                 x = line.split()
                 for y in x:
