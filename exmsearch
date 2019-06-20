@@ -968,11 +968,11 @@ class BodyWidgets():
         stat_columns.append(w.div)
         for script in user_stats.sending_scripts.most_common(10):
             debug('Script Dir: %s, Script Count: %s', script[0],script[1])
-            script_dir, sending_script = str(script[0].split())
+            script_dir = str(script[0].split())
             stat_columns.append(
                 w.getColRow([
-                    w.getText('body',script_dir,'left'),
-                    w.getText('body',sending_script,'left'),
+                    w.getText('body',script_dir[0],'left'),
+                    w.getText('body',script_dir[1],'left'),
                     w.getText('body',str(script[1]),'center')
                 ])
             )
