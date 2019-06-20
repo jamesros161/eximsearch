@@ -1528,6 +1528,7 @@ class CpanelUserStats():
         self.stats = {}
         self.sending_scripts = collections.Counter()
         for item in stat_results:
+            debug('item Keys: %s', item.keys())
             debug('item["sending_scripts"]: %s', item['sending_scripts'])
             debug('item["scripts_related_lines"]: %s', item['scripts_related_lines'])
             for line in item['sending_scripts']:
@@ -2166,6 +2167,9 @@ def query_for_cpanel_summary(poolArgs):
                     if state.cpanel_user in line:
                         if 'cwd=' in line:
                             result_counts['sending_scripts'].append(line)
+                            pid = line[line.index('['):line.index(']')]
+                    if pid and pid in line:
+                        result_counts['script_related_lines'].append(line)
                 if i % 1000000 == 0:
                     percent = float(i) / float(totalLines)
                     completion = int(percent * 100)
