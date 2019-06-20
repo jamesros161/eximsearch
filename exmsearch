@@ -960,9 +960,9 @@ class BodyWidgets():
         )
         stat_columns.append(
             w.getColRow([
-                w.getText('body','Script Source Directory','center'),
+                ('weight', 2, w.getText('body','Script Source Directory','center')),
                 w.getText('body','Sending Script','center'),
-                w.getText('body','Times Sent', 'center')
+                (12,w.getText('body','Times Sent', 'center'))
             ])
         )
         stat_columns.append(w.div)
