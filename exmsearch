@@ -946,13 +946,13 @@ class BodyWidgets():
                 w.blankFlow
             ])
         )
-        stat_columns.append(w.getDiv(divider='─'))
+        #stat_columns.append(w.getDiv(divider='─'))
         stat_columns.append(
             w.getColRow([
                 w.blankFlow,
-                ('weight',4,w.getText('body','Email Address','center')),
-                (10, w.getText('body','Was \nRecipient', 'center')),
-                (10, w.getText('body','Was \nSender', 'center')),
+                ('weight',4,urwid.AttrMap(w.getText('header','Email Address','center'),'header')),
+                (10, urwid.AttrMap(w.getText('header','Recipient', 'center'),'header')),
+                (10, urwid.AttrMap(w.getText('header','Sender', 'center'),'header')),
                 w.blankFlow
             ])
         )
@@ -967,7 +967,7 @@ class BodyWidgets():
                     w.blankFlow
                 ])
             )
-        stat_columns.append(w.getDiv(divider='_'))
+        stat_columns.append(w.getDiv(divider='─'))
         stat_columns.append(
             w.getColRow([
                 w.blankFlow,
@@ -975,7 +975,7 @@ class BodyWidgets():
                 w.blankFlow
             ])
         )
-        stat_columns.append(w.getDiv(divider='_'))
+        #stat_columns.append(w.getDiv(divider='─'))
         stat_columns.append(
             w.getColRow([
                 urwid.AttrMap(w.blankFlow,'header'),
