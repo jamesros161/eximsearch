@@ -938,18 +938,22 @@ class BodyWidgets():
         debug('user_stats instance: %s', user_stats)
         stat_columns = [
             w.getColRow([
+                w.blankFlow,
                 ('weight',4,w.getText('body','Email Address','center')),
                 (10, w.getText('body','Was \nRecipient', 'center')),
-                (10, w.getText('body','Was \nSender', 'center'))
+                (10, w.getText('body','Was \nSender', 'center')),
+                w.blankFlow
             ])
         ]
         stat_columns.append(w.div)
         for email in user_stats.list_of_email_accounts:
             stat_columns.append(
                 w.getColRow([
+                    w.blankFlow,
                     ('weight',4,w.getText('body',email,'center')),
                     (10,w.getText('body',str(user_stats.stats[email]['was_recipient']), 'center')),
-                    (10,w.getText('body',str(user_stats.stats[email]['was_sender']), 'center'))
+                    (10,w.getText('body',str(user_stats.stats[email]['was_sender']), 'center')),
+                    w.blankFlow
                 ])
             )
         stat_columns.append(w.getDiv(divider='─'))
@@ -963,9 +967,11 @@ class BodyWidgets():
         stat_columns.append(w.getDiv(divider='─'))
         stat_columns.append(
             w.getColRow([
+                w.blankFlow,
                 ('weight', 2, w.getText('body','Script Source Directory','left')),
                 w.getText('body','Sending Script','left'),
-                (12,w.getText('body','Times Sent', 'center'))
+                (12,w.getText('body','Times Sent', 'center')),
+                w.blankFlow
             ])
         )
         stat_columns.append(w.div)
@@ -975,9 +981,11 @@ class BodyWidgets():
             debug('Script Dir: %s', script_dir)
             stat_columns.append(
                 w.getColRow([
+                    w.blankFlow,
                     ('weight',2,w.getText('body',script_dir[0],'left')),
                     w.getText('body',script_dir[1],'left'),
-                    (12,w.getText('body',str(script[1]),'center'))
+                    (12,w.getText('body',str(script[1]),'center')),
+                    w.blankFlow
                 ],dividechars=3)
             )
         debug('user_stats["sending_scripts"]: %s', user_stats.sending_scripts.most_common(5))
