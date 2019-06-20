@@ -1533,9 +1533,9 @@ class CpanelUserStats():
             #debug('item["script_related_lines"]: %s', item['script_related_lines'])
             for line in item['script_related_lines']:
                 x = line.split()
-                for y in x:
-                    if 'from' in y:
-                        debug('script_sending_email: %s', x)
+                for z in x:
+                    if 'from' in z:
+                        debug('script_sending_email: %s', z)
             for line in item['sending_scripts']:
                 x = line.split()
                 for y in x:
