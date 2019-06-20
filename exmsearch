@@ -956,7 +956,9 @@ class BodyWidgets():
                 w.blankFlow,
                 w.getText('body','Top Sending Script Directories', 'center'),
                 w.blankFlow
-            ]),
+            ])
+        )
+        stat_columns.append(
             w.getColRow([
                 w.getText('body','Script Directory','center'),
                 w.getText('body','Number of Times Sent', 'center')
