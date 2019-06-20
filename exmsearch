@@ -992,17 +992,21 @@ class BodyWidgets():
             debug('Script Count: %s',script[1])
             script_dir = script[0].split()
             debug('Script Dir: %s', script_dir)
-            if not script_dir[2] in state.list_of_users_emails:
-                debug('Address not owned by cPanel User!')
-                script_sender_format = 'alert'
+            if len(script_dir) > 2:
+                script_sender = script_dir[2]
+                if not script_sender in state.list_of_users_emails:
+                    debug('Address not owned by cPanel User!')
+                    script_sender_format = 'alert'
+                else:
+                    script_sender_format = 'body'
             else:
-                script_sender_format = 'body'
+                script_sender = ''
             stat_columns.append(
                 w.getColRow([
                     w.blankFlow,
                     ('weight',2,w.getText('body',script_dir[0],'left')),
                     w.getText('body',script_dir[1],'left'),
-                    ('weight', 2, w.getText(script_sender_format,script_dir[2],'right')),
+                    ('weight', 2, w.getText(script_sender_format,script_sender,'right')),
                     (12,w.getText('body',str(script[1]),'center')),
                     w.blankFlow
                 ],dividechars=3)
