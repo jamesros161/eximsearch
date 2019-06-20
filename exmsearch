@@ -1001,6 +1001,7 @@ class BodyWidgets():
                     script_sender_format = 'body'
             else:
                 script_sender = ''
+                script_sender_format = 'body'
             stat_columns.append(
                 w.getColRow([
                     w.blankFlow,
