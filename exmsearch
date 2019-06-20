@@ -978,12 +978,12 @@ class BodyWidgets():
         stat_columns.append(w.getDiv(divider='─'))
         stat_columns.append(
             w.getColRow([
-                urwid.AttrMap(w.blankFlow),
+                urwid.AttrMap(w.blankFlow,'header'),
                 ('weight', 2, urwid.AttrMap(w.getText('header','Script Source Directory','left'),'header')),
-                urwid.AttrMap(w.getText('header','Sending Script','left')),
-                ('weight', 2, urwid.AttrMap(w.getText('header','Sending Address','right'))),
-                (12,urwid.AttrMap(w.getText('header','Times Sent', 'center'))),
-                urwid.AttrMap(w.blankFlow)
+                urwid.AttrMap(w.getText('header','Sending Script','left'),'header'),
+                ('weight', 2, urwid.AttrMap(w.getText('header','Sending Address','right'),'header')),
+                (12,urwid.AttrMap(w.getText('header','Times Sent', 'center'),'header')),
+                urwid.AttrMap(w.blankFlow,'header')
             ])
         )
         stat_columns.append(w.div)
