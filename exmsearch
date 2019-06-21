@@ -1799,24 +1799,29 @@ class Entry():
             shlex.split(self.fullEntryText)
         except:
             debug('Cannot shlex split this entry!')
-            m = self.fullEntryText.split()
-            if self.msgType:
-                if self.msgType[2] == 'Spam Status':
-                        if 'detected' in m:
-                            self.spamStatus = [15, 'Spam Status',  ' '.join(m[m.index('detected') + 3: -2])]
-                            self.spamScore = [15, 'Spam Score', m[-1]]
-            #self.parseError = [15, 'Parsing Error: ', str(Exception)]
-            x = 0
-            while x <= len(m):
-                if x == 0:
-                    self.date = [10, 'Date: ', m[x]]
-                if x == 1:
-                    self.time = [11, 'Time: ', m[x]]
-                if x == 2:
-                    self.pid = [12, 'Process ID: ', m[x]]
-                if x == 3:
-                    self.id = [13, 'Message ID: ', m[x]]
-            self.fullEntryText = [14, 'Full Entry: ', self.fullEntryText]        
+            try:
+                self.fullEntryText.split()
+            except:
+                warning('Could Not Parse line: %s', self.fullEntryText)
+            else:
+                m = self.fullEntryText.split()
+                if self.msgType:
+                    if self.msgType[2] == 'Spam Status':
+                            if 'detected' in m:
+                                self.spamStatus = [15, 'Spam Status',  ' '.join(m[m.index('detected') + 3: -2])]
+                                self.spamScore = [15, 'Spam Score', m[-1]]
+                #self.parseError = [15, 'Parsing Error: ', str(Exception)]
+                x = 0
+                while x <= len(m):
+                    if x == 0:
+                        self.date = [10, 'Date: ', m[x]]
+                    if x == 1:
+                        self.time = [11, 'Time: ', m[x]]
+                    if x == 2:
+                        self.pid = [12, 'Process ID: ', m[x]]
+                    if x == 3:
+                        self.id = [13, 'Message ID: ', m[x]]
+                self.fullEntryText = [14, 'Full Entry: ', self.fullEntryText]        
         else:
             m = shlex.split(self.fullEntryText)
             x = 0
