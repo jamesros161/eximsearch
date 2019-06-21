@@ -1467,7 +1467,14 @@ class LogFiles():
             else:
                 fixed_dates.append(date_ranges[i])
             i += 1
-        debug('Fixed Date Ranges: %s', fixed_dates)
+        formatted_date_ranges = []
+        for date_range in fixed_dates:
+            x = datetime.strptime(date_range[0],s.dt.logDateFormat)
+            y = datetime.strptime(date_range[1],s.dt.logDateFormat)
+            formatted_date_ranges.append(
+                datetime.strptime(x,s.dt.logDateFormat) + ' - ' + datetime.strptime(y,s.dt.logDateFormat)
+            )
+        debug('Formatted Date Ranges: %s', formatted_date_ranges)
 """
 DATA PROCESSING / SEARCH AND RESULT CLASSES
 """
