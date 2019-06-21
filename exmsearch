@@ -1259,6 +1259,7 @@ class View():
         loop.screen.clear()
         self.footer = w.getFooterWidget(self, self.menuItems)
         self.body = body.get_body_widget(self.view_name, user_args=user_args, calling_view=self)
+        self.footer = w.getFooterWidget(self, self.menuItems)
         #self.body._invalidate() 
         self.show_body()
         self.show_footer()
