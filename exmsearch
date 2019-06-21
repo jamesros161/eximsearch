@@ -1798,13 +1798,14 @@ class Entry():
         try:
             shlex.split(self.fullEntryText)
         except:
+            debug('Cannot shlex split this entry!')
             m = self.fullEntryText.split()
             if self.msgType:
                 if self.msgType[2] == 'Spam Status':
                         if 'detected' in m:
                             self.spamStatus = [15, 'Spam Status',  ' '.join(m[m.index('detected') + 3: -2])]
                             self.spamScore = [15, 'Spam Score', m[-1]]
-            self.parseError = [15, 'Parsing Error: ', str(Exception)]
+            #self.parseError = [15, 'Parsing Error: ', str(Exception)]
             x = 0
             while x <= len(m):
                 if x == 0:
