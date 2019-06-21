@@ -1668,6 +1668,7 @@ class Results():
                     original_results,
                     isFiltered, filters_applied))
                 state.set_result_list(getattr(self,name))
+                debug('Finished Creating New Result List')
         else:
             count = len(resultContents)
             setattr(self,name,ResultLists(
@@ -1675,6 +1676,7 @@ class Results():
                 resultContents, count,
                 original_results,
                 isFiltered, filters_applied))
+            debug('Finished Creating New Result List')
             state.set_result_list(getattr(self,name))
     def get_single_entry(self,entryNo,searchNo):
         debug('Started Results.getSingleEntry: %s, %s', entryNo, searchNo)
