@@ -1709,6 +1709,7 @@ class ResultLists():
         list_name,result_type,result_contents,
         count,original_results='',
         is_filtered=False, filters_applied=[]):
+        debug('Init ResultLists')
         self.list_name = list_name
         self.is_filtered = is_filtered
         self.query = state.get_query(ACTIVE)
