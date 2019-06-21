@@ -82,10 +82,10 @@ class GlobalSettings():
             #debug('raw: %s', raw)
             if key in 'ctrl e':
                 views.activate('quit_loop',focus_position=BODY)
-            if key in ('N', 'n'):
+            if 'ctrl n' in key:
                 views.activate('new_search', focus_position=BODY)
-            if key in ('S', 's'):
-                views.activate('coming_soon', focus_position=FOOTER)
+            if 'ctrl f' in key:
+                views.activate('add_remove_filters', focus_position=BODY)
             if key in ('B', 'b') and 'single_entry' in state.get_view_name(ACTIVE):
                 views.activate('results_list', focus_position='body')
             if key in 'tab':
@@ -214,11 +214,9 @@ class Menus():
                 ['Prev. Screen', 'Home'],
                 ['Next  Screen', 'End'],
                 ['Change Fields', '← / ↑ / ↓ / →'],
-                ['Toggle Menu', 'Tab'],
+                ['Move to / from Menu', 'Tab'],
                 ['New Search', 'Ctrl + N'],
                 ['Add / Remove Filters', 'Ctrl + F'],
-                ['Apply Filters', 'Ctrl + Shift + F'],
-                ['Clear Filters', 'Ctrl + X'],
                 ['Exit', 'Ctrl + E']
             ]
 class LogFileSettings():
