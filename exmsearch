@@ -1458,6 +1458,11 @@ class LogFiles():
                 #debug('First Line: %s, Last_line: %s',first_line,last_line)
         date_ranges.sort()
         debug('Date Ranges: %s', date_ranges)
+        for date in date_ranges:
+            if date_ranges[date_ranges.index(date) + 1] == date:
+                date_ranges.remove(date)
+                date_ranges.remove(date)
+        debug('Date Rangse: %s', date_ranges)
         
 """
 DATA PROCESSING / SEARCH AND RESULT CLASSES
