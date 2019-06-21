@@ -1850,7 +1850,7 @@ class Entry():
                     if 'P=' in m[x]:
                         self.protocol = [22, 'Protocol: ', m[x][2:]]
                         if 'local' in self.protocol[2]:
-                            debug('msgType should be Local! wtf?!?')
+                            debug('msgType should be Local! wtf?!?: %s',self.msgType)
                             self.msgType = [15, 'Message Type: ', 'local']
                     if 'T=' in m[x] and m[x][0] != 'R':
                         self.topic = [21, 'Subject: ', m[x][2:]]
@@ -1902,7 +1902,7 @@ class Entry():
                     if 'T=' in m[x] and m[x][0] != 'D' and m[x][0] != 'Q':
                         self.mta = [22, 'MTA: ', m[x][2:]]
                         if 'dovecot' in self.mta[1]:
-                            self.msgType = [15, 'Type: ', 'local']
+                            self.msgType = [15, 'Message Type: ', 'local']
                     if ' => ' in fullEntryText:
                         if 'T=dovecot' in fullEntryText:
                             self.msgType = [15, 'Message Type: ', 'dovecot']
