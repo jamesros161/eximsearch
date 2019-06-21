@@ -1221,7 +1221,7 @@ class View():
     def __init__(self, view_name,
         default_view_focus,
         header_title=s.df.mainTitle,
-        header_subtitle=s.df.mainSubTitle,
+        header_subtitle='',
         is_view_result_list=False,
         is_view_single_entry=False,
         is_view_add_filters=False):
@@ -1234,7 +1234,7 @@ class View():
         self.is_view_add_filters = is_view_add_filters
     def start(self, previous_view, focus_position=None, user_args=None, add_to_view_chain=True):
         debug('view_name: %s, focus_position: %s', self.view_name, focus_position)
-        self.header = w.getHeaderWidget(self.header_title,subtitle=self.header_subtitle)
+        #self.header = w.getHeaderWidget(self.header_title,subtitle=self.header_subtitle)
         self.previous_view = previous_view
         menuItems = getattr(s.menus,self.view_name)
         loop.screen.clear()
@@ -1256,6 +1256,10 @@ class View():
         self.show_body()
         self.show_footer()
     def show_header(self):
+        if not self.header_subtitle:
+            self.header = w.getHeaderWidget(self.header_title,subtitle=s.df.mainSubTitle)
+        else:
+            self.header = w.getHeaderWidget(self.header_title,subtitle=self.header_subtitle)
         frame.contents.__setitem__('header', [self.header, None])
     def show_body(self):
         frame.contents.__setitem__('body', [self.body, None])
