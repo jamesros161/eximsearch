@@ -746,7 +746,7 @@ class BodyWidgets():
                 [
                     (numColWidth, BoxButton(str(x), on_press=views.activate,
                         user_data=['single_entry',entry])),
-                    (13, w.getText('body', '\n' + msgType + '\n','center')),
+                    (13, w.getText('body', '\n' + entry.msgType[2] + '\n','center')),
                     urwid.Text(('body','\n' + entry.fullEntryText[2] + '\n'),align='left'),
                     (3 , w.getText('body','', 'left'))
                 ]
