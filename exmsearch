@@ -925,6 +925,7 @@ class BodyWidgets():
                 ('weight',4,urwid.AttrMap(w.getText('header','Email Address','center'),'header')),
                 (10, urwid.AttrMap(w.getText('header','Recipient', 'center'),'header')),
                 (10, urwid.AttrMap(w.getText('header','Sender', 'center'),'header')),
+                (10, urwid.AttrMap(w.getText('header','Bounced', 'center'),'header')),
                 urwid.AttrMap(w.blankFlow, 'header')
             ],dividechars=0)
         )
@@ -936,6 +937,7 @@ class BodyWidgets():
                     ('weight',4,w.getText('body',email,'center')),
                     (10,w.getText('body',str(user_stats.stats[email]['was_recipient']), 'center')),
                     (10,w.getText('body',str(user_stats.stats[email]['was_sender']), 'center')),
+                    (10,w.getText('body',str(user_stats.stats[email]['was_bounced']), 'center')),
                     w.blankFlow
                 ])
             )
@@ -1610,7 +1612,8 @@ class CpanelUserStats():
         for email in self.list_of_email_accounts:
             self.stats[email] = {
                 'was_recipient': 0,
-                'was_sender': 0
+                'was_sender': 0,
+                'was_bounced': 0
             } 
             for item in stat_results:
                 if email in item:
@@ -2163,7 +2166,8 @@ def query_for_cpanel_summary(poolArgs):
     for email in email_list:
         result_counts[email] = {
             'was_sender':0,
-            'was_recipient':0
+            'was_recipient':0,
+            'was_bounced':0
         }
     result_counts['sending_scripts'] = []
     result_counts['script_related_lines'] = []
@@ -2193,6 +2197,9 @@ def query_for_cpanel_summary(poolArgs):
                                 if email in x.sendAddr[2]:
                                     #debug('%s was found in in line %s as a sender', email, i)
                                     result_counts[email]['was_sender'] += 1
+                            if len(x.msgType) > 2:
+                                if 'bounce' in x.msgType[2]:
+                                    result_counts[email]['was_bounced'] += 1
                     if state.cpanel_user in line:
                         if 'cwd=' in line:
                             result_counts['sending_scripts'].append(line)
