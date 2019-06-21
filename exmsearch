@@ -1824,6 +1824,7 @@ class Entry():
                         self.pid = [12, 'Process ID: ', m[x]]
                     if x == 3:
                         self.id = [13, 'Message ID: ', m[x]]
+                    x += 1
                 self.fullEntryText = [14, 'Full Entry: ', self.fullEntryText]        
         else:
             m = shlex.split(self.fullEntryText)
