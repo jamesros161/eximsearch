@@ -1728,6 +1728,7 @@ class ResultLists():
             self.contents = entries.get_list_from_search_no(search_number)
         else:
             self.contents = result_contents
+        debug('Init ResultLists Complete')
         #debug('List of Attr in new ResultList: %s', dir(self))
     def parseEntries(self):
         i = 0
