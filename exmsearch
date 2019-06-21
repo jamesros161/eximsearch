@@ -1470,7 +1470,7 @@ class LogFiles():
                 x.strftime('%b %d %Y') + ' - ' + y.strftime('%b %d %Y')
             )
         debug('Formatted Date Ranges: %s', formatted_date_ranges)
-        self.mainSubTitle =  'Log Dates: ' + ' | '.join(formatted_date_ranges)
+        s.df.mainSubTitle =  'Log Dates: ' + ' | '.join(formatted_date_ranges)
 """
 DATA PROCESSING / SEARCH AND RESULT CLASSES
 """
