@@ -94,9 +94,9 @@ class GlobalSettings():
                 else:
                     if self.menuEnabled:
                         frame.focus_position = 'footer'
-            if 'ctrl left' in key:
+            if 'ctrl home' in key:
                     state.go_back()
-            if 'ctrl right' in key:
+            if 'ctrl end' in key:
                 state.go_forward()
             if key in 'f5':
                 debug('Current View: %s', state.get_view_name(ACTIVE))
@@ -211,8 +211,8 @@ class Menus():
                 ['    (Q)uit    ','quit_loop']]
             self.quit_loop = []
             self.legend = [
-                ['Prev. Screen', 'Ctrl + ←'],
-                ['Next  Screen', 'Ctrl + →'],
+                ['Prev. Screen', 'Ctrl + Home'],
+                ['Next  Screen', 'Ctrl + End'],
                 ['Change Fields', '← / ↑ / ↓ / →'],
                 ['Toggle Menu', 'Tab'],
                 ['New Search', 'Ctrl + N'],
