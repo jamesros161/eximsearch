@@ -742,11 +742,12 @@ class BodyWidgets():
                 msgType = entry.msgType[2]
             else:
                 msgType = '-'
+            debug('msgType = %s', msgType)
             self.listDisplayCols.append(w.getColRow(
                 [
                     (numColWidth, BoxButton(str(x), on_press=views.activate,
                         user_data=['single_entry',entry])),
-                    (13, w.getText('body', '\n' + entry.msgType[2] + '\n','center')),
+                    (13, w.getText('body', '\n' + msgType + '\n','center')),
                     urwid.Text(('body','\n' + entry.fullEntryText[2] + '\n'),align='left'),
                     (3 , w.getText('body','', 'left'))
                 ]
