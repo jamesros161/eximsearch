@@ -1459,7 +1459,7 @@ class LogFiles():
         fixed_dates = []
         i = 0
         while i < len(date_ranges):
-            if len(date_ranges) >= i + 1:
+            if len(date_ranges) > i + 1:
                 if date_ranges[i][1] != date_ranges[i+1][0]:
                     fixed_dates.append(date_ranges[i])
                 if date_ranges[i][1] == date_ranges[i+1][0]:
