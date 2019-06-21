@@ -1460,6 +1460,10 @@ class LogFiles():
         debug('Date Ranges: %s', date_ranges)
         dates = collections.Counter(date_ranges)
         debug('Date Ranges: %s', dates)
+        for key, value in dates.items():
+            if value > 1:
+                del dates[key]
+        debug('Date Ranges: %s', dates.keys().sort())
         
 """
 DATA PROCESSING / SEARCH AND RESULT CLASSES
