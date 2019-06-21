@@ -1804,8 +1804,11 @@ class Entry():
             except:
                 warning('Could Not Parse line: %s', self.fullEntryText)
             else:
+                debug('Parsing with standard split')
                 m = self.fullEntryText.split()
+                debug('split entry: %s', m)
                 if self.msgType:
+                    debug('self.msgType: %s', self.msgType)
                     if self.msgType[2] == 'Spam Status':
                             if 'detected' in m:
                                 self.spamStatus = [15, 'Spam Status',  ' '.join(m[m.index('detected') + 3: -2])]
