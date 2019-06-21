@@ -768,9 +768,11 @@ class BodyWidgets():
         apply_button = state.get_view(ACTIVE).footer.contents[0][0].contents[0][0]
         if not state.get_result_list(ACTIVE):
             state.get_view(ACTIVE).footer.contents[0][0].contents[0][0].disable()
+            state.get_view(ACTIVE).show_footer()
             debug('apply_button selectable? %s', apply_button.selectable())
         else:
             state.get_view(ACTIVE).footer.contents[0][0].contents[0][0].enable()
+            state.get_view(ACTIVE).show_footer()
             debug('apply_button selectable? %s', apply_button.selectable())
         debug(' kwargs : %s', kwargs)
         #Create Active Filters List Headers
