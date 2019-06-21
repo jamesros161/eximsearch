@@ -1260,10 +1260,9 @@ class View():
         self.menuItems = getattr(s.menus,self.view_name)
         loop.screen.clear()
         self.footer = w.getFooterWidget(self, self.menuItems)
-        self.body = body.get_body_widget(self.view_name, user_args=user_args, calling_view=self)
-        #self.body._invalidate() 
-        self.show_body()
         self.show_footer()
+        self.body = body.get_body_widget(self.view_name, user_args=user_args, calling_view=self)
+        self.show_body()
         self.show_header()
         if focus_position:
             frame.set_focus(focus_position)
