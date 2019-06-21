@@ -1459,7 +1459,7 @@ class LogFiles():
         date_ranges.sort()
         debug('Date Ranges: %s', date_ranges)
         dates = collections.Counter(date_ranges)
-        debug('Date Ranges: %s', date_ranges)
+        debug('Date Ranges: %s', dates)
         
 """
 DATA PROCESSING / SEARCH AND RESULT CLASSES
