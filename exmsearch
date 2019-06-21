@@ -200,7 +200,7 @@ class Menus():
                 ['      (N)ew Search      ','new_search'],
                 ['          (Q)uit        ','quit_loop']]
             self.add_remove_filters = [
-                ['(A)pply Current Results ','apply_filters'],
+                ['(A)pply Current Filters ','apply_filters'],
                 ['  (B)ack To Result List ','results_list'],
                 ['         (H)ome         ','home'],
                 ['      (N)ew Search      ','new_search'],
@@ -355,7 +355,7 @@ class CustomButton(urwid.Button):
     button_right = urwid.Text(']')
 class BoxButton(urwid.WidgetWrap):
     _border_char = u'─'
-    def __init__(self, label, on_press=None, user_data=None):
+    def __init__(self, label, on_press=None, user_data=None, enabled=True):
         padding_size = 2
         border = self._border_char * (len(label) + padding_size * 2 )
         self.cursor_position = len(border) + padding_size
@@ -364,7 +364,7 @@ class BoxButton(urwid.WidgetWrap):
         self.bottom = u'└' + border + u'┘'
         self.on_press_action = on_press
         self.on_press_user_data = user_data
-        self.enabled = True
+        self.enabled = enabled
         # self.widget = urwid.Text([self.top, self.middle, self.bottom])
         self.widget = urwid.Pile([
             urwid.Text(self.top[:-1],align='center'),
@@ -767,12 +767,10 @@ class BodyWidgets():
     def get_add_remove_filters(self, **kwargs):
         apply_button = state.get_view(ACTIVE).footer.contents[0][0].contents[0][0]
         if not state.get_result_list(ACTIVE):
-            state.get_view(ACTIVE).footer.contents[0][0].contents[0][0].disable()
-            state.get_view(ACTIVE).show_footer()
+            apply_button = BoxButton('(A)pply Current Filters ',on_press=views.activate, user_data=('apply_filters'),enabled=False)
             debug('apply_button selectable? %s', apply_button.selectable())
         else:
-            state.get_view(ACTIVE).footer.contents[0][0].contents[0][0].enable()
-            state.get_view(ACTIVE).show_footer()
+            apply_button = BoxButton('(A)pply Current Filters ',on_press=views.activate, user_data=('apply_filters'),enabled=True)
             debug('apply_button selectable? %s', apply_button.selectable())
         debug(' kwargs : %s', kwargs)
         #Create Active Filters List Headers
@@ -1259,7 +1257,6 @@ class View():
         loop.screen.clear()
         self.footer = w.getFooterWidget(self, self.menuItems)
         self.body = body.get_body_widget(self.view_name, user_args=user_args, calling_view=self)
-        self.footer = w.getFooterWidget(self, self.menuItems)
         #self.body._invalidate() 
         self.show_body()
         self.show_footer()
