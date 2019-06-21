@@ -1850,7 +1850,7 @@ class Entry():
                     if 'P=' in m[x]:
                         self.protocol = [22, 'Protocol: ', m[x][2:]]
                         if 'local' in self.protocol[2]:
-                            self.msgtype = [15, 'Message Type: ', 'local']
+                            self.msgType = [15, 'Message Type: ', 'local']
                     if 'T=' in m[x] and m[x][0] != 'R':
                         self.topic = [21, 'Subject: ', m[x][2:]]
                     if m[x] == 'from':
