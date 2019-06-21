@@ -1794,7 +1794,7 @@ class Entry():
         self.entryType = []
         if 'Warning: "SpamAssassin' in self.fullEntryText:
             self.msgType = [15, 'Message Type: ', 'Spam Status']
-        #debug('Init Entries: %s', self.fullEntryText)
+        debug('Init Entries: %s', self.fullEntryText)
         try:
             shlex.split(self.fullEntryText)
         except:
