@@ -1407,12 +1407,22 @@ class LogFiles():
         for log in s.lf.selectedLogs:
             if log[-2:] != 'gz':
                 popen_args = "sudo head -n 1 " + log
-                reqOutput, reqError = subprocess.Popen(popen_args, 
+                reqOutput,_ = subprocess.Popen(popen_args, 
                     stdout=subprocess.PIPE, 
                     stderr=subprocess.PIPE,
                     shell=True
                     ).communicate()
-                debug('reqOutput: %s', reqOutput)
+                first_line = reqOutput[:10]
+                debug('first_line: %s', first_line)
+
+                popen_args = "sudo tail -n 1 " + log
+                reqOutput,_ = subprocess.Popen(popen_args, 
+                    stdout=subprocess.PIPE, 
+                    stderr=subprocess.PIPE,
+                    shell=True
+                    ).communicate()
+                last_line = reqOutput[:10]
+                debug('last_line: %s', last_line)
                 #x = os.popen("sudo head -n 1 %s" % log).read()
                 #first_line = x[:10]
                 #y = os.popen("sudo tail -n 1 %s" % log).read()
@@ -1425,7 +1435,17 @@ class LogFiles():
                     stderr=subprocess.PIPE,
                     shell=True
                     ).communicate()
-                debug('reqOutput: %s', reqOutput)
+                first_line = reqOutput[:10]
+                debug('first_line: %s', first_line)
+
+                popen_args = "sudo zcat " + log + " | tail -n 1"
+                reqOutput, reqError = subprocess.Popen(popen_args, 
+                    stdout=subprocess.PIPE, 
+                    stderr=subprocess.PIPE,
+                    shell=True
+                    ).communicate()
+                last_line = reqOutput[:10]
+                debug('first_line: %s', last_line)
                 #x = os.popen("sudo zcat %s | head -n 1" % log).read()
                 #first_line = x[:10]
                 #y = os.popen("sudo zcat %s | tail -n 1" % log).read()
