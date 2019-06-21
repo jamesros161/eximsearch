@@ -972,7 +972,7 @@ class BodyWidgets():
         stat_columns.append(
             w.getColRow([
                 w.blankFlow,
-                w.getText('body','Top Sending Script Directories', 'center'),
+                w.getText('body','Top Sending Scripts for ' + state.cpanel_user, 'center'),
                 w.blankFlow
             ])
         )
@@ -1839,18 +1839,18 @@ class Entry():
                     self.deliveryTime = [22, 'Time Spent being Delivered: ', m[x][3:]]
                 if 'RT=' in m[x]:
                     self.deliveryTime = [22, 'Time Spent being Delivered: ', m[x][3:]]
-                if ' <= ' in fullEntryText:
+                if '<=' in fullEntryText:
                     self.msgType = [15, 'Message Type: ', 'incoming']
                     if 'A=' in m[x]:
                         self.smtpAuth = [22, 'Auth. Method: ', m[x][2:]]
                         if 'dovecot' in m[x]:
-                            self.msgType = [15, 'Type: ', 'relay']
+                            self.msgType = [15, 'Message Type: ', 'relay']
                     if x == 5:
                         self.sendAddr = [18, 'Sender: ', m[x]]
                     if 'P=' in m[x]:
                         self.protocol = [22, 'Protocol: ', m[x][2:]]
-                        if 'local' in self.protocol[1]:
-                            self.msgtype = [15, 'Type: ', 'local']
+                        if 'local' in self.protocol[2]:
+                            self.msgtype = [15, 'Message Type: ', 'local']
                     if 'T=' in m[x] and m[x][0] != 'R':
                         self.topic = [21, 'Subject: ', m[x][2:]]
                     if m[x] == 'from':
