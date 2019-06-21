@@ -1433,7 +1433,7 @@ class LogFiles():
                 #debug('First Line: %s, Last_line: %s',first_line,last_line)
             else:
                 popen_args = "sudo zcat " + log + " | head -n 1"
-                reqOutput, reqError = subprocess.Popen(popen_args, 
+                reqOutput,_ = subprocess.Popen(popen_args, 
                     stdout=subprocess.PIPE, 
                     stderr=subprocess.PIPE,
                     shell=True
@@ -1443,7 +1443,7 @@ class LogFiles():
                 debug('first_line: %s', first_line)
                 
                 popen_args = "sudo zcat " + log + " | tail -n 1"
-                reqOutput, reqError = subprocess.Popen(popen_args, 
+                reqOutput,_ = subprocess.Popen(popen_args, 
                     stdout=subprocess.PIPE, 
                     stderr=subprocess.PIPE,
                     shell=True
