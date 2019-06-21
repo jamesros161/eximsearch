@@ -1153,7 +1153,7 @@ class State():
         name = 'filter-'+ str(filter_number)
         setattr(self,name,Filter(
                 name,filter_number,self.current_filter_type,
-                self.current_edit_text)
+                self.current_edit_text.lower())
                 )
         self.active_filters.append(
             getattr(self,name)
@@ -1809,10 +1809,10 @@ class Entry():
                 debug('split entry: %s', m)
                 if self.msgType:
                     debug('self.msgType: %s', self.msgType)
-                    if self.msgType[2] == 'Spam Status':
+                    if self.msgType[2] == 'spam status':
                             if 'detected' in m:
-                                self.spamStatus = [15, 'Spam Status',  ' '.join(m[m.index('detected') + 3: -2])]
-                                self.spamScore = [15, 'Spam Score', m[-1]]
+                                self.spamStatus = [15, 'spam status',  ' '.join(m[m.index('detected') + 3: -2])]
+                                self.spamScore = [15, 'spam score', m[-1]]
                 #self.parseError = [15, 'Parsing Error: ', str(Exception)]
                 x = 0
                 while x <= len(m):
@@ -1840,10 +1840,10 @@ class Entry():
                     if m[x].startswith('cwd'):
                         self.cwd = [13, 'Source Directory: ', m[x].split('=')[1]]
                         if self.cwd[2] == '/var/spool/exim':
-                            self.msgType = [15, 'Message Type: ', 'Exim Queue']
+                            self.msgType = [15, 'Message Type: ', 'exim queue']
                             self.id = [13, 'Message Id: ', m[-1]]
                         else:
-                            self.msgType = [15, 'Message Type: ', 'Script Mailer']
+                            self.msgType = [15, 'Message Type: ', 'script mailer']
                         if 'args:' in m:
                             args = m.index('args:')
                             self.script = [13, 'Sending Script: ', m[args + 1]]
@@ -1852,12 +1852,12 @@ class Entry():
                     else:
                         self.id = [13, 'Message ID: ', m[x]]
                     if 'Sender' in m[x]:
-                        self.msgType = [15, 'Message Type: ', 'Sender Id']
+                        self.msgType = [15, 'Message Type: ', 'sender id']
                 if x == 4:
                     if len(m[x]) == 2:
                         self.entryType = [22, 'Entry Type Symbol: ', m[x]]
                     elif 'Completed' in m[x]:
-                        self.msgType = [15, 'Message Type: ', 'Queue Status']
+                        self.msgType = [15, 'Message Type: ', 'queue status']
                 #debug('parseEntries self.fullEntryText: %s', self.fullEntryText)
                 if self.msgType:
                     if self.msgType[2] == 'Spam Status':
@@ -1975,12 +1975,12 @@ class Entry():
                     if ' -> ' in fullEntryText:
                         self.msgType = [15, 'Message Type: ', 'forwarder']
                     if not self.entryType and ' rejected ' in fullEntryText:
-                        self.msgType = [15, 'Message Type: ', 'Bounce']
+                        self.msgType = [15, 'Message Type: ', 'bounce']
                         self.id = []
                     if 'SMTP connection' in fullEntryText:
                         self.msgType = [15, 'Message Type: ', 'SMTP Connect']
                     if ' ** ' in fullEntryText:
-                        self.msgType = [15, 'Message Type: ', 'Bounce']
+                        self.msgType = [15, 'Message Type: ', 'bounce']
                     if ' no host name found ' in fullEntryText or ' failed to find host name ' in fullEntryText:
                         self.msgType = [15, 'Message Type: ', 'Hostname Error']
                 x += 1
