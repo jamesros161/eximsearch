@@ -765,9 +765,12 @@ class BodyWidgets():
         #resultListFiller = urwid.Filler(resultListBox)
         return resultListBox
     def get_add_remove_filters(self, **kwargs):
+        apply_button = state.get_view(ACTIVE).footer.contents[0][0].contents[0][0]
         if not state.get_result_list(ACTIVE):
+            debug('apply_button selectable? %s', apply_button.selectable())
             state.get_view(ACTIVE).footer.contents[0][0].contents[0][0].disable()
         else:
+            debug('apply_button selectable? %s', apply_button.selectable())
             state.get_view(ACTIVE).footer.contents[0][0].contents[0][0].enable()
         debug(' kwargs : %s', kwargs)
         #Create Active Filters List Headers
