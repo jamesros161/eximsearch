@@ -1,8 +1,0 @@
-{
-    'obj': state,
-    'attrs': [
-        get_view(ACTIVE),
-        body,
-        body
-    ]
-}
