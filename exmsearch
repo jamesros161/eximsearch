@@ -1467,6 +1467,7 @@ class LogFiles():
             else:
                 fixed_dates.append(date_ranges[i])
             i += 1
+        debug('Fixed Date Ranges: %s', fixed_dates)
 """
 DATA PROCESSING / SEARCH AND RESULT CLASSES
 """
