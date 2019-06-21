@@ -546,7 +546,7 @@ class MyWidgets():
         outsidefiller = urwid.Filler(lineBox,height=listHeight)
         outsideCol = w.getColRow([w.blankBox,('weight',2,outsidefiller),w.blankBox])
         return urwid.Filler(outsideCol, height=listHeight)
-    def getHeaderWidget(self,title=s.df.mainTitle,subtitle=''):
+    def getHeaderWidget(self,title=s.df.mainTitle,subtitle=s.df.mainSubTitle):
         """Generates a basic header with a title and optional subtitle
            This is meant to be used exclusively by the Headers.new() method
         
