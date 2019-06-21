@@ -179,36 +179,36 @@ class Menus():
                 [' Add / Remove Filters ','add_remove_filters'],
                 ['  cPanel User Stats   ','stat_summary'],
                 [' Change Log Selection ','choose_logs'],
-                ['         (Q)uit       ','quit_loop']]
+                ['          Quit        ','quit_loop']]
             self.new_search = self.home
             self.search_progress = self.home
             self.stat_summary = self.home
         
             self.results_list = [
-                ['(F)ilter Current Results','add_remove_filters'],
-                [' (C)lear Applied Filters','clear_applied_filters'],
-                ['         (H)ome         ','home'],
-                ['      (N)ew Search      ', 'new_search'],
-                ['          (Q)uit        ','quit_loop']]
+                ['Filter Current Results','add_remove_filters'],
+                [' Clear Applied Filters','clear_applied_filters'],
+                ['         Home         ','home'],
+                ['      New Search      ', 'new_search'],
+                ['          Quit        ','quit_loop']]
             self.results_summary = self.results_list
             self.apply_filters = self.results_list
             self.clear_applied_filters = self.results_list
 
             self.single_entry = [
-                ['  (B)ack To Result List ','results_list'],
-                ['         (H)ome         ','home'],
-                ['      (N)ew Search      ','new_search'],
-                ['          (Q)uit        ','quit_loop']]
+                ['  Back To Result List ','results_list'],
+                ['         Home         ','home'],
+                ['      New Search      ','new_search'],
+                ['          Quit        ','quit_loop']]
             self.add_remove_filters = [
-                ['(A)pply Current Filters ','apply_filters'],
-                ['  (B)ack To Result List ','results_list'],
-                ['         (H)ome         ','home'],
-                ['      (N)ew Search      ','new_search'],
-                ['          (Q)uit        ','quit_loop']]
+                ['Apply Current Filters ','apply_filters'],
+                ['  Back To Result List ','results_list'],
+                ['         Home         ','home'],
+                ['      New Search      ','new_search'],
+                ['          Wuit        ','quit_loop']]
             self.add_remove_filters_no_apply = [
-                [' (N)ew Search ','new_search'],
-                ['    (H)ome    ','home'],
-                ['    (Q)uit    ','quit_loop']]
+                [' New Search ','new_search'],
+                ['    Home    ','home'],
+                ['    Quit    ','quit_loop']]
             self.quit_loop = []
             self.legend = [
                 ['Prev. Screen', 'Home'],
