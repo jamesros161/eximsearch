@@ -767,11 +767,11 @@ class BodyWidgets():
     def get_add_remove_filters(self, **kwargs):
         apply_button = state.get_view(ACTIVE).footer.contents[0][0].contents[0]
         if not state.get_result_list(ACTIVE):
-            apply_button = BoxButton(' No Results to Filter ',on_press=views.activate, user_data=('apply_filters'),enabled=False)
-            debug('apply_button selectable? %s', apply_button[0].selectable())
+            apply_button = [BoxButton(' No Results to Filter ',on_press=views.activate, user_data=('apply_filters'),enabled=False),('given', 30)]
+            #debug('apply_button selectable? %s', apply_button[0].selectable())
         else:
-            apply_button = BoxButton('(A)pply Current Filters ',on_press=views.activate, user_data=('apply_filters'),enabled=True)
-            debug('apply_button selectable? %s', apply_button[0].selectable())
+            apply_button = [BoxButton('(A)pply Current Filters ',on_press=views.activate, user_data=('apply_filters'),enabled=True),('given', 30)]
+            #debug('apply_button selectable? %s', apply_button[0].selectable())
         debug(' kwargs : %s', kwargs)
         #Create Active Filters List Headers
         list_of_active_filters = []
