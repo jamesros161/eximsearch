@@ -1852,6 +1852,7 @@ class Entry():
                         if 'local' in self.protocol[2]:
                             debug('msgType should be Local! wtf?!?: %s',self.msgType)
                             self.msgType = [15, 'Message Type: ', 'local']
+                            debug('msgType should be Local! wtf?!?: %s',self.msgType)
                     if 'T=' in m[x] and m[x][0] != 'R':
                         self.topic = [21, 'Subject: ', m[x][2:]]
                     if m[x] == 'from':
