@@ -10,7 +10,7 @@ FORMAT = '%(lineno)d :: %(funcName)s :: %(message)s'
 if getpass.getuser() == 'root':
     logpath = '/root/eximsearch.log'
 else:
-    logpath = '/home/' + getpass.getuser() + '/logs/eximsearch.log'
+    logpath = '/home/' + getpass.getuser() + '/eximsearch.log'
 logging.basicConfig(format=FORMAT,filename=logpath,filemode='a', level=logging.DEBUG)
 ACTIVE = 'active'
 PREV = 'prev'
