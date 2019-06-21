@@ -1472,7 +1472,7 @@ class LogFiles():
             x = datetime.strptime(date_range[0],s.dt.logDateFormat)
             y = datetime.strptime(date_range[1],s.dt.logDateFormat)
             formatted_date_ranges.append(
-                datetime.strptime(x,s.dt.logDateFormat) + ' - ' + datetime.strptime(y,s.dt.logDateFormat)
+                x.strftime(s.dt.logDateFormat) + ' - ' + y.strptime(s.dt.logDateFormat)
             )
         debug('Formatted Date Ranges: %s', formatted_date_ranges)
 """
