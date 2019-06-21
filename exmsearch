@@ -766,7 +766,9 @@ class BodyWidgets():
         return resultListBox
     def get_add_remove_filters(self, **kwargs):
         if not state.get_result_list(ACTIVE):
-            debug('menuItems: %s', state.get_view(ACTIVE).footer.contents[0][0].contents[0][0])
+            state.get_view(ACTIVE).footer.contents[0][0].contents[0][0].disable()
+        else:
+            state.get_view(ACTIVE).footer.contents[0][0].contents[0][0].enable()
         debug(' kwargs : %s', kwargs)
         #Create Active Filters List Headers
         list_of_active_filters = []
