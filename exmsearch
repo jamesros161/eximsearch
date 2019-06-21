@@ -364,6 +364,7 @@ class BoxButton(urwid.WidgetWrap):
         self.bottom = u'└' + border + u'┘'
         self.on_press_action = on_press
         self.on_press_user_data = user_data
+        self.enabled = True
         # self.widget = urwid.Text([self.top, self.middle, self.bottom])
         self.widget = urwid.Pile([
             urwid.Text(self.top[:-1],align='center'),
@@ -383,7 +384,14 @@ class BoxButton(urwid.WidgetWrap):
         super(BoxButton, self).__init__(self.widget)
 
     def selectable(self):
-        return True
+        if self.enabled:
+            return True
+        else:
+            return False
+    def disable(self):
+        self.enabled = False
+    def enable(self):
+        self.enabled = True
 
     def keypress(self, *args, **kw):
         return self._hidden_btn.keypress(*args, **kw)
@@ -757,6 +765,7 @@ class BodyWidgets():
         #resultListFiller = urwid.Filler(resultListBox)
         return resultListBox
     def get_add_remove_filters(self, **kwargs):
+        #if state.get_result_list
         debug(' kwargs : %s', kwargs)
         #Create Active Filters List Headers
         list_of_active_filters = []
@@ -1242,7 +1251,7 @@ class View():
         loop.screen.clear()
         self.footer = w.getFooterWidget(self, menuItems)
         self.body = body.get_body_widget(self.view_name, user_args=user_args, calling_view=self)
-        self.body._invalidate() 
+        #self.body._invalidate() 
         self.show_body()
         self.show_footer()
         self.show_header()
