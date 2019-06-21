@@ -1414,7 +1414,6 @@ class LogFiles():
                     shell=True
                     ).communicate()
                 first_line = reqOutput[:10]
-                date_ranges.append(first_line)
                 debug('first_line: %s', first_line)
 
                 popen_args = "sudo tail -n 1 " + log
@@ -1425,7 +1424,7 @@ class LogFiles():
                     ).communicate()
                 last_line = reqOutput[:10]
                 debug('last_line: %s', last_line)
-                date_ranges.append(last_line)
+                date_ranges.append([first_line,last_line])
                 #x = os.popen("sudo head -n 1 %s" % log).read()
                 #first_line = x[:10]
                 #y = os.popen("sudo tail -n 1 %s" % log).read()
@@ -1439,7 +1438,6 @@ class LogFiles():
                     shell=True
                     ).communicate()
                 first_line = reqOutput[:10]
-                date_ranges.append(first_line)
                 debug('first_line: %s', first_line)
                 
                 popen_args = "sudo zcat " + log + " | tail -n 1"
@@ -1449,7 +1447,7 @@ class LogFiles():
                     shell=True
                     ).communicate()
                 last_line = reqOutput[:10]
-                date_ranges.append(last_line)
+                date_ranges.append([first_line,last_line])
                 debug('last_line: %s', last_line)
                 #x = os.popen("sudo zcat %s | head -n 1" % log).read()
                 #first_line = x[:10]
@@ -1458,13 +1456,7 @@ class LogFiles():
                 #debug('First Line: %s, Last_line: %s',first_line,last_line)
         date_ranges.sort()
         debug('Date Ranges: %s', date_ranges)
-        dates = collections.Counter(date_ranges)
-        debug('Date Ranges: %s', dates)
-        for key, value in dates.items():
-            if value >= 2:
-                del dates[key]
-        debug('Date Ranges: %s', dates)
-        
+               
 """
 DATA PROCESSING / SEARCH AND RESULT CLASSES
 """
