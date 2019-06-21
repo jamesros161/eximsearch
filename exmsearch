@@ -738,6 +738,7 @@ class BodyWidgets():
         #for result in result_list.contents:
         for entry in list_of_result_entries:
             numColWidth = len(str(x)) + 6
+            debug('entry.msgType:%s', entry.msgType)
             if len(entry.msgType) > 2:
                 msgType = entry.msgType[2]
             else:
