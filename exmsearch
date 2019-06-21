@@ -1841,7 +1841,7 @@ class Entry():
                     self.deliveryTime = [22, 'Time Spent being Delivered: ', m[x][3:]]
                 if 'RT=' in m[x]:
                     self.deliveryTime = [22, 'Time Spent being Delivered: ', m[x][3:]]
-                if '<=' in fullEntryText:
+                if '<=' in fullEntryText and not 'P=local' in fullEntryText:
                     self.msgType = [15, 'Message Type: ', 'incoming']
                     if 'A=' in m[x]:
                         self.smtpAuth = [22, 'Auth. Method: ', m[x][2:]]
@@ -1851,10 +1851,6 @@ class Entry():
                         self.sendAddr = [18, 'Sender: ', m[x]]
                     if 'P=' in m[x]:
                         self.protocol = [22, 'Protocol: ', m[x][2:]]
-                        if 'local' in self.protocol[2]:
-                            debug('msgType should be Local! wtf?!?: %s',self.msgType)
-                            self.msgType = [15, 'Message Type: ', 'local']
-                            debug('msgType should be Local! wtf?!?: %s',self.msgType)
                     if 'T=' in m[x] and m[x][0] != 'R':
                         self.topic = [21, 'Subject: ', m[x][2:]]
                     if m[x] == 'from':
@@ -1875,6 +1871,10 @@ class Entry():
                             self.recipient = [19, 'Recipient: ', stripped_recip]
                         else:
                             self.recipient = [19, 'Recipient: ', m[x+1]]
+                elif 'P=local' in fullEntryText:
+                            debug('msgType should be Local! wtf?!?: %s',self.msgType)
+                            self.msgType = [15, 'Message Type: ', 'local']
+                            debug('msgType should be Local! wtf?!?: %s',self.msgType)
                 else:
                     if x == 5:
                         if '@' in m[x]:
