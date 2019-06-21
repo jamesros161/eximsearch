@@ -1406,16 +1406,16 @@ class LogFiles():
     def get_date_range(self):
         for log in s.lf.selectedLogs:
             if log[-2:] != 'gz':
-                first_line = os.popen("sudo head -n 1 %s" % log).read()
-                first_line = first_line[10:]
-                last_line = os.popen("sudo tail -n 1 %s" % log).read()
-                last_line = last_line[10:]
+                x = os.popen("sudo head -n 1 %s" % log).read()
+                first_line = x[10:]
+                y = os.popen("sudo tail -n 1 %s" % log).read()
+                last_line = y[10:]
                 debug('First Line: %s, Last_line: %s',first_line,last_line)
             else:
-                first_line = os.popen("sudo zcat %s | head -n 1" % log).read()
-                first_line = first_line[10:]
-                last_line = os.popen("sudo zcat %s | tail -n 1" % log).read()
-                last_line = last_line[10:]
+                x = os.popen("sudo zcat %s | head -n 1" % log).read()
+                first_line = x[10:]
+                y = os.popen("sudo zcat %s | tail -n 1" % log).read()
+                last_line = y[10:]
                 debug('First Line: %s, Last_line: %s',first_line,last_line)
 """
 DATA PROCESSING / SEARCH AND RESULT CLASSES
