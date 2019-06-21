@@ -1459,9 +1459,10 @@ class LogFiles():
         date_ranges.sort()
         debug('Date Ranges: %s', date_ranges)
         for date in date_ranges:
-            if date_ranges[date_ranges.index(date) + 1] == date:
-                date_ranges.remove(date)
-                date_ranges.remove(date)
+            if len(date_ranges) > date_ranges.index(date) + 1:
+                if date_ranges[date_ranges.index(date) + 1] == date:
+                    date_ranges.remove(date)
+                    date_ranges.remove(date)
         debug('Date Rangse: %s', date_ranges)
         
 """
