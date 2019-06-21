@@ -206,9 +206,9 @@ class Menus():
                 ['      (N)ew Search      ','new_search'],
                 ['          (Q)uit        ','quit_loop']]
             self.add_remove_filters_no_apply = [
-                ['      (N)ew Search      ','new_search'],
-                ['         (H)ome         ','home'],
-                ['          (Q)uit        ','quit_loop']]
+                [' (N)ew Search ','new_search'],
+                ['    (H)ome    ','home'],
+                ['    (Q)uit    ','quit_loop']]
             self.quit_loop = []
             self.legend = [
                 ['Prev. Screen', 'Ctrl + ←'],
