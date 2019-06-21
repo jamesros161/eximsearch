@@ -1,4 +1,4 @@
-#!/opt/imh-python/bin/python
+#!/usr/bin/python2.7
 # -*- coding: utf-8 -*-
 
 import urwid, datetime, os, subprocess, sys, json, re, shlex, gzip, time, logging, collections, socket, threading, getpass
