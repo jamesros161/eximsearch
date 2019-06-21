@@ -1713,6 +1713,7 @@ class ResultLists():
         self.list_name = list_name
         self.is_filtered = is_filtered
         self.query = state.get_query(ACTIVE)
+        debug('query: %s', self.query)
         self.original_results = original_results
         self.filteredApplied = filters_applied
         self.count = count
