@@ -1461,7 +1461,7 @@ class LogFiles():
         dates = collections.Counter(date_ranges)
         debug('Date Ranges: %s', dates)
         for key, value in dates.items():
-            if value == 2:
+            if value >= 2:
                 del dates[key]
         debug('Date Ranges: %s', dates)
         
