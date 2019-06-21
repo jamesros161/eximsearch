@@ -1,4 +1,0 @@
-{
-    "command": "debug('progressBar: %s', walker_item.contents[1][0].get_text()[0])",
-    "keycode": "f3"
-}
