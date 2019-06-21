@@ -175,11 +175,11 @@ class Menus():
             self.stat_summary_results = self.coming_soon
 
             self.home = [
-                ['      (N)ew Search      ', 'new_search'],
-                [' Add / Remove (F)ilters ','add_remove_filters'],
-                ['     (S)tats Summary    ','stat_summary'],
-                ['      (T)est Mailer     ','coming_soon'],
-                ['          (Q)uit        ','quit_loop']]
+                ['      New Search      ', 'new_search'],
+                [' Add / Remove Filters ','add_remove_filters'],
+                ['  cPanel User Stats   ','stat_summary'],
+                [' Change Log Selection ','choose_logs'],
+                ['         (Q)uit       ','quit_loop']]
             self.new_search = self.home
             self.search_progress = self.home
             self.stat_summary = self.home
