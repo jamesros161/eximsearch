@@ -1,13 +1,17 @@
-#!/opt/imh-python/bin/python
+#!/usr/bin/python2.7
 # -*- coding: utf-8 -*-
 
-import urwid, datetime, os, subprocess, sys, json, re, shlex, gzip, time, logging, collections, socket, threading
-from multiprocessing import Pool, Queue, current_process
+import urwid, datetime, os, subprocess, sys, json, re, shlex, gzip, time, logging, collections, socket, threading, getpass
+from multiprocessing import Pool, Queue, current_process, connection
 from multiprocessing.pool import ThreadPool
 from datetime import datetime, timedelta
 os.nice(20)
 FORMAT = '%(lineno)d :: %(funcName)s :: %(message)s'
-logging.basicConfig(format=FORMAT,filename='log',filemode='a', level=logging.DEBUG)
+if getpass.getuser() == 'root':
+    logpath = '/root/eximsearch.log'
+else:
+    logpath = '/home/' + getpass.getuser() + '/logs/eximsearch.log'
+logging.basicConfig(format=FORMAT,filename=logpath,filemode='a', level=logging.DEBUG)
 ACTIVE = 'active'
 PREV = 'prev'
 BODY = 'body'
@@ -51,32 +55,37 @@ class GlobalSettings():
             'date',
             'type'
         ]
-    def dyn_store_debug(self):
-        data = {
-            "keycode": "f3",
-            "command": "state.get_view_name(ACTIVE)"
-        }
-        with open('/home/usirius/git/eximsearch/debug.json', 'a') as outfile:
-            json.dump(data, outfile)
-#    def dyn_debug(self, *args):
-#        with open('/home/usirius/git/eximsearch/debug.json', 'r') as debug_file:
-#            x = json.load(debug_file,'utf-8')
-#            try:
-#                eval(x['command'])
-#            except Exception as e:
-#                debug('Exception is : %s', e)
-#            else:
-#                return eval(x['command'])
+    #def dyn_store_debug(self):
+        #data = {
+        #    "keycode": "f3",
+        #    "command": "state.get_view_name(ACTIVE)"
+        #}
+        #with open('/home/usirius/git/eximsearch/debug.json', 'a') as outfile:
+        #    json.dump(data, outfile)
+    def dyn_debug(self, *args):
+        debug('dynamic_debug_disabled')
+        #with open('/home/usirius/git/eximsearch/debug.json', 'r') as debug_file:
+        #    x = json.load(debug_file,'utf-8')
+        #    for walker_item in state.get_view(ACTIVE).body.body:
+        #        if type(walker_item) == urwid.container.Columns:
+        #            if type(walker_item.contents[0][0]) == urwid.graphics.ProgressBar:
+        #                try:
+        #                   eval(x['command'])
+        #               except Exception as e:
+        #                   debug('Exception is : %s', e)
+        #                else:
+        #                   pass
+        #               #    return eval(x['command'])
     def unhandled_input(self,key):
         if type(key) == str:
             #raw = loop.screen.get_input(raw_keys=True)
             #debug('raw: %s', raw)
             if key in 'ctrl e':
                 views.activate('quit_loop',focus_position=BODY)
-            if key in ('N', 'n'):
+            if 'ctrl n' in key:
                 views.activate('new_search', focus_position=BODY)
-            if key in ('S', 's'):
-                views.activate('coming_soon', focus_position=FOOTER)
+            if 'ctrl f' in key:
+                views.activate('add_remove_filters', focus_position=BODY)
             if key in ('B', 'b') and 'single_entry' in state.get_view_name(ACTIVE):
                 views.activate('results_list', focus_position='body')
             if key in 'tab':
@@ -85,26 +94,27 @@ class GlobalSettings():
                 else:
                     if self.menuEnabled:
                         frame.focus_position = 'footer'
-            if 'ctrl left' in key:
+            if 'home' in key:
                     state.go_back()
-            if 'ctrl right' in key:
+            if 'end' in key:
                 state.go_forward()
             if key in 'f5':
                 debug('Current View: %s', state.get_view_name(ACTIVE))
-                if state.get_view(PREV):
-                    debug('Previous View: %s', state.get_view_name(PREV))
-            if key in 'f6' and state.get_view(PREV):
+                if hasattr(state,'prev_view'):
+                    if state.prev_view:
+                        debug('Previous View: %s', state.get_view_name(PREV))
+            if key in 'f6':
                 debug('Active Filters: %s', state.get_active_filters())
             if key in 'f7':
                 debug('Current Query: %s', state.get_query(ACTIVE))
-            if key in 'f8' and state.get_query(PREV):
-                debug('PRevious Query: %s', state.get_query(PREV))
-#            if key in 'f3':
-#                debug('Body: %s', self.dyn_debug())
+                if hasattr(state,'prev_query'):
+                    debug('Previous Query: %s', state.get_query(PREV))
+            if key in 'f3':
+                debug('Body: %s', self.dyn_debug())
             if key in 'f1':
                 debug('Current Result List: %s', state.get_result_list_name(ACTIVE))
-                if state.get_result_list_name(PREV):
-                    debug('Previous Result LIst: %s', state.get_result_list_name(PREV))
+                if hasattr(state,'prev_result_list'):
+                    debug('Previous Result List: %s', state.get_result_list_name(PREV))
             if key in 'f2':
                 debug('Current View Chain Position: %s', state.get_view_chain_pos())
                 debug('Current View Chain Name: %s', state.get_view_from_chain(state.get_view_chain_pos()).view_name)
@@ -153,6 +163,7 @@ class DisplayFrameSettings():
             ('bold',    'dark green, bold' , 'black'),
             ('blue', 'bold', 'dark blue'),
             ('highlight', 'dark green', 'default'),
+            ('alert', 'dark red, bold', 'default'),
         ]
 class Menus():
         def __init__(self):
@@ -161,46 +172,51 @@ class Menus():
 
             self.coming_soon = [
                 ['         (H)ome         ','home']]
+            self.stat_summary_results = self.coming_soon
 
             self.home = [
-                ['      (N)ew Search      ', 'new_search'],
-                [' Add / Remove (F)ilters ','add_remove_filters'],
-                ['     (S)tats Summary    ','coming_soon'],
-                ['      (T)est Mailer     ','coming_soon'],
-                ['          (Q)uit        ','quit_loop']]
+                ['      New Search      ', 'new_search'],
+                [' Add / Remove Filters ','add_remove_filters'],
+                ['  cPanel User Stats   ','stat_summary'],
+                [' Change Log Selection ','choose_logs'],
+                ['          Quit        ','quit_loop']]
             self.new_search = self.home
             self.search_progress = self.home
+            self.stat_summary = self.home
         
             self.results_list = [
-                ['(F)ilter Current Results','add_remove_filters'],
-                [' (C)lear Applied Filters','clear_applied_filters'],
-                ['         (H)ome         ','home'],
-                ['      (N)ew Search      ', 'new_search'],
-                ['          (Q)uit        ','quit_loop']]
+                ['Filter Current Results','add_remove_filters'],
+                [' Clear Applied Filters','clear_applied_filters'],
+                ['         Home         ','home'],
+                ['      New Search      ', 'new_search'],
+                ['          Quit        ','quit_loop']]
             self.results_summary = self.results_list
+            self.apply_filters = self.results_list
+            self.clear_applied_filters = self.results_list
 
             self.single_entry = [
-                [' (S)how Related Entries ','show_related_entries'],
-                ['  (B)ack To Result List ','results_list'],
-                ['         (H)ome         ','home'],
-                ['      (N)ew Search      ','new_search'],
-                ['          (Q)uit        ','quit_loop']]
+                ['  Back To Result List ','results_list'],
+                ['         Home         ','home'],
+                ['      New Search      ','new_search'],
+                ['          Quit        ','quit_loop']]
             self.add_remove_filters = [
-                ['(A)pply Current Results ','apply_filters'],
-                ['  (B)ack To Result List ','results_list'],
-                ['         (H)ome         ','home'],
-                ['      (N)ew Search      ','new_search'],
-                ['          (Q)uit        ','quit_loop']]
+                ['Apply Current Filters ','apply_filters'],
+                ['  Back To Result List ','results_list'],
+                ['         Home         ','home'],
+                ['      New Search      ','new_search'],
+                ['          Wuit        ','quit_loop']]
+            self.add_remove_filters_no_apply = [
+                [' New Search ','new_search'],
+                ['    Home    ','home'],
+                ['    Quit    ','quit_loop']]
             self.quit_loop = []
             self.legend = [
-                ['Prev. Screen', 'Ctrl + ←'],
-                ['Next  Screen', 'Ctrl + →'],
+                ['Prev. Screen', 'Home'],
+                ['Next  Screen', 'End'],
                 ['Change Fields', '← / ↑ / ↓ / →'],
-                ['Toggle Menu', 'Tab'],
+                ['Move to / from Menu', 'Tab'],
                 ['New Search', 'Ctrl + N'],
                 ['Add / Remove Filters', 'Ctrl + F'],
-                ['Apply Filters', 'Ctrl + Shift + F'],
-                ['Clear Filters', 'Ctrl + X'],
                 ['Exit', 'Ctrl + E']
             ]
 class LogFileSettings():
@@ -319,18 +335,29 @@ class QuestionBox(urwid.Filler):
         debug('%s Entry String: %s', self.original_widget, entry)
         state.set_query(entry)
         views.activate('search_progress',is_threaded=True,on_join=search.new)
-
-def show_or_exit(key):
-    if key in ('q', 'Q', 'esc'):
-        raise urwid.ExitMainLoop()
-
+class UserBox(urwid.Filler):
+    def keypress(self, size, key):
+        if key != 'enter':
+            return super(UserBox, self).keypress(size, key)
+        entry = self.original_widget.get_edit_text()
+        self.original_widget.set_edit_text('')
+        debug('%s Entry String: %s', self.original_widget, entry)
+        state.cpanel_user = entry
+        state.list_of_users_emails = uapi.list_email_accounts(entry)
+        if not state.cpanel_user:
+            self.original_widget.set_caption('That is not a valid cPanel User\n Please Try Again\n')
+        else:
+            if not state.list_of_users_emails:
+                self.original_widget.set_caption(state.cpanel_user + ' user does not have any email addresses\n')
+            else:
+                views.activate('search_progress',is_threaded=True,on_join=search.cpanel_summary)
 
 class CustomButton(urwid.Button):
     button_left = urwid.Text('[')
     button_right = urwid.Text(']')
 class BoxButton(urwid.WidgetWrap):
     _border_char = u'─'
-    def __init__(self, label, on_press=None, user_data=None):
+    def __init__(self, label, on_press=None, user_data=None, enabled=True):
         padding_size = 2
         border = self._border_char * (len(label) + padding_size * 2 )
         self.cursor_position = len(border) + padding_size
@@ -339,6 +366,7 @@ class BoxButton(urwid.WidgetWrap):
         self.bottom = u'└' + border + u'┘'
         self.on_press_action = on_press
         self.on_press_user_data = user_data
+        self.enabled = enabled
         # self.widget = urwid.Text([self.top, self.middle, self.bottom])
         self.widget = urwid.Pile([
             urwid.Text(self.top[:-1],align='center'),
@@ -358,7 +386,14 @@ class BoxButton(urwid.WidgetWrap):
         super(BoxButton, self).__init__(self.widget)
 
     def selectable(self):
-        return True
+        if self.enabled:
+            return True
+        else:
+            return False
+    def disable(self):
+        self.enabled = False
+    def enable(self):
+        self.enabled = True
 
     def keypress(self, *args, **kw):
         return self._hidden_btn.keypress(*args, **kw)
@@ -374,6 +409,8 @@ class MyWidgets():
         self.blankFlow = self.getText('body','','center')
         self.blankBox = urwid.Filler(self.blankFlow)
         self.searchProgress = urwid.ProgressBar('body', 'header', current=0, done=100, satt=None)
+    def getDiv(self,divider=' '):
+        return urwid.Divider(divider,top=0,bottom=0)
     def getButton(self, thisLabel, callingObject, callback, user_data=None, buttonMap='bold', focus_map='header'):
         """Creates and returns a FixedButton object.
         
@@ -519,7 +556,7 @@ class MyWidgets():
         outsidefiller = urwid.Filler(lineBox,height=listHeight)
         outsideCol = w.getColRow([w.blankBox,('weight',2,outsidefiller),w.blankBox])
         return urwid.Filler(outsideCol, height=listHeight)
-    def getHeaderWidget(self,title=s.df.mainTitle,subtitle=''):
+    def getHeaderWidget(self,title=s.df.mainTitle,subtitle=s.df.mainSubTitle):
         """Generates a basic header with a title and optional subtitle
            This is meant to be used exclusively by the Headers.new() method
         
@@ -542,6 +579,8 @@ class MyWidgets():
             return urwid.Pile((titleMap, subtitleMap, divMap), focus_item=None)
         else:
             return urwid.Pile((titleMap, divMap), focus_item=None)
+    def getSearchProgress(self):
+        return urwid.ProgressBar('body', 'header', current=0, done=100, satt=None)
     def getFooterWidget(self,view_instance, menuItems):
         """Generates a footer column row containing a list of buttons for a
             basic menu / navigation. This is meant to be used exclusively by
@@ -624,10 +663,7 @@ class BodyWidgets():
                     on_state_change=[logFiles,'update'], 
                     user_data=[log])
                     )
-        #logCheckBoxes.append(w.div)
-        #logCheckBoxes.append(w.getButton('Continue', views, 'activate', user_data='home'))
         logCheckBoxes.append(BoxButton('Continue', on_press=views.activate, user_data='home'))
-        #logCheckBoxes.append(w.div)
         listBox = w.getListBox(logCheckBoxes)[0]
         chooseLogsBox = w.centeredListLineBox(
             listBox, 
@@ -643,6 +679,7 @@ class BodyWidgets():
             debug(' No logs selected, returning to choose_logs ')
             return self.get_choose_logs()
         else:
+            logFiles.get_date_range()
             return urwid.Filler(homeText, 'middle')
     def get_new_search(self, **kwargs):
         """Page opened when starting an entirely new
@@ -656,7 +693,7 @@ class BodyWidgets():
     def get_search_progress(self, **kwargs):
         debug(' kwargs : %s', kwargs)
         searchingStatus = urwid.Pile([
-            w.getText('body', 'Searching Logs Now. Please wait....', 'center'),
+            w.getText('body', 'Processing Your Request. Please wait....', 'center'),
             w.searchProgress
             ])
         statusFiller = urwid.Filler(searchingStatus, 'middle')
@@ -692,7 +729,7 @@ class BodyWidgets():
         if activeFilters:
             summaryRows.append(w.getText('bold', 'Currently Active Filters:', 'center'))
             for activeFilter in activeFilters:
-                summaryRows.append(w.getText('body', activeFilter, 'center'))
+                summaryRows.append(w.getText('body', activeFilter.filter_field + ' : ' + activeFilter.filter_criteria, 'center'))
         summaryRows.append(w.div)
         summaryRows.append(BoxButton('Show Results', on_press=views.activate, user_data='results_list'))
         #summaryRows.append(w.getButton('Show Results', views,'activate', user_data='results_list'))
@@ -709,18 +746,18 @@ class BodyWidgets():
         #for result in result_list.contents:
         for entry in list_of_result_entries:
             numColWidth = len(str(x)) + 6
+            debug('entry.msgType:%s', entry.msgType)
+            if len(entry.msgType) > 2:
+                msgType = entry.msgType[2]
+            else:
+                msgType = '-'
+            debug('msgType = %s', msgType)
             self.listDisplayCols.append(w.getColRow(
                 [
-                    #(5, w.getButton(
-                    #    str(x),
-                    #    views,
-                    #    'activate',
-                    #    user_data=['single_entry', 
-                    #        result_list.contents.index(result), 
-                    #       result_list])),
-                    (numColWidth  , BoxButton(str(x), on_press=views.activate,
+                    (numColWidth, BoxButton(str(x), on_press=views.activate,
                         user_data=['single_entry',entry])),
-                    urwid.Text(('body','\n' + entry.fullEntryText[2] + '\n'),align='left', wrap='clip'),
+                    (13, w.getText('body', '\n' + msgType + '\n','center')),
+                    urwid.Text(('body','\n' + entry.fullEntryText[2] + '\n'),align='left'),
                     (3 , w.getText('body','', 'left'))
                 ]
             ))
@@ -730,6 +767,12 @@ class BodyWidgets():
         #resultListFiller = urwid.Filler(resultListBox)
         return resultListBox
     def get_add_remove_filters(self, **kwargs):
+        if not state.get_result_list(ACTIVE):
+            footer = w.getFooterWidget(state.get_view(ACTIVE),Menus().add_remove_filters_no_apply)
+            frame.contents.__setitem__('footer', [footer, None])
+        else:
+            footer = w.getFooterWidget(state.get_view(ACTIVE),Menus().add_remove_filters)
+            frame.contents.__setitem__('footer', [footer, None])
         debug(' kwargs : %s', kwargs)
         #Create Active Filters List Headers
         list_of_active_filters = []
@@ -807,26 +850,33 @@ class BodyWidgets():
         return urwid.Filler(filter_input_pile,valign='top')
     def get_clear_applied_filters(self, **kwargs):
         debug(' kwargs : %s', kwargs)
+        state.active_filters = []
+        original_results_list = state.get_result_list(ACTIVE).get_original_results()
+        state.set_result_list(original_results_list)
+        return self.get_results_summary()
     def get_quit_loop(self, **kwargs):
         """Page opened upon a request to quit, and 
             asks for confirmation of quiting
         """
         debug(' kwargs : %s', kwargs)
-        if state.get_view(ACTIVE) == 'choose_logs':
-            noButton = w.getButton('No', views, 'choose_logs')
-        else:
-            noButton = w.getButton('No', views, 'exit')
+        #noButton = BoxButton('No', on_press=state.go_back)
+        #if state.get_view(ACTIVE) == 'choose_logs':
+        #    noButton = w.getButton('No', views, 'choose_logs')
+        #else:
+        #    noButton = w.getButton('No', views, 'exit')
+        s.menuEnabled = True
         quitList = [
             w.div,
             w.getColRow([
-                w.getButton('Yes', views, 'exit'),
-                noButton]),
+                BoxButton('Yes',on_press=views.exit),
+                BoxButton('No', on_press=state.go_back)
+                ]),
             w.div]
         quitBox = w.getListBox(quitList)[0]
         return w.centeredListLineBox(
             quitBox, 
             'Are You Sure You Want to Quit?',
-            len(quitList) + 2)
+            len(quitList) + 4)
     def get_coming_soon(self, **kwargs):
         debug(' kwargs : %s', kwargs)
         comingSoonStatus = urwid.Pile([
@@ -834,10 +884,13 @@ class BodyWidgets():
             ])
         comingSoonFiller = urwid.Filler(comingSoonStatus, 'middle')
         return w.centeredListLineBox(comingSoonFiller, '',10)
+    def get_stat_summary(self, **kwargs):
+        debug(' kwargs : %s', kwargs)
+        select_user = urwid.Edit('Enter the cPanel UserName Below\n',align='center')
+        select_filler = UserBox(select_user, 'middle')
+        return w.centeredListLineBox(select_filler, 'cPanel User Stat Summary', 5)
     def get_single_entry(self, **kwargs):
         debug(' kwargs : %s', kwargs)
-        #entryNo = kwargs['user_args'][0]
-        #result_list = kwargs['user_args'][1]
         single_entry = kwargs['user_args'][0]
         state.set_entry_on_screen(single_entry)
         entry_fields = single_entry.get_entry_fields()
@@ -846,7 +899,6 @@ class BodyWidgets():
         for field in entry_fields:
             entry_field_col_rows.append(w.getColRow([
                 (30,w.getButton(field[2],search,'related',user_data=field[3], buttonMap='body')),
-                #(40,BoxButton(field[2],on_press=search.new,user_data=field[3])),
                 ('weight',4,w.getText('body', field[3], 'left'))
             ]))
         entry_walker = urwid.SimpleFocusListWalker(entry_field_col_rows)
@@ -861,8 +913,108 @@ class BodyWidgets():
                 w.getText('body',"\n"+filter_instance.filter_criteria+"\n",'left')
             ]))
         self.filter_input.set_edit_text('')
-#    def rem_filter_from_walker(self,walker_index):
-
+    def get_apply_filters(self, **kwargs):
+        debug('kwargs: %s', kwargs)
+        if state.get_result_list(ACTIVE):
+            if state.active_filters:
+                search.filter_active_results()
+                #views.activate('results_summary')
+                return self.get_results_summary()
+    def get_stat_summary_results(self, **kwargs):
+        debug(' kwargs : %s', kwargs)
+        debug('cPanel User: %s', state.cpanel_user)
+        user_stats = cpanel_stats.get(state.cpanel_user)
+        debug('user_stats instance: %s', user_stats)
+        stat_columns = [w.div]
+        #stat_columns.append(w.getDiv(divider='─'))
+        stat_columns.append(
+            w.getColRow([
+                w.blankFlow,
+                w.getText('body','Email Addresses Owned by ' + state.cpanel_user, 'center'),
+                w.blankFlow
+            ])
+        )
+        #stat_columns.append(w.getDiv(divider='─'))
+        stat_columns.append(
+            w.getColRow([
+                urwid.AttrMap(w.blankFlow,'header'),
+                ('weight',4,urwid.AttrMap(w.getText('header','Email Address','center'),'header')),
+                (10, urwid.AttrMap(w.getText('header','Recipient', 'center'),'header')),
+                (10, urwid.AttrMap(w.getText('header','Sender', 'center'),'header')),
+                (10, urwid.AttrMap(w.getText('header','Bounced', 'center'),'header')),
+                urwid.AttrMap(w.blankFlow, 'header')
+            ],dividechars=0)
+        )
+        stat_columns.append(w.div)
+        for email in user_stats.list_of_email_accounts:
+            stat_columns.append(
+                w.getColRow([
+                    w.blankFlow,
+                    ('weight',4,w.getText('body',email,'center')),
+                    (10,w.getText('body',str(user_stats.stats[email]['was_recipient']), 'center')),
+                    (10,w.getText('body',str(user_stats.stats[email]['was_sender']), 'center')),
+                    (10,w.getText('body',str(user_stats.stats[email]['was_bounced']), 'center')),
+                    w.blankFlow
+                ])
+            )
+        stat_columns.append(w.getDiv(divider='─'))
+        stat_columns.append(w.div)
+        stat_columns.append(
+            w.getColRow([
+                w.blankFlow,
+                w.getText('body','Top Sending Scripts for ' + state.cpanel_user, 'center'),
+                w.blankFlow
+            ])
+        )
+        #stat_columns.append(w.getDiv(divider='─'))
+        stat_columns.append(
+            w.getColRow([
+                urwid.AttrMap(w.blankFlow,'header'),
+                ('weight', 2, urwid.AttrMap(w.getText('header','Script Source Directory','left'),'header')),
+                urwid.AttrMap(w.getText('header','Sending Script','left'),'header'),
+                ('weight', 2, urwid.AttrMap(w.getText('header','Sending Address','center'),'header')),
+                (12,urwid.AttrMap(w.getText('header','Times Sent', 'center'),'header')),
+                urwid.AttrMap(w.blankFlow,'header')
+            ],dividechars=0)
+        )
+        stat_columns.append(w.div)
+        for script in user_stats.sending_scripts.most_common(10):
+            debug('Script Count: %s',script[1])
+            script_dir = script[0].split()
+            debug('Script Dir: %s', script_dir)
+            if len(script_dir) > 2:
+                script_sender = script_dir[2]
+                if not script_sender in state.list_of_users_emails:
+                    debug('Address not owned by cPanel User!')
+                    script_sender_format = 'alert'
+                else:
+                    script_sender_format = 'body'
+            else:
+                script_sender = ''
+                script_sender_format = 'body'
+            stat_columns.append(
+                w.getColRow([
+                    w.blankFlow,
+                    ('weight',2,w.getText('body',script_dir[0],'left')),
+                    w.getText('body',script_dir[1],'left'),
+                    ('weight', 2, w.getText(script_sender_format,script_sender,'right')),
+                    (12,w.getText('body',str(script[1]),'center')),
+                    w.blankFlow
+                ],dividechars=3)
+            )
+        debug('user_stats["sending_scripts"]: %s', user_stats.sending_scripts.most_common(5))
+        stat_columns_pile = urwid.Pile(stat_columns)
+        #stat_columns_filler = urwid.Filler(stat_columns_pile,valign='middle',height=len(stat_columns) + 4)
+        #stat_inner_column = w.getColRow([
+        #    w.blankFlow,
+        #    ('weight', 5, stat_columns_pile),
+        #    w.blankFlow
+        #])
+        #stat_columns_filler = urwid.Filler(stat_inner_column)
+        #stat_list_box = w.getListBox(stat_columns)
+        stat_line_box = w.getLineBox(stat_columns_pile,'cPanel User ' + state.cpanel_user + ' Stat Summary')
+        stat_filler = urwid.Filler(stat_line_box,valign='middle')
+        return stat_filler  
 """
 STATE MANAGEMENT / TRACKING
 """
@@ -870,6 +1022,7 @@ class State():
     def __init__(self):
         self.active_view = None
         self.previous_view = None
+        self.cpanel_user = None
         self.active_result_list = None
         self.prev_result_list = None
         self.active_query = None
@@ -885,6 +1038,7 @@ class State():
         self.current_filter_type = None
         self.current_filter_type_state = None
         self.current_edit_text = None
+        self.list_of_users_emails = []
     def increment_counter(self):
         self.searchCounter += 1
     def filter_input_radio(self,*args,**kwargs):
@@ -1015,7 +1169,7 @@ class State():
         name = 'filter-'+ str(filter_number)
         setattr(self,name,Filter(
                 name,filter_number,self.current_filter_type,
-                self.current_edit_text)
+                self.current_edit_text.lower())
                 )
         self.active_filters.append(
             getattr(self,name)
@@ -1026,11 +1180,15 @@ class State():
     def remove_active_filter(self,*args):
         debug('filter: %s, walker_index: %s, body_instance: %s', args[1][0],args[1][1],args[1][2])
         filter_instance = args[1][0]
-        walker_index = args[1][1]
+        #walker_index = args[1][1]
         body_instance = args[1][2]
         self.active_filters.remove(filter_instance)
         debug('filter_walker length: %s', len(body_instance.filter_walker))
-        del body_instance.filter_walker[walker_index]
+        for row in body_instance.filter_walker:
+            if body_instance.filter_walker.index(row) > 0:
+                if filter_instance.filter_criteria in row.contents[2][0].get_text()[0]:
+                    debug('Current filter walker rows: %s, current filter criteria: %s', row.contents[2][0].get_text()[0], filter_instance.filter_criteria)
+                    body_instance.filter_walker.remove(row)
     def get_active_filters(self):
         debug('State.get_active_filters: %s', self.active_filters)
         return self.active_filters
@@ -1068,7 +1226,7 @@ class State():
             return False
     def get_view_chain_pos(self):
         return self.view_chain_pos
-    def go_back(self):
+    def go_back(self, *args):
         if self.set_view_chain_pos(-1):
             x = state.get_view_from_chain(state.get_view_chain_pos())
             x.reload()
@@ -1081,7 +1239,7 @@ class View():
     def __init__(self, view_name,
         default_view_focus,
         header_title=s.df.mainTitle,
-        header_subtitle=s.df.mainSubTitle,
+        header_subtitle='',
         is_view_result_list=False,
         is_view_single_entry=False,
         is_view_add_filters=False):
@@ -1094,14 +1252,15 @@ class View():
         self.is_view_add_filters = is_view_add_filters
     def start(self, previous_view, focus_position=None, user_args=None, add_to_view_chain=True):
         debug('view_name: %s, focus_position: %s', self.view_name, focus_position)
-        self.header = w.getHeaderWidget(self.header_title,subtitle=self.header_subtitle)
+        #self.header = w.getHeaderWidget(self.header_title,subtitle=self.header_subtitle)
         self.previous_view = previous_view
-        menuItems = getattr(s.menus,self.view_name)
-        self.footer = w.getFooterWidget(self, menuItems)
-        self.body = body.get_body_widget(self.view_name, user_args=user_args, calling_view=self)
-        self.show_header()
-        self.show_body()
+        self.menuItems = getattr(s.menus,self.view_name)
+        loop.screen.clear()
+        self.footer = w.getFooterWidget(self, self.menuItems)
         self.show_footer()
+        self.body = body.get_body_widget(self.view_name, user_args=user_args, calling_view=self)
+        self.show_body()
+        self.show_header()
         if focus_position:
             frame.set_focus(focus_position)
         else:
@@ -1114,6 +1273,10 @@ class View():
         self.show_body()
         self.show_footer()
     def show_header(self):
+        if not self.header_subtitle:
+            self.header = w.getHeaderWidget(self.header_title,subtitle=s.df.mainSubTitle)
+        else:
+            self.header = w.getHeaderWidget(self.header_title,subtitle=self.header_subtitle)
         frame.contents.__setitem__('header', [self.header, None])
     def show_body(self):
         frame.contents.__setitem__('body', [self.body, None])
@@ -1133,10 +1296,12 @@ class ViewSets():
         self.results_summary = View('results_summary', BODY)
         self.results_list = View('results_list', BODY, is_view_result_list=True)
         self.add_remove_filters = View('add_remove_filters', BODY, is_view_add_filters=True)
-        self.apply_current_filters = View('apply_current_filters',BODY)
+        self.apply_filters = View('apply_filters',BODY)
         self.clear_applied_filters = View('clear_applied_filters', BODY)
         self.coming_soon = View('coming_soon', FOOTER)
         self.single_entry = View('single_entry', BODY, is_view_single_entry=True)
+        self.stat_summary = View('stat_summary', BODY)
+        self.stat_summary_results = View('stat_summary_results',FOOTER)
     def get_view(self, view_name):
         return getattr(self,view_name)
     def activate(self,*args, **kwargs):
@@ -1179,7 +1344,7 @@ class ViewSets():
             on_join()
         else:
             activating_view.start(current_view,focus_position=focus_position, user_args=user_data)
-    def exit(self):
+    def exit(self,*args):
         debug
         raise urwid.ExitMainLoop()
 state = State()
@@ -1259,12 +1424,85 @@ class LogFiles():
             if file.startswith("exim_mainlog"):
                 loglist.append(os.path.join(logdir, file))
         return loglist
+    def get_date_range(self):
+        date_ranges = []
+        for log in s.lf.selectedLogs:
+            if log[-2:] != 'gz':
+                popen_args = "sudo head -n 1 " + log
+                reqOutput,_ = subprocess.Popen(popen_args, 
+                    stdout=subprocess.PIPE, 
+                    stderr=subprocess.PIPE,
+                    shell=True
+                    ).communicate()
+                first_line = reqOutput[:10]
+                debug('first_line: %s', first_line)
 
+                popen_args = "sudo tail -n 1 " + log
+                reqOutput,_ = subprocess.Popen(popen_args, 
+                    stdout=subprocess.PIPE, 
+                    stderr=subprocess.PIPE,
+                    shell=True
+                    ).communicate()
+                last_line = reqOutput[:10]
+                debug('last_line: %s', last_line)
+                date_ranges.append([first_line,last_line])
+                #x = os.popen("sudo head -n 1 %s" % log).read()
+                #first_line = x[:10]
+                #y = os.popen("sudo tail -n 1 %s" % log).read()
+                #last_line = y[:10]
+                #debug('First Line: %s, Last_line: %s',first_line,last_line)
+            else:
+                popen_args = "sudo zcat " + log + " | head -n 1"
+                reqOutput,_ = subprocess.Popen(popen_args, 
+                    stdout=subprocess.PIPE, 
+                    stderr=subprocess.PIPE,
+                    shell=True
+                    ).communicate()
+                first_line = reqOutput[:10]
+                debug('first_line: %s', first_line)
+                
+                popen_args = "sudo zcat " + log + " | tail -n 1"
+                reqOutput,_ = subprocess.Popen(popen_args, 
+                    stdout=subprocess.PIPE, 
+                    stderr=subprocess.PIPE,
+                    shell=True
+                    ).communicate()
+                last_line = reqOutput[:10]
+                date_ranges.append([first_line,last_line])
+                debug('last_line: %s', last_line)
+        date_ranges.sort()
+        debug('Date Ranges: %s', date_ranges)
+        fixed_dates = []
+        i = 0
+        while i < len(date_ranges):
+            if len(date_ranges) > i + 1:
+                if date_ranges[i][1] != date_ranges[i+1][0]:
+                    fixed_dates.append(date_ranges[i])
+                if date_ranges[i][1] == date_ranges[i+1][0]:
+                    date_ranges[i+1][0] = date_ranges[i][0]
+            else:
+                fixed_dates.append(date_ranges[i])
+            i += 1
+        formatted_date_ranges = []
+        for date_range in fixed_dates:
+            x = datetime.strptime(date_range[0],s.dt.logDateFormat)
+            y = datetime.strptime(date_range[1],s.dt.logDateFormat)
+            formatted_date_ranges.append(
+                '( ' + x.strftime('%b %d %Y') + ' - ' + y.strftime('%b %d %Y') + ' )'
+            )
+        debug('Formatted Date Ranges: %s', formatted_date_ranges)
+        s.df.mainSubTitle =  'Log Dates: ' + ' '.join(formatted_date_ranges)
 """
 DATA PROCESSING / SEARCH AND RESULT CLASSES
 """
 class Search():
     def new(self, *args):
+        if hasattr(self,'process_pool'):
+            self.process_pool.terminate()
+            del(self.process_pool)
+            self.process_pool = Pool(maxtasksperchild=1)
+        else:
+            self.process_pool = Pool(maxtasksperchild=1)
         s.rl.resultOverflow = False
         if args:
             debug('Search Has special arguments: %s', args)
@@ -1278,70 +1516,128 @@ class Search():
             original_results=searchNumber
             )
         result_list = results.get_result_list(searchNumber)
+        if hasattr(self,'process_pool'):
+            self.process_pool.terminate()
+            del(self.process_pool)
+        if state.active_filters:
+            views.activate('apply_filters')
         views.activate('results_summary',focus_position=BODY,user_args=result_list)
         #views.show(views.newSearchSummary(searchNumber,query), frame, 'body')
     def related(self,related_query):
         debug('related_query: %s',related_query)
         state.set_query(related_query)
         views.activate('search_progress',is_threaded=True,on_join=search.new)
-    def filter_results(self,*args):
-        global mostRecentSearchNo
-        debug("Start Search.filterResults: %s", filters.get())
-        currentSearchNo = 'search' + str(searchCounter - 1).zfill(3)
-        filteredSearchNo = self.incrementCounter()
-        mostRecentSearchNo = filteredSearchNo
-        currentResultList = results.getRawResultList(currentSearchNo)
-        self.currentFilters = filters.get()
-        filteredResults = []
-        originalQuery = currentResultList.query
-        #originalInput = currentResultList
-        entryList = currentResultList.getListOfEntries()
-        entryList.sort()
-        debug('filterResults entryList: %s', entryList)
-        filteredResults = self.filterInput('sendAddr', input=entryList)
-        filteredResults = self.filterInput('recipient', input=filteredResults)
-        filteredResults = self.filterInput('date', input=filteredResults)
-        filteredResults = self.filterInput('msgType', input=filteredResults)
-        debug("Filtered Results Count: %s", len(filteredResults))
-        if currentResultList.isFiltered:
-            original_results = currentResultList.original_results
+    def cpanel_summary(self):
+        #summary = {}
+        logPoolArgs = []
+        for log in s.lf.selectedLogs:
+            logPoolArgs.append(log)
+        #cpanel_summary_pool = ThreadPool()
+        if hasattr(self,'process_pool'):
+            self.process_pool.terminate()
+            del(self.process_pool)
+            self.process_pool = Pool(maxtasksperchild=1)
         else:
-            original_results = currentSearchNo
-        results.new(filteredSearchNo, 'filteredResults', originalQuery, filteredResults, original_results=original_results, isFiltered=True)
-        views.show(views.newSearchSummary(filteredSearchNo,originalQuery), frame, 'body')
-    def filter_input(self, filterType, input=None):
-        if not self.currentFilters[filterType]:
-            return input
-        else:
-            filteredResults = []
-            filterSet = self.currentFilters[filterType]
-            #debug('filterInput filters: %s', filterSet)
-            for item in input[:]:
-                x = getattr(item,filterType)
-                #debug('filterInput x.filterType: %s', x)
-                for filters in filterSet:
-                    for filter in filters:
-                        #debug('filterInput filter: %s', filter)
-                        if filter in x:
-                            filteredResults.append(item)
-            return filteredResults
-    def filter_logs(self):
+            self.process_pool = Pool(maxtasksperchild=1)
+        debug('logPoolArgs: %s',logPoolArgs)
+        results = self.process_pool.map(query_for_cpanel_summary, logPoolArgs)
+        if state.cpanel_user:
+            cpanel_stats.new(state.cpanel_user,state.list_of_users_emails, results)
+        if hasattr(self,'process_pool'):
+            self.process_pool.terminate()
+            del(self.process_pool)
+        views.activate('stat_summary_results')
+    def filter_active_results(self):
+        results_to_filter = state.get_result_list(ACTIVE)
+        list_of_active_filters = state.get_active_filters()
+        list_of_entries_to_filter = entries.get_list_from_active_result_list()
+        debug('results_to_filter: %s, list_of_active_filters: %s', results_to_filter,list_of_active_filters)
+        search_no = state.get_new_search_number()
+        i = 0
+        list_of_matching_entries = []
+        for entry in list_of_entries_to_filter:
+            for result_filter in list_of_active_filters:
+                if hasattr(entry,result_filter.filter_field):
+                    if result_filter.filter_criteria in getattr(entry, result_filter.filter_field):
+                        debug('Matching Entry: %s', entry.msgType)
+                        name = 'entry-' + search_no + '-' + str(i)
+                        i += 1
+                        setattr(entries,name,entry)
+                        debug('New entries.%s, %s', name, getattr(entries,name))
+                        list_of_matching_entries.append(getattr(entries,name))
+        debug('list_of_matching_entries: %s', list_of_matching_entries)
+        results.new(search_no,'filtered_results',list_of_matching_entries,original_results=results_to_filter,isFiltered=True,filters_applied=list_of_active_filters)
+    def filter_logs(self,related_query=False):
         starttime = datetime.now()
-        #debug(":filterLogs :: Current Thread:: %s", threading.current_thread().getName())
-        #debug('filterLogs filter: %s', query)
-        #for log in self.selectedLogs:
         logPoolArgs = []
         query = state.get_query(ACTIVE)
         for log in s.lf.selectedLogs:
             logPoolArgs.append([query,log])
-        queryLogProcessPool = ThreadPool()
-        searchedLogs = queryLogProcessPool.map(queryLogProcess, logPoolArgs)
+        if hasattr(self,'process_pool'):
+            self.process_pool.terminate()
+            del(self.process_pool)
+            self.process_pool = Pool(maxtasksperchild=1)
+        else:
+            self.process_pool = Pool(maxtasksperchild=1)
+        searchedLogs = self.process_pool.map(queryLogProcess, logPoolArgs)
         results = []
         for resultList in searchedLogs:
             results.extend(resultList)
         logging.info('QT = %s : filteredLog Pool Result Count: %s',datetime.now() - starttime, len(results))
+        if hasattr(self,'process_pool'):
+            self.process_pool.terminate()
+            del(self.process_pool)
         return results
-
+class CpanelStats():
+    def new(self, cpanel_user_name,list_of_email_accounts,stat_results):
+        setattr(self, cpanel_user_name, CpanelUserStats(cpanel_user_name,list_of_email_accounts,stat_results))
+    def get(self,cpanel_user_name):
+        debug('cpanel_user_name: %s', cpanel_user_name)
+        return getattr(self,cpanel_user_name)
+class CpanelUserStats():
+    def __init__(self,cpanel_user_name,list_of_email_accounts,stat_results):
+        debug('Init cPanelUserStats: %s', cpanel_user_name)
+        self.cpanel_user_name = cpanel_user_name
+        self.list_of_email_accounts = list_of_email_accounts
+        self.stats = {}
+        self.sending_scripts = collections.Counter()
+        for item in stat_results:
+            #debug('item Keys: %s', item.keys())
+            #debug('item["sending_scripts"]: %s', item['sending_scripts'])
+            #debug('item["script_related_lines"]: %s', item['script_related_lines'])
+            for line in item['sending_scripts']:
+                x = line.split()
+                for y in x:
+                    if 'cwd=' in y:
+                        debug('sending_script directory: %s', y[4:])
+                        debug('sending_script: %s', x[x.index(y) + 3])
+                        debug('Sending_script PID: %s', x[x.index(y) - 1])
+                        pid = x[x.index(y) - 1]
+                        sending_email = ''
+                        for line in item['script_related_lines']:
+                            if pid in line:
+                                i = line.split()
+                                for j in i:
+                                    if 'from' in j:
+                                        debug('script_sending_email: %s', i[i.index(j) + 1][1:-1])
+                                        sending_email = i[i.index(j) + 1][1:-1]
+                        z = y[4:] + ' ' + x[x.index(y) + 3]
+                        z = z + ' ' + sending_email
+                        self.sending_scripts[z] += 1
+        for email in self.list_of_email_accounts:
+            self.stats[email] = {
+                'was_recipient': 0,
+                'was_sender': 0,
+                'was_bounced': 0
+            } 
+            for item in stat_results:
+                if email in item:
+                    for key in self.stats[email].keys():
+                        if key in item[email]:
+                            self.stats[email][key] += item[email][key]
+        debug('Stat Results: %s', stat_results)
+        debug('Most Common Sending Script Directories: %s', self.sending_scripts.most_common(5))
+        debug('self.stats: %s', self.stats)
 class Results():
     def __init__(self):
         self.currentFilters = {
@@ -1387,6 +1683,7 @@ class Results():
                     original_results,
                     isFiltered, filters_applied))
                 state.set_result_list(getattr(self,name))
+                debug('Finished Creating New Result List')
         else:
             count = len(resultContents)
             setattr(self,name,ResultLists(
@@ -1394,7 +1691,8 @@ class Results():
                 resultContents, count,
                 original_results,
                 isFiltered, filters_applied))
-            state.set_result_list(resultContents)
+            debug('Finished Creating New Result List')
+            state.set_result_list(getattr(self,name))
     def get_single_entry(self,entryNo,searchNo):
         debug('Started Results.getSingleEntry: %s, %s', entryNo, searchNo)
         entryId = 'entry-' + str(entryNo)
@@ -1426,29 +1724,30 @@ class ResultLists():
         list_name,result_type,result_contents,
         count,original_results='',
         is_filtered=False, filters_applied=[]):
+        debug('Init ResultLists')
         self.list_name = list_name
         self.is_filtered = is_filtered
         self.query = state.get_query(ACTIVE)
+        debug('query: %s', self.query)
         self.original_results = original_results
         self.filteredApplied = filters_applied
         self.count = count
         self.previous_results = None
+        self.contents = []
         if result_type == 'logResults':
+            debug('result_type == logResults')
             i = 0
             search_number = state.searchCounterStr
+            debug('search_number: %s', search_number)
             for result in result_contents:
                 name = 'entry-' + search_number + '-' + str(i)
+                debug('New Entry Name is: %s', name)
                 entries.new(name, result)
                 i += 1
+            self.contents = entries.get_list_from_search_no(search_number)
         else:
-            result_contents.sort(key=lambda x: str(x.getTimeOrd()), reverse=False)
-            i = 0
-            self.contents = []
-            for entry in result_contents:
-                name = 'entry-' + str(i)
-                setattr(self,name,entry)
-                self.contents.append(entry.fullEntryText[2])
-                i += 1
+            self.contents = result_contents
+        debug('Init ResultLists Complete')
         #debug('List of Attr in new ResultList: %s', dir(self))
     def parseEntries(self):
         i = 0
@@ -1463,6 +1762,8 @@ class ResultLists():
             if 'entry-' in attr:
                 listOfEntries.append(getattr(self,attr))
         return listOfEntries
+    def get_original_results(self):
+        return self.original_results
     def set_previous_list(self):
         if self.previous_results:
             state.prev_result_list = self.previous_results
@@ -1481,6 +1782,13 @@ class Entries():
             if active_result_list_name in attr:
                 listOfEntries.append(getattr(self,attr))
         return listOfEntries
+    def get_list_from_search_no(self,search_no):
+        listOfEntries = []
+        active_result_list_name = search_no
+        for attr in dir(self):
+            if active_result_list_name in attr:
+                listOfEntries.append(getattr(self,attr))
+        return listOfEntries
     def get_entry(self,entry_name):
         if hasattr(self, entry_name):
             return getattr(self, entry_name)
@@ -1491,30 +1799,48 @@ class Entry():
         """This class is used to create single-view Entry Objects
         """
         self.name = name
+        self.id = []
         self.msgType = []
         self.date = []
         self.time = []
         self.sendAddr = []
         self.recipient = []
         self.fullEntryText = fullEntryText
-        #debug('Init Entries: %s', self.fullEntryText)
+        self.entryType = []
+        if 'Warning: "SpamAssassin' in self.fullEntryText:
+            self.msgType = [15, 'Message Type: ', 'Spam Status']
+        debug('Init Entries: %s', self.fullEntryText)
         try:
             shlex.split(self.fullEntryText)
         except:
-            m = self.fullEntryText.split()
-            self.parseError = [15, 'Parsing Error: ', str(Exception)]
-            x = 0
-            while x <= len(m):
-                if x == 0:
-                    self.date = [10, 'Date: ', m[x]]
-                if x == 1:
-                    self.time = [11, 'Time: ', m[x]]
-                if x == 2:
-                    self.pid = [12, 'Process ID: ', m[x]]
-                if x == 3:
-                    self.id = [13, 'Message ID: ', m[x]]
-                x += 1
-            self.fullEntryText = [14, 'Full Entry: ', self.fullEntryText]        
+            debug('Cannot shlex split this entry!')
+            try:
+                self.fullEntryText.split()
+            except:
+                warning('Could Not Parse line: %s', self.fullEntryText)
+            else:
+                debug('Parsing with standard split')
+                m = self.fullEntryText.split()
+                debug('split entry: %s', m)
+                if self.msgType:
+                    debug('self.msgType: %s', self.msgType)
+                    if self.msgType[2] == 'spam status':
+                            if 'detected' in m:
+                                self.spamStatus = [15, 'spam status',  ' '.join(m[m.index('detected') + 3: -2])]
+                                self.spamScore = [15, 'spam score', m[-1]]
+                #self.parseError = [15, 'Parsing Error: ', str(Exception)]
+                x = 0
+                while x <= len(m):
+                    if x == 0:
+                        self.date = [10, 'Date: ', m[x]]
+                    if x == 1:
+                        self.time = [11, 'Time: ', m[x]]
+                    if x == 2:
+                        self.pid = [12, 'Process ID: ', m[x]]
+                    if x == 3:
+                        self.id = [13, 'Message ID: ', m[x]]
+                    x += 1
+                self.fullEntryText = [14, 'Full Entry: ', self.fullEntryText]        
         else:
             m = shlex.split(self.fullEntryText)
             x = 0
@@ -1526,11 +1852,35 @@ class Entry():
                 if x == 2:
                     self.pid = [12, 'Process ID: ', m[x]]
                 if x == 3:
-                    self.id = [13, 'Message ID: ', m[x]]
+                    if m[x].startswith('cwd'):
+                        self.cwd = [13, 'Source Directory: ', m[x].split('=')[1]]
+                        if self.cwd[2] == '/var/spool/exim':
+                            self.msgType = [15, 'Message Type: ', 'exim queue']
+                            self.id = [13, 'Message Id: ', m[-1]]
+                        else:
+                            self.msgType = [15, 'Message Type: ', 'script mailer']
+                        if 'args:' in m:
+                            args = m.index('args:')
+                            self.script = [13, 'Sending Script: ', m[args + 1]]
+                            if len(m) > args + 2:
+                                self.scriptArgs = [13, 'Script Arguments: ', ' '.join(m[args + 2:])]
+                    else:
+                        self.id = [13, 'Message ID: ', m[x]]
+                    if 'Sender' in m[x]:
+                        self.msgType = [15, 'Message Type: ', 'sender id']
                 if x == 4:
                     if len(m[x]) == 2:
                         self.entryType = [22, 'Entry Type Symbol: ', m[x]]
+                    elif 'Completed' in m[x]:
+                        self.msgType = [15, 'Message Type: ', 'queue status']
                 #debug('parseEntries self.fullEntryText: %s', self.fullEntryText)
+                if self.msgType:
+                    if self.msgType[2] == 'Spam Status':
+                        if 'detected' in m[x]:
+                            n = m[x].split()
+                            if 'detected' in n:
+                                self.spamStatus = [15, 'Spam Status',  ' '.join(n[n.index('detected')+3:-1])]
+                                self.spamScore = [15, 'Spam Score', n[-1]]
                 if 'H=' in m[x]:
                     if len(m) > x + 1:
                         if m[x+1][0] == '(':
@@ -1544,7 +1894,7 @@ class Entry():
                             if s.hostname in self.host:
                                 self.msgType = [15, 'Type: ', 'relay']
                 if m[x] == 'SMTP':
-                    self.smtpError = [22, 'Failure Message: ', " ".join(m[x:])]
+                    self.smtpError = [22, 'SMTP Message: ', " ".join(m[x:])]
                 if 'S=' in m[x] and m[x][0] != 'M':
                     self.size = [22, 'Size: ', m[x][2:]]
                 if 'I=' in m[x] and m[x][0] != 'S':
@@ -1568,18 +1918,13 @@ class Entry():
                     self.deliveryTime = [22, 'Time Spent being Delivered: ', m[x][3:]]
                 if 'RT=' in m[x]:
                     self.deliveryTime = [22, 'Time Spent being Delivered: ', m[x][3:]]
-                if ' <= ' in fullEntryText:
-                    self.msgType = [15, 'Message Type: ', 'incoming']
+                if '<=' in fullEntryText:
                     if 'A=' in m[x]:
                         self.smtpAuth = [22, 'Auth. Method: ', m[x][2:]]
-                        if 'dovecot' in m[x]:
-                            self.msgType = [15, 'Type: ', 'relay']
                     if x == 5:
-                        self.sendAddr = [18, 'Sender', m[x]]
+                        self.sendAddr = [18, 'Sender: ', m[x]]
                     if 'P=' in m[x]:
                         self.protocol = [22, 'Protocol: ', m[x][2:]]
-                        if 'local' in self.protocol[1]:
-                            self.msgtype = [15, 'Type: ', 'local']
                     if 'T=' in m[x] and m[x][0] != 'R':
                         self.topic = [21, 'Subject: ', m[x][2:]]
                     if m[x] == 'from':
@@ -1590,33 +1935,76 @@ class Entry():
                             else:
                                 self.fr = [18, 'Sender: ', m[x+1][1:-1]]
                     if m[x] == 'for':
-                        self.receipient = [19, 'Recipient: ', m[x+1]]
-                    x += 1
+                        if '(' in m[x+1] and ')' in m[x+1]:
+                            y = m[x+1]
+                            stripped_recip = y[y.index('(') + 1:y.index(')')]
+                            self.recipient = [19, 'Recipient: ', stripped_recip]
+                        if '<' in m[x+1] and '>' in m[x+1]:
+                            y = m[x+1]
+                            stripped_recip = y[y.index('<') + 1:y.index('>')]
+                            self.recipient = [19, 'Recipient: ', stripped_recip]
+                        else:
+                            self.recipient = [19, 'Recipient: ', m[x+1]]
+                    if 'P=local' in fullEntryText:
+                        self.msgType = [15, 'Message Type: ', 'local']
+                    elif 'A=dovecot' in fullEntryText:
+                        self.msgType = [15, 'Message Type: ', 'relay']
+                    else:
+                        self.msgType = [15, 'Message Type: ', 'incoming']
                 else:
                     if x == 5:
                         if '@' in m[x]:
-                            self.receipient = [19, 'Recipient: ', m[x]]
+                            if '(' in m[x] and ')' in m[x]:
+                                y = m[x]
+                                stripped_recip = y[y.index('(') + 1:y.index(')')]
+                                self.recipient = [19, 'Recipient: ', stripped_recip]
+                            if '<' in m[x] and '>' in m[x]:
+                                y = m[x]
+                                stripped_recip = y[y.index('<') + 1:y.index('>')]
+                                self.recipient = [19, 'Recipient: ', stripped_recip]
+                            self.recipient = [19, 'Recipient: ', m[x]]
                         else:
                             if len(m) > x + 1:
                                 if '@' in m[x + 1]:
-                                    self.receipient = [19, 'Recipient: ', m[x] + m[x+1]]
+                                    if '(' in m[x+1] and ')' in m[x+1]:
+                                        y = m[x+1]
+                                        stripped_recip = y[y.index('(') + 1:y.index(')')]
+                                        self.recipient = [19, 'Recipient: ', stripped_recip]
+                                    if '<' in m[x+1] and '>' in m[x+1]:
+                                        y = m[x+1]
+                                        stripped_recip = y[y.index('<') + 1:y.index('>')]
+                                        self.recipient = [19, 'Recipient: ', stripped_recip]
+                                    else:
+                                        self.recipient = [19, 'Recipient: ', m[x] + m[x+1]]
                     if 'P=' in m[x]:
                         self.returnPath = [20, 'Return Path: ', m[x][3:-1]]
                     if 'T=' in m[x] and m[x][0] != 'D' and m[x][0] != 'Q':
                         self.mta = [22, 'MTA: ', m[x][2:]]
                         if 'dovecot' in self.mta[1]:
-                            self.msgType = [15, 'Type: ', 'local']
+                            self.msgType = [15, 'Message Type: ', 'local']
                     if ' => ' in fullEntryText:
-                        self.msgType = [15, 'Message Type: ', 'outgoing']
-                    x += 1
-            
+                        if 'T=dovecot' in fullEntryText:
+                            self.msgType = [15, 'Message Type: ', 'dovecot']
+                        else:
+                            self.msgType = [15, 'Message Type: ', 'outgoing']
+                    if ' -> ' in fullEntryText:
+                        self.msgType = [15, 'Message Type: ', 'forwarder']
+                    if not self.entryType and ' rejected ' in fullEntryText:
+                        self.msgType = [15, 'Message Type: ', 'bounce']
+                        self.id = []
+                    if 'SMTP connection' in fullEntryText:
+                        self.msgType = [15, 'Message Type: ', 'SMTP Connect']
+                    if ' ** ' in fullEntryText:
+                        self.msgType = [15, 'Message Type: ', 'bounce']
+                    if ' no host name found ' in fullEntryText or ' failed to find host name ' in fullEntryText:
+                        self.msgType = [15, 'Message Type: ', 'Hostname Error']
+                x += 1
             self.fullEntryText = [14, 'Full Entry: ', self.fullEntryText]
     def getTimeOrd(self):
         x = str(self.date[2]) + '_' + str(self.time[2])
         x = datetime.strptime(x, s.dt.logDateTimeFormat)
         return x.toordinal()
     def get_entry_fields(self):
-
         fieldList = [a for a in dir(self) if not a.startswith('__') and not callable(getattr(self,a))]
         fields = []
         for field in fieldList:
@@ -1630,51 +2018,12 @@ class Entry():
                         x[2]
                     ])
         return fields
-class Testing():
-    def set_get_views(self):
-        state.set_view(View('Test A', 'Test A Header', 'Test A Header', 'Test A Body'))
-        current_view = state.get_view('active')
-        debug('Current View: %s', current_view)
-        current_view_name = state.get_view_name('active')
-        debug('Current View Name: %s', current_view_name)
-        state.set_view(View('Test B', 'Test B Header', 'Test B Header', 'Test B Body'))
-        current_view = state.get_view('active')
-        current_view_name = state.get_view_name('active')
-        prev_view = state.get_view('prev')
-        prev_view_name = state.get_view_name('prev')
-        debug('Current View: %s', current_view)
-        debug('Current View Name: %s', current_view_name)
-        debug('Previous View: %s', prev_view)
-        debug('Previous View Name: %s', prev_view_name)
-    def set_get_result_lists(self):
-        state.set_result_list(ResultList('Test List A', ['entry1','entry2','entry3','entry4']))
-        current_result_list = state.get_result_list('active')
-        current_result_list_name = state.get_result_list_name('active')
-        debug('\nCurrent Result List Name: %s', current_result_list_name)
-        debug('Current Result LIst: %s\n', current_result_list)
-        state.set_result_list(ResultList('Test List B', ['entry5','entry6','entry7','entry8']))
-        current_result_list = state.get_result_list('active')
-        current_result_list_name = state.get_result_list_name('active')
-        prev_result_list = state.get_result_list('prev')
-        prev_result_list_name = state.get_result_list_name('prev')
-        debug('Current result list: %s', current_result_list)
-        debug('Current result List Name: %s', current_result_list_name)
-        debug('Previous result list: %s', prev_result_list)
-        debug('Previous result list Name: %s', prev_result_list_name)
-    def set_get_query(self):
-        state.set_query('Test Query 1')
-        current_query = state.get_query('active')
-        debug('Current Query:: %s', current_query)
-        state.set_query('Test Query 2')
-        current_query = state.get_query('active')
-        prev_query = state.get_query('prev')
-        debug('Current Query:: %s', current_query)
-        debug('Previous Query:: %s', prev_query)
-    def set_get_active_filters(self):
-        state.set_active_filters('Test Filters 1')
-        current_filters = state.get_active_filters()
-        debug('Current filters:: %s', current_filters)
-
+    def get_field_text(self,field_name):
+        field = getattr(self,field_name)
+        if len(field) >= 3:
+            return field[2]
+        else:
+            return field
 class Filters():
     def add(self,filter_field,filter_criteria,body_instance):
         filter_number = state.get_new_filter_number()
@@ -1682,7 +2031,7 @@ class Filters():
         if hasattr(self, name):
             raise Exception('Filter number {} has already been created'.format(name))
         else:
-            setattr(self, name,Filter(name, filter_number, filter_field, filter_criteria,body_instance))
+            setattr(self, name,Filter(name, filter_number, filter_field, filter_criteria))
             #debug('new Filter: %s', Filter(name, filter_number, filter_field, filter_criteria,body_instance))
     def rem(self,filter_to_remove):
         filter_name = filter_to_remove.name
@@ -1708,18 +2057,87 @@ class Filters():
                         list_of_filters.append(filters)
         debug('list_of_filters: %s', list_of_filters)
         return list_of_filters
-    #def remove_filters(self,*args, **kwargs):
-    #    debug('args: %s, kwargs: %s', args, kwargs)  
-    #    body_instance = args[1]
-    #    filter_walker_index = args[2]
-    #   self.rem()
 class Filter():
     def __init__(self,name,filter_number,filter_field,filter_criteria):
         debug('New Filter: %s', self)
         self.name = name
         self.filter_number = filter_number
-        self.filter_field = filter_field
+        if filter_field == 'Message Type':
+            self.filter_field = 'msgType'
+        if filter_field == 'Sender':
+            self.filter_field = 'sendAddr'
+        if filter_field == 'Recipient':
+            self.filter_field = 'recipient'
+        if filter_field == 'Date':
+            self.filter_field = 'date'
+        #self.filter_field = filter_field
         self.filter_criteria = filter_criteria
+class UAPI():
+    """This is the class used to make calls to WHM
+    
+    Arguments:
+        APIClient {Class} -- [https://github.com/0x6c/whmapi.git]
+    
+    Returns:
+        [NONE] -- [NONE]
+    """
+    def call(self, user, module, function, req_params=None):
+        """Method to run WHMAPI function via subprocess module
+        
+        Arguments:
+            function {string} -- [provides the function to be called]
+            req_params {dict} -- [dictionary of key + values]
+        """
+
+        debug(self)
+
+        popen_args = ["/usr/local/cpanel/bin/uapi", '--user='+user, module ,function ,'--output=json']
+        if req_params:
+            for key , value in req_params.items():
+                x = str(key) + "=" + str(value)
+                popen_args.append(x)
+
+        reqOutput, reqError = subprocess.Popen(popen_args, 
+            stdout=subprocess.PIPE, 
+            stderr=subprocess.PIPE
+            ).communicate()
+        debug('reqOutput: %s', reqOutput)
+        if reqError:
+            warning('Error Returned when Attempting to call cpanel for email list: %s', reqError)
+            if 'UserNotFound' in reqError:
+                warning('Cpanel User Selected does not exist!')
+                state.cpanel_user = None
+            return False
+        data = json.loads(reqOutput)
+        debug("uapi call Results: %s", data)
+        debug("uapi data metadata: %s", data['result']['data'])
+        resultCode = data['result']['status']
+        resultReason = data['result']['errors']
+        #if the result is successfull, pass the result's data as return value
+        if resultCode == 1:
+            resultData = data['result']['data']
+            return resultData 
+
+        #If the result is not successfull, print error message and exit with code 1
+        else:
+            debug("""The data you entered is invalid!\n
+            Take a deep hard look at yourself\n
+            And reconsider whether or not you 
+            know what you are doing...""")
+            debug('Result Code: %s --- %s', resultCode, resultReason)
+        return (resultCode, resultReason)
+    def list_email_accounts(self, user):
+        data = self.call(user, 'Email', 'list_pops')
+        email_list = []
+        if data:
+            for item in data:
+                email = item['email']
+                if email == user:
+                    email = email + '@' + s.hostname
+                email_list.append(email)
+        debug('Email_List: %s', email_list)
+        return email_list
+
 def queryLogProcess(poolArgs):
     os.nice(20)
     query,log = poolArgs
@@ -1731,7 +2149,6 @@ def queryLogProcess(poolArgs):
                 pass
             #debug('Lines in file: %s', i)
             totalLines = i
-        
         #logPoolArgs = []
         with open(log,mode='r') as p:
             for i, line in enumerate(p):
@@ -1772,12 +2189,116 @@ def queryLogProcess(poolArgs):
                     w.searchProgress.set_completion(completion)
                     loop.draw_screen()
     return rawEntries
+def query_for_cpanel_summary(poolArgs):
+    os.nice(20)
+    result_counts = {}
+    log = poolArgs
+    email_list = state.list_of_users_emails
+    pid = ''
+    #debug('Log = %s, email_list = %s', log, email_list)
+    for email in email_list:
+        result_counts[email] = {
+            'was_sender':0,
+            'was_recipient':0,
+            'was_bounced':0
+        }
+    result_counts['sending_scripts'] = []
+    result_counts['script_related_lines'] = []
+    #rawEntries = []
+    if log[-2:] != 'gz':
+        with open(log,mode='rb') as f:
+            for i, line in enumerate(f):
+                pass
+            #debug('Lines in file: %s', i)
+            totalLines = i
+        with open(log,mode='rb') as p:
+            for i, line in enumerate(p):
+                try:
+                    line.encode('utf-8').strip()
+                except UnicodeDecodeError as e:
+                    debug('Log: %s, Line: %s, Offset: %s, %s', log, i, e.start, e.reason)
+                else:
+                    line.encode('utf-8').strip()
+                    for email in email_list:
+                        if email in line:
+                            x = Entry(line,'temp')
+                            if len(x.recipient) > 2:
+                                if email in x.recipient[2]:
+                                    #debug('%s was found in in line %s as a recipient', email, i)
+                                    result_counts[email]['was_recipient'] += 1
+                            if len(x.sendAddr) > 2:
+                                if email in x.sendAddr[2]:
+                                    #debug('%s was found in in line %s as a sender', email, i)
+                                    result_counts[email]['was_sender'] += 1
+                            if len(x.msgType) > 2:
+                                if 'bounce' in x.msgType[2]:
+                                    result_counts[email]['was_bounced'] += 1
+                    if state.cpanel_user in line:
+                        if 'cwd=' in line:
+                            result_counts['sending_scripts'].append(line)
+                            #debug('script sending PID: %s', line[line.index('['):line.index(']')])
+                            pid = line[line.index('['):line.index(']')]
+                    if pid and pid in line:
+                        result_counts['script_related_lines'].append(line)
+                if i % 1000000 == 0:
+                    percent = float(i) / float(totalLines)
+                    completion = int(percent * 100)
+                    #debug('Total Lines in file: %s', totalLines)
+                    #debug('Current Line Percent: %s', completion)
+                    w.searchProgress.set_completion(completion)
+                    loop.draw_screen()
+    else:
+        with gzip.open(log,mode='r') as f:
+            for i, line in enumerate(f):
+                pass
+            #debug('Lines in file: %s', i)
+            totalLines = i
+        with gzip.open(log,mode='r') as f:
+            for i, line in enumerate(f):
+                try:
+                    line.encode('utf-8').strip()
+                except UnicodeDecodeError as e:
+                    debug('Log: %s, Line: %s, Offset: %s, %s', log, i, e.start, e.reason)
+                else:
+                    line.encode('utf-8').strip()
+                    for email in email_list:
+                        if email in line:
+                            #debug('%s was found in in line %s', email, i)
+                            x = Entry(line,'temp')
+                            if len(x.recipient) > 2:
+                                if email in x.recipient[2]:
+                                    #debug('%s was found in in line %s as a recipient', email, i)
+                                    result_counts[email]['was_recipient'] += 1
+                            if len(x.sendAddr) > 2:
+                                if email in x.sendAddr[2]:
+                                    #debug('%s was found in in line %s as a sender', email, i)
+                                    result_counts[email]['was_sender'] += 1
+                    if state.cpanel_user in line:
+                        if 'cwd=' in line:
+                            result_counts['sending_scripts'].append(line)
+                            pid = line[line.index('['):line.index(']')]
+                    if pid and pid in line:
+                        result_counts['script_related_lines'].append(line)
+                if i % 1000000 == 0:
+                    percent = float(i) / float(totalLines)
+                    completion = int(percent * 100)
+                    #debug('Total Lines in file: %s', totalLines)
+                    #debug('Current Line Percent: %s', completion)
+                    w.searchProgress.set_completion(completion)
+                    loop.draw_screen()
+    debug('Result_counts: %s',result_counts)
+    return result_counts
 s = GlobalSettings()
 if __name__ == '__main__':
     debug("\n****\nApplication Start!\n****\n")
+    #Initialize Frame Widget
+    frame = urwid.Frame(urwid.Filler(w.getText('body','Loading...Please Wait', 'center')))
+    #Initialize Loop object
+    loop = urwid.MainLoop(frame, s.df.palette, unhandled_input=s.unhandled_input,handle_mouse=False)
     #Initialize LogFiles
     logFiles = LogFiles()
-    
+    uapi = UAPI()
+    cpanel_stats = CpanelStats()
     #Initiatlize Views and BodyWidgets
     views = ViewSets()
     body = BodyWidgets()
@@ -1791,15 +2312,11 @@ if __name__ == '__main__':
     #Initialize Results and Search Container Objects
     results = Results()
     search = Search()
-
-    #Initialize Frame Widget
-    frame = urwid.Frame(urwid.Filler(w.getText('body','Loading...Please Wait', 'center')))
     
     #Activate initial screen 'choose_logs'
     views.activate('choose_logs',BODY)
 
-    #Initialize Loop object
-    loop = urwid.MainLoop(frame, s.df.palette, unhandled_input=s.unhandled_input)
+    #Initialize Thread and Process Pools
 
     #Run Forest Run.
     loop.run()
