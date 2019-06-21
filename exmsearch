@@ -1407,15 +1407,15 @@ class LogFiles():
         for log in s.lf.selectedLogs:
             if log[-2:] != 'gz':
                 x = os.popen("sudo head -n 1 %s" % log).read()
-                first_line = x[10:]
+                first_line = x[:10]
                 y = os.popen("sudo tail -n 1 %s" % log).read()
-                last_line = y[10:]
+                last_line = y[:10]
                 debug('First Line: %s, Last_line: %s',first_line,last_line)
             else:
                 x = os.popen("sudo zcat %s | head -n 1" % log).read()
-                first_line = x[10:]
+                first_line = x[:10]
                 y = os.popen("sudo zcat %s | tail -n 1" % log).read()
-                last_line = y[10:]
+                last_line = y[:10]
                 debug('First Line: %s, Last_line: %s',first_line,last_line)
 """
 DATA PROCESSING / SEARCH AND RESULT CLASSES
