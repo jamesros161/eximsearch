@@ -1412,7 +1412,7 @@ class LogFiles():
                     stderr=subprocess.PIPE,
                     shell=True
                     ).communicate()
-                debug('reqOutput: %s, reqError: %s', reqOutput, reqError)
+                debug('reqOutput: %s', reqOutput)
                 #x = os.popen("sudo head -n 1 %s" % log).read()
                 #first_line = x[:10]
                 #y = os.popen("sudo tail -n 1 %s" % log).read()
@@ -1425,7 +1425,7 @@ class LogFiles():
                     stderr=subprocess.PIPE,
                     shell=True
                     ).communicate()
-                debug('reqOutput: %s, reqError: %s', reqOutput, reqError)
+                debug('reqOutput: %s', reqOutput)
                 #x = os.popen("sudo zcat %s | head -n 1" % log).read()
                 #first_line = x[:10]
                 #y = os.popen("sudo zcat %s | tail -n 1" % log).read()
