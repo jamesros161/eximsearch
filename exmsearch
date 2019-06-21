@@ -1456,7 +1456,6 @@ class LogFiles():
                 #y = os.popen("sudo zcat %s | tail -n 1" % log).read()
                 #last_line = y[:10]
                 #debug('First Line: %s, Last_line: %s',first_line,last_line)
-        date_ranges = list(dict.fromkeys(date_ranges))
         date_ranges.sort()
         debug('Date Ranges: %s', date_ranges)
         
