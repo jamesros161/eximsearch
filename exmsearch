@@ -1449,11 +1449,6 @@ class LogFiles():
                 last_line = reqOutput[:10]
                 date_ranges.append([first_line,last_line])
                 debug('last_line: %s', last_line)
-                #x = os.popen("sudo zcat %s | head -n 1" % log).read()
-                #first_line = x[:10]
-                #y = os.popen("sudo zcat %s | tail -n 1" % log).read()
-                #last_line = y[:10]
-                #debug('First Line: %s, Last_line: %s',first_line,last_line)
         date_ranges.sort()
         debug('Date Ranges: %s', date_ranges)
         fixed_dates = []
@@ -1475,6 +1470,8 @@ class LogFiles():
                 x.strftime('%b %d %Y') + ' - ' + y.strftime('%b %d %Y')
             )
         debug('Formatted Date Ranges: %s', formatted_date_ranges)
+        date_range_subtitle = 'Log Dates: ' + ' | '.join(formatted_date_ranges)
+        return w.getHeaderWidget(subtitle=date_range_subtitle)
 """
 DATA PROCESSING / SEARCH AND RESULT CLASSES
 """
