@@ -20,7 +20,7 @@ setuptools.setup(
 
      classifiers=[
 
-         "Programming Language :: Python :: 3.6",
+         "Programming Language :: Python :: 2.7",
 
          "License :: GNU General Public License",
 
