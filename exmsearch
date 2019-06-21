@@ -1406,12 +1406,12 @@ class LogFiles():
     def get_date_range(self):
         for log in s.lf.selectedLogs:
             if log[-2:] != 'gz':
-                first_line = os.popen("head -n 1 /var/log/%s" % log).read()
-                last_line = os.popen("tail -n 1 /var/log/%s" % log).read()
+                first_line = os.popen("head -n 1 %s" % log).read()
+                last_line = os.popen("tail -n 1 %s" % log).read()
                 debug('First Line: %s, Last_line: %s',first_line,last_line)
             else:
-                first_line = os.popen("zcat /var/log/%s | head -n 1" % log).read()
-                last_line = os.popen("zcat /var/log/%s | tail -n 1" % log).read()
+                first_line = os.popen("zcat %s | head -n 1" % log).read()
+                last_line = os.popen("zcat %s | tail -n 1" % log).read()
                 debug('First Line: %s, Last_line: %s',first_line,last_line)
 """
 DATA PROCESSING / SEARCH AND RESULT CLASSES
