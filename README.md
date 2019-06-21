@@ -34,7 +34,7 @@ This will have to be run on a server with cPanel / WHM 11+ . This must be run as
 1) The Simplest way to install this application is to add our repo to your yum configuration:
 
 ```
-sudo yum-config-manager --add-repo http://repo.wolfindva.com/CentOS
+sudo yum-config-manager --add-repo http://repo.wolfindva.com/wolfindva.repo
 
 ```
 
