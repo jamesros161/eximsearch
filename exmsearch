@@ -653,10 +653,7 @@ class BodyWidgets():
                     on_state_change=[logFiles,'update'], 
                     user_data=[log])
                     )
-        #logCheckBoxes.append(w.div)
-        #logCheckBoxes.append(w.getButton('Continue', views, 'activate', user_data='home'))
         logCheckBoxes.append(BoxButton('Continue', on_press=views.activate, user_data='home'))
-        #logCheckBoxes.append(w.div)
         listBox = w.getListBox(logCheckBoxes)[0]
         chooseLogsBox = w.centeredListLineBox(
             listBox, 
@@ -672,6 +669,7 @@ class BodyWidgets():
             debug(' No logs selected, returning to choose_logs ')
             return self.get_choose_logs()
         else:
+            date_range = logFiles.get_date_range()
             return urwid.Filler(homeText, 'middle')
     def get_new_search(self, **kwargs):
         """Page opened when starting an entirely new
@@ -877,8 +875,6 @@ class BodyWidgets():
         return w.centeredListLineBox(select_filler, 'cPanel User Stat Summary', 5)
     def get_single_entry(self, **kwargs):
         debug(' kwargs : %s', kwargs)
-        #entryNo = kwargs['user_args'][0]
-        #result_list = kwargs['user_args'][1]
         single_entry = kwargs['user_args'][0]
         state.set_entry_on_screen(single_entry)
         entry_fields = single_entry.get_entry_fields()
@@ -887,34 +883,8 @@ class BodyWidgets():
         for field in entry_fields:
             entry_field_col_rows.append(w.getColRow([
                 (30,w.getButton(field[2],search,'related',user_data=field[3], buttonMap='body')),
-                #(40,BoxButton(field[2],on_press=search.new,user_data=field[3])),
                 ('weight',4,w.getText('body', field[3], 'left'))
             ]))
-        #entry_field_col_rows.append(w.div)
-        #entry_field_col_rows.append(BoxButton('Check for Related Entries', on_press=)
-        #entry_field_col_rows.append(w.div)
-        #related_entries = single_entry.get_related_entry_fields()
-        #for entry in related_entries:
-        #    entry_field_col_rows.append(
-        #        w.getColRow([
-        #            w.blankFlow,
-        #                w.getColRow([
-        #                    w.getSearchProgress(),
-        #                    w.getText('body',entry['field-text'],'left')
-        #                ]),
-        #            w.blankFlow]
-        #        )
-        #    )
-        #for entry in related_entries:
-        #    related_entry_count = single_entry.get_related_entry_count()
-        #    debug('related_entry_count for %s : ', entry['field-text'], related_entry_count)
-            #entry_field_col_rows.append(
-            #    w.getColRow([
-            #    w.getText('body',entry['related-entries'],'right'),
-            #    (25,w.getText('body', 'Entries match ' + entry['field-text'], 'left')),
-            #    w.getText('body',entry['field-contents'],'left')
-            #    ])
-            #)
         entry_walker = urwid.SimpleFocusListWalker(entry_field_col_rows)
         return urwid.ListBox(entry_walker)
     def add_filter_to_walker(self,filter_instance):
@@ -1433,6 +1403,16 @@ class LogFiles():
             if file.startswith("exim_mainlog"):
                 loglist.append(os.path.join(logdir, file))
         return loglist
+    def get_date_range(self):
+        for log in s.lf.selectedLogs:
+            if log[-2:] != 'gz':
+                with open(log,mode='r') as f:
+                    first_line = f.readline()
+                    debug('first_line: %s', first_line)
+            else:
+                with gzip.open(log,mode='r') as f:
+                    first_line = f.readline()
+                    debug('first_line: %s', first_line)
 
 """
 DATA PROCESSING / SEARCH AND RESULT CLASSES
