@@ -1406,7 +1406,7 @@ class LogFiles():
     def get_date_range(self):
         for log in s.lf.selectedLogs:
             if log[-2:] != 'gz':
-                popen_args = "sudo head -n 1" + log
+                popen_args = "sudo head -n 1 " + log
                 reqOutput, reqError = subprocess.Popen(popen_args, 
                     stdout=subprocess.PIPE, 
                     stderr=subprocess.PIPE,
@@ -1419,7 +1419,7 @@ class LogFiles():
                 #last_line = y[:10]
                 #debug('First Line: %s, Last_line: %s',first_line,last_line)
             else:
-                popen_args = "sudo zcat" + log + " | head -n 1"
+                popen_args = "sudo zcat " + log + " | head -n 1"
                 reqOutput, reqError = subprocess.Popen(popen_args, 
                     stdout=subprocess.PIPE, 
                     stderr=subprocess.PIPE,
