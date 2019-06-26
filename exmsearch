@@ -1515,7 +1515,7 @@ class Search():
             self.process_pool = Pool(maxtasksperchild=1)
         else:
             self.process_pool = Pool(maxtasksperchild=1)
-        s.rl.resultOverflow = False
+        #s.rl.resultOverflow = False
         if args:
             debug('Search Has special arguments: %s', args)
             state.set_query(args[0])
