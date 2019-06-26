@@ -901,10 +901,16 @@ class BodyWidgets():
         entry_fields.sort()
         entry_field_col_rows = [w.div]
         for field in entry_fields:
-            entry_field_col_rows.append(w.getColRow([
-                (30,w.getButton(field[2],search,'related',user_data=field[3], buttonMap='body')),
-                ('weight',4,w.getText('body', field[3], 'left'))
-            ]))
+            if field[3] == '/':
+                entry_field_col_rows.append(w.getColRow([
+                    (30,w.getText('body', field[2], 'center')),
+                    ('weight',4,w.getText('body', field[3], 'left'))
+                ]))
+            else:
+                entry_field_col_rows.append(w.getColRow([
+                    (30,w.getButton(field[2],search,'related',user_data=field[3], buttonMap='body')),
+                    ('weight',4,w.getText('body', field[3], 'left'))
+                ]))
         entry_walker = urwid.SimpleFocusListWalker(entry_field_col_rows)
         return urwid.ListBox(entry_walker)
     def add_filter_to_walker(self,filter_instance):
