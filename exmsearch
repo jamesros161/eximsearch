@@ -2201,6 +2201,7 @@ def queryLogProcess(poolArgs):
                     #debug('Current Line Percent: %s', completion)
                     w.searchProgress.set_completion(completion)
                     loop.draw_screen()
+    debug('ResultOverflow: %s', s.rl.resultOverflow)
     return rawEntries
 def query_for_cpanel_summary(poolArgs):
     os.nice(20)
