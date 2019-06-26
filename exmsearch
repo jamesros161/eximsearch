@@ -1825,17 +1825,17 @@ class Entry():
         try:
             shlex.split(self.fullEntryText)
         except:
-            debug('Cannot shlex split this entry!')
+            #debug('Cannot shlex split this entry!')
             try:
                 self.fullEntryText.split()
             except:
                 warning('Could Not Parse line: %s', self.fullEntryText)
             else:
-                debug('Parsing with standard split')
+                #debug('Parsing with standard split')
                 m = self.fullEntryText.split()
-                debug('split entry: %s', m)
+                #debug('split entry: %s', m)
                 if self.msgType:
-                    debug('self.msgType: %s', self.msgType)
+                    #debug('self.msgType: %s', self.msgType)
                     if self.msgType[2] == 'spam status':
                             if 'detected' in m:
                                 self.spamStatus = [15, 'spam status',  ' '.join(m[m.index('detected') + 3: -2])]
