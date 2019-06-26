@@ -2163,7 +2163,7 @@ def queryLogProcess(poolArgs):
         #logPoolArgs = []
         with open(log,mode='r') as p:
             for i, line in enumerate(p):
-                if len(rawEntries) == 10000:
+                if len(rawEntries) == 1000:
                     s.rl.resultOverflow = True
                     debug('ResultOverflow = True')
                     break
@@ -2185,7 +2185,7 @@ def queryLogProcess(poolArgs):
             totalLines = i
         with gzip.open(log,mode='r') as f:
             for i, line in enumerate(f):
-                if len(rawEntries) == 10000:
+                if len(rawEntries) == 1000:
                     s.rl.resultOverflow = True
                     debug('ResultOverflow = True')
                     break
