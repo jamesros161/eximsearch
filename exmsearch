@@ -854,9 +854,10 @@ class BodyWidgets():
         return urwid.Filler(filter_input_pile,valign='top')
     def get_clear_applied_filters(self, **kwargs):
         debug(' kwargs : %s', kwargs)
-        state.active_filters = []
-        original_results_list = state.get_result_list(ACTIVE).get_original_results()
-        state.set_result_list(original_results_list)
+        if state.active_filters:
+            state.active_filters = []
+            original_results_list = state.get_result_list(ACTIVE).get_original_results()
+            state.set_result_list(original_results_list)
         return self.get_results_summary()
     def get_quit_loop(self, **kwargs):
         """Page opened upon a request to quit, and 
