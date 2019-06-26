@@ -1591,11 +1591,11 @@ class Search():
             self.process_pool = Pool(maxtasksperchild=1)
         else:
             self.process_pool = Pool(maxtasksperchild=1)
-        searchedLogs,resultsOverflow = self.process_pool.map(queryLogProcess, logPoolArgs)
+        searchedLogs = self.process_pool.map(queryLogProcess, logPoolArgs)
+        debug('ResultsOverflow: %s', searchedLogs)
         results = []
         for resultList in searchedLogs:
             results.extend(resultList)
-        debug('ResultsOverflow: %s', resultsOverflow)
         logging.info('QT = %s : filteredLog Pool Result Count: %s',datetime.now() - starttime, len(results))
         if hasattr(self,'process_pool'):
             self.process_pool.terminate()
