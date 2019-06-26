@@ -706,6 +706,7 @@ class BodyWidgets():
         debug(' kwargs : %s', kwargs)
         query = state.get_query(ACTIVE)
         result_list = state.get_result_list(ACTIVE)
+        debug('resultOverFlow = %s', s.rl.resultOverflow)
         if s.rl.resultOverflow:
             if state.get_query:
                 summaryRows = [w.getText('header', ' for ' + query, 'center')]
