@@ -930,7 +930,7 @@ class BodyWidgets():
             if state.active_filters:
                 search.filter_active_results()
                 #views.activate('results_summary')
-                return self.get_results_summary()
+            return self.get_results_summary()
     def get_stat_summary_results(self, **kwargs):
         debug(' kwargs : %s', kwargs)
         debug('cPanel User: %s', state.cpanel_user)
