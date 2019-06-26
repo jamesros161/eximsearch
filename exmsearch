@@ -2168,6 +2168,7 @@ def queryLogProcess(poolArgs):
                 if len(rawEntries) == 1000:
                     s.rl.resultOverflow = True
                     debug('ResultOverflow: %s', s.rl.resultOverflow)
+                    rawEntries.append('RESULTSOVERFLOW')
                     break
                 if query in line:
                     if line not in rawEntries:
@@ -2201,9 +2202,7 @@ def queryLogProcess(poolArgs):
                     #debug('Current Line Percent: %s', completion)
                     w.searchProgress.set_completion(completion)
                     loop.draw_screen()
-    debug('ResultOverflow: %s', s.rl.resultOverflow)
-    resultOverflow = s.rl.resultOverflow
-    return rawEntries, resultOverflow
+    return rawEntries
 def query_for_cpanel_summary(poolArgs):
     os.nice(20)
     result_counts = {}
