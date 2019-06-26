@@ -204,7 +204,7 @@ class Menus():
                 ['  Back To Result List ','results_list'],
                 ['         Home         ','home'],
                 ['      New Search      ','new_search'],
-                ['          Wuit        ','quit_loop']]
+                ['          Quit        ','quit_loop']]
             self.add_remove_filters_no_apply = [
                 [' New Search ','new_search'],
                 ['    Home    ','home'],
@@ -330,11 +330,16 @@ class QuestionBox(urwid.Filler):
     def keypress(self, size, key):
         if key != 'enter':
             return super(QuestionBox, self).keypress(size, key)
-        entry = self.original_widget.get_edit_text()
-        self.original_widget.set_edit_text('')
-        debug('%s Entry String: %s', self.original_widget, entry)
-        state.set_query(entry)
-        views.activate('search_progress',is_threaded=True,on_join=search.new)
+        user_input = self.original_widget.get_edit_text()
+        if len(user_input) >= 255:
+            self.original_widget.set_caption('Input Must be 255 Characters or Less\nPlease Try Again')
+            self.original_widget.set_edit_text('')
+        else:
+            entry = self.original_widget.get_edit_text()
+            self.original_widget.set_edit_text('')
+            debug('%s Entry String: %s', self.original_widget, entry)
+            state.set_query(entry)
+            views.activate('search_progress',is_threaded=True,on_join=search.new)
 class UserBox(urwid.Filler):
     def keypress(self, size, key):
         if key != 'enter':
@@ -351,7 +356,6 @@ class UserBox(urwid.Filler):
                 self.original_widget.set_caption(state.cpanel_user + ' user does not have any email addresses\n')
             else:
                 views.activate('search_progress',is_threaded=True,on_join=search.cpanel_summary)
-
 class CustomButton(urwid.Button):
     button_left = urwid.Text('[')
     button_right = urwid.Text(']')
