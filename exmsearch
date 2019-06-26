@@ -2166,7 +2166,7 @@ def queryLogProcess(poolArgs):
             for i, line in enumerate(p):
                 if len(rawEntries) == 1000:
                     s.rl.resultOverflow = True
-                    debug('ResultOverflow = True')
+                    debug('ResultOverflow: %s', s.rl.resultOverflow)
                     break
                 if query in line:
                     if line not in rawEntries:
@@ -2188,7 +2188,7 @@ def queryLogProcess(poolArgs):
             for i, line in enumerate(f):
                 if len(rawEntries) == 1000:
                     s.rl.resultOverflow = True
-                    debug('ResultOverflow = True')
+                    debug('ResultOverflow: %s',s.rl.resultOverflow)
                     break
                 if query in line:
                     if line not in rawEntries:
