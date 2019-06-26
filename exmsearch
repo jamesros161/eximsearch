@@ -1592,7 +1592,6 @@ class Search():
         else:
             self.process_pool = Pool(maxtasksperchild=1)
         searchedLogs = self.process_pool.map(queryLogProcess, logPoolArgs)
-        debug('ResultsOverflow: %s', searchedLogs)
         results = []
         for resultList in searchedLogs:
             results.extend(resultList)
@@ -1753,10 +1752,13 @@ class ResultLists():
             search_number = state.searchCounterStr
             debug('search_number: %s', search_number)
             for result in result_contents:
-                name = 'entry-' + search_number + '-' + str(i)
-                #debug('New Entry Name is: %s', name)
-                entries.new(name, result)
-                i += 1
+                if result == 'RESULTSOVERFLOW':
+                    s.rl.resultOverflow = True
+                else:
+                    name = 'entry-' + search_number + '-' + str(i)
+                    #debug('New Entry Name is: %s', name)
+                    entries.new(name, result)
+                    i += 1
             self.contents = entries.get_list_from_search_no(search_number)
         else:
             self.contents = result_contents
@@ -2191,6 +2193,7 @@ def queryLogProcess(poolArgs):
                 if len(rawEntries) == 1000:
                     s.rl.resultOverflow = True
                     debug('ResultOverflow: %s',s.rl.resultOverflow)
+                    rawEntries.append('RESULTSOVERFLOW')
                     break
                 if query in line:
                     if line not in rawEntries:
