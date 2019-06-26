@@ -1752,7 +1752,7 @@ class ResultLists():
             debug('search_number: %s', search_number)
             for result in result_contents:
                 name = 'entry-' + search_number + '-' + str(i)
-                debug('New Entry Name is: %s', name)
+                #debug('New Entry Name is: %s', name)
                 entries.new(name, result)
                 i += 1
             self.contents = entries.get_list_from_search_no(search_number)
@@ -1820,7 +1820,7 @@ class Entry():
         self.entryType = []
         if 'Warning: "SpamAssassin' in self.fullEntryText:
             self.msgType = [15, 'Message Type: ', 'Spam Status']
-        debug('Init Entries: %s', self.fullEntryText)
+        #debug('Init Entries: %s', self.fullEntryText)
         try:
             shlex.split(self.fullEntryText)
         except:
