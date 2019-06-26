@@ -1591,11 +1591,11 @@ class Search():
             self.process_pool = Pool(maxtasksperchild=1)
         else:
             self.process_pool = Pool(maxtasksperchild=1)
-        searchedLogs = self.process_pool.map(queryLogProcess, logPoolArgs)
+        searchedLogs,resultsOverflow = self.process_pool.map(queryLogProcess, logPoolArgs)
         results = []
         for resultList in searchedLogs:
             results.extend(resultList)
-        debug('ResultsOverflow: %s', s.rl.resultOverflow)
+        debug('ResultsOverflow: %s', resultsOverflow)
         logging.info('QT = %s : filteredLog Pool Result Count: %s',datetime.now() - starttime, len(results))
         if hasattr(self,'process_pool'):
             self.process_pool.terminate()
@@ -2202,7 +2202,8 @@ def queryLogProcess(poolArgs):
                     w.searchProgress.set_completion(completion)
                     loop.draw_screen()
     debug('ResultOverflow: %s', s.rl.resultOverflow)
-    return rawEntries
+    resultOverflow = s.rl.resultOverflow
+    return rawEntries, resultOverflow
 def query_for_cpanel_summary(poolArgs):
     os.nice(20)
     result_counts = {}
