@@ -332,7 +332,7 @@ class QuestionBox(urwid.Filler):
             return super(QuestionBox, self).keypress(size, key)
         user_input = self.original_widget.get_edit_text()
         if len(user_input) >= 255:
-            self.original_widget.set_caption('Input Must be 255 Characters or Less\nPlease Try Again')
+            self.original_widget.set_caption('Input Must be 255 Characters or Less\nPlease Try Again\n')
             self.original_widget.set_edit_text('')
         else:
             entry = self.original_widget.get_edit_text()
