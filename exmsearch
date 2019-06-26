@@ -715,7 +715,7 @@ class BodyWidgets():
             summaryRows.extend([
                 w.div,
                 w.getText('bold',' There are too many Results \n Only showing the first ' 
-                    + str(result_list.count) + 
+                    + str(result_list.count - len(s.lf.selectedLogs)) + 
                     ' Results \nConsider applying filters to narrow down results ', 'center'),
                 w.div
             ])
@@ -740,7 +740,7 @@ class BodyWidgets():
         #summaryRows.append(w.getButton('Show Results', views,'activate', user_data='results_list'))
         summary = urwid.SimpleFocusListWalker(summaryRows)
         summaryList = urwid.ListBox(summary)
-        return w.centeredListLineBox(summaryList, 'Search Results', len(summaryRows) + 5)
+        return w.centeredListLineBox(summaryList, 'Search Results', len(summaryRows) + 6)
     def get_results_list(self, **kwargs):
         debug(' kwargs : %s', kwargs)
         #result_list = state.get_result_list(ACTIVE)
