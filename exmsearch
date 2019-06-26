@@ -1197,7 +1197,7 @@ class State():
         debug('filter_walker length: %s', len(body_instance.filter_walker))
         for row in body_instance.filter_walker:
             if body_instance.filter_walker.index(row) > 0:
-                if filter_instance.filter_criteria in row.contents[2][0].get_text()[0]:
+                if filter_instance.filter_criteria in row.contents[2][0].get_text()[0] and filter_instance.filter_type in row.contents[1][0]:
                     debug('Current filter walker rows: %s, current filter criteria: %s', row.contents[2][0].get_text()[0], filter_instance.filter_criteria)
                     body_instance.filter_walker.remove(row)
     def get_active_filters(self):
