@@ -735,7 +735,6 @@ class BodyWidgets():
             summaryRows.append(w.getText('bold', 'Currently Active Filters:', 'center'))
             for activeFilter in activeFilters:
                 summaryRows.append(w.getText('body', activeFilter.filter_field + ' : ' + activeFilter.filter_criteria, 'center'))
-        summaryRows.append(w.div)
         summaryRows.append(BoxButton('Show Results', on_press=views.activate, user_data='results_list'))
         #summaryRows.append(w.getButton('Show Results', views,'activate', user_data='results_list'))
         summary = urwid.SimpleFocusListWalker(summaryRows)
