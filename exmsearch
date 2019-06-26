@@ -1595,6 +1595,7 @@ class Search():
         results = []
         for resultList in searchedLogs:
             results.extend(resultList)
+        debug('ResultsOverflow: %s', s.rl.resultOverflow)
         logging.info('QT = %s : filteredLog Pool Result Count: %s',datetime.now() - starttime, len(results))
         if hasattr(self,'process_pool'):
             self.process_pool.terminate()
