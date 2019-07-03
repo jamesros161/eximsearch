@@ -2266,7 +2266,7 @@ def queryLogProcess_2(poolArgs):
         completion = int(percent * 100)
         #debug('Total Lines in file: %s', totalLines)
         #debug('Current Line Percent: %s', completion)
-        debug('searchProgress.get_text: %s', state.active_view.frame.body)
+        debug('searchProgress.get_text: %s', loop.frame.contents)
         if completion > int(w.searchProgress.get_text()[:-1].strip()):
             debug("completion: %s", completion)
             w.searchProgress.set_completion(completion)
