@@ -2238,7 +2238,7 @@ def queryLogProcess2(poolArgs):
             i = i + 100
             #if reqStdOut_newline[-1] == last_line:
             #    x == False
-            if i >= 100000:
+            if i >= 10000:
                 x = False
         debug("log_file_contents: %s", log_file_contents)
         #log_less_process.communicate(input="^f")
