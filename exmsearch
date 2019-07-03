@@ -2266,7 +2266,8 @@ def queryLogProcess2(poolArgs):
         #            w.searchProgress.set_completion(completion)
         #            loop.draw_screen()
         debug("Gzipped Log File Contents: %s", log_file_contents)
-        debug("")
+        runtime = starttime - datetime.now()
+        debug("Runtime: %s", datetime.strftime(runtime,s.dt.displayDateTimeFormat))
     #return rawEntries
 def query_for_cpanel_summary(poolArgs):
     os.nice(20)
