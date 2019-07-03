@@ -2226,6 +2226,7 @@ def queryLogProcess2(poolArgs):
         log_file_contents = []
         while x == True:
             sed_string = "'" + str(i) + "," + str(i + 99) + "p'"
+            debug('sed_string: %s', sed_string)
             popen_args = ["sudo", "sed", "-n", sed_string, log]
             log_less_process = subprocess.Popen(popen_args, 
                 stdout=subprocess.PIPE, 
