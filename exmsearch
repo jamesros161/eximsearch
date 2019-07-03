@@ -111,7 +111,8 @@ class GlobalSettings():
                 if hasattr(state,'prev_query'):
                     debug('Previous Query: %s', state.get_query(PREV))
             if key in 'f3':
-                debug('Body: %s', self.dyn_debug())
+                self.dyn_debug()
+                #debug('Body: %s', self.dyn_debug())
             if key in 'f1':
                 debug('Current Result List: %s', state.get_result_list_name(ACTIVE))
                 if hasattr(state,'prev_result_list'):
