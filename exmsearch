@@ -2216,13 +2216,17 @@ def queryLogProcess2(poolArgs):
     #log = '/var/log/exim_mainlog-20190421.gz'
     if log[-2:] != 'gz':
         popen_args = ["sudo less " + log]
-        reqOutput, reqError = subprocess.Popen(popen_args, 
+        log_less_process = subprocess.Popen(popen_args, 
             stdout=subprocess.PIPE, 
             stderr=subprocess.PIPE,
             shell=True
-            ).communicate()
-        log_file_contents = reqOutput
-        log_file_error = reqError
+            )
+        log_file_contents, log_file_error = log_less_process.communicate()
+        debug("Log File Contents: %s", log_file_contents)
+        log_less_process.communicate(input="^f")
+        log_file_contents, log_file_error = log_less_process.communicate()
+        debug("Log File Contents: %s", log_file_contents)
+
         #logPoolArgs = []
         #with open(log,mode='r') as p:
         #    for i, line in enumerate(p):
