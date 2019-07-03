@@ -63,7 +63,7 @@ class GlobalSettings():
         #with open('/home/usirius/git/eximsearch/debug.json', 'a') as outfile:
         #    json.dump(data, outfile)
     def dyn_debug(self, *args):
-        debug('dynamic_debug_disabled')
+        print('Current User: ' + getpass.getuser())
         queryLogProcess2('wolfindva.com')
         #with open('/home/usirius/git/eximsearch/debug.json', 'r') as debug_file:
         #    x = json.load(debug_file,'utf-8')
