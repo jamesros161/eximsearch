@@ -2258,20 +2258,6 @@ def queryLogProcess_2(poolArgs):
                     if query in line:
                         if line not in rawEntries:
                             rawEntries.append(line)
-        #if total_lines % end_line == 0:
-        percent = float(end_line) / float(total_lines)
-        completion = int(percent * 100)
-        #debug('Total Lines in file: %s', totalLines)
-        #debug('Current Line Percent: %s', completion)
-        search_progress_box = frame.contents['body'][0].base_widget.contents[1][0].original_widget.original_widget.contents[1][0].original_widget
-        progress_bar = search_progress_box.original_widget.contents[1][0]
-        progress_bar_text = progress_bar.get_text()[:-1].strip()
-        debug(
-            'searchProgress.get_text: %s', progress_bar_text)
-        if completion > int(progress_bar_text):
-            debug("completion: %s", completion)
-            progress_bar.set_completion(completion)
-            loop.draw_screen()
     else:
         with gzip.open(log,mode='r') as f:
             for i, line in enumerate(f):
@@ -2295,6 +2281,19 @@ def queryLogProcess_2(poolArgs):
                     #debug('Current Line Percent: %s', completion)
                     w.searchProgress.set_completion(completion)
                     loop.draw_screen()
+    #if total_lines % end_line == 0:
+    percent = float(end_line) / float(total_lines)
+    completion = int(percent * 100)
+    #debug('Total Lines in file: %s', totalLines)
+    #debug('Current Line Percent: %s', completion)
+    search_progress_box = frame.contents['body'][0].base_widget.contents[1][0].original_widget.original_widget.contents[1][0].original_widget
+    progress_bar = search_progress_box.original_widget.contents[1][0]
+    progress_bar_text = progress_bar.get_text()[:-1].strip()
+    debug('searchProgress.get_text: %s', progress_bar_text)
+    if completion > int(progress_bar_text):
+        debug("completion: %s", completion)
+        progress_bar.set_completion(completion)
+        loop.draw_screen()
     return rawEntries
 def queryLogProcess2(poolArgs):
     os.nice(20)
