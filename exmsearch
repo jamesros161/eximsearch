@@ -2232,9 +2232,8 @@ def queryLogProcess2(poolArgs):
                 stderr=subprocess.PIPE
                 )
             reqStdOut = log_less_process.stdout.read()
-            reqStdOut_newline = reqStdOut.splitlines()
-            debug("reqStdOut: %s", reqStdOut_newline)
-            log_file_contents.extend(reqStdOut_newline)
+            debug("reqStdOut: %s", reqStdOut)
+            log_file_contents.extend(reqStdOut)
             i = i + 100
             #if reqStdOut_newline[-1] == last_line:
             #    x == False
