@@ -64,7 +64,7 @@ class GlobalSettings():
         #    json.dump(data, outfile)
     def dyn_debug(self, *args):
         print('Current User: ' + getpass.getuser())
-        queryLogProcess2('wolfindva.com')
+        queryLogProcess2(['wolfindva.com','/var/log/exim_mainlog'])
         #with open('/home/usirius/git/eximsearch/debug.json', 'r') as debug_file:
         #    x = json.load(debug_file,'utf-8')
         #    for walker_item in state.get_view(ACTIVE).body.body:
