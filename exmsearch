@@ -2208,16 +2208,17 @@ def queryLogProcess(poolArgs):
     return rawEntries
 def queryLogProcess2(poolArgs):
     os.nice(20)
-    #query,log = poolArgs
-    #debug('Log = %s, filters = %s', log, query)
+    query,log = poolArgs
+    debug('Log = %s, filters = %s', log, query)
     rawEntries = []
     starttime = datetime.now()
-    log = '/var/log/exim_mainlog-20190421.gz'
+    #log = '/var/log/exim_mainlog-20190421.gz'
     if log[-2:] != 'gz':
-        popen_args = ["sudo", "cat" , log]
+        popen_args = ["sudo cat " + log + "| less"]
         reqOutput, reqError = subprocess.Popen(popen_args, 
             stdout=subprocess.PIPE, 
-            stderr=subprocess.PIPE
+            stderr=subprocess.PIPE,
+            shell=True
             ).communicate()
         log_file_contents = reqOutput
         log_file_error = reqError
