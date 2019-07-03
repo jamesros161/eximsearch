@@ -2268,9 +2268,9 @@ def queryLogProcess_2(poolArgs):
         progress_bar_text = progress_bar.get_text()[:-1].strip()
         debug(
             'searchProgress.get_text: %s', progress_bar_text)
-        if completion > int(w.searchProgress.get_text()[:-1].strip()):
+        if completion > int(progress_bar_text):
             debug("completion: %s", completion)
-            w.searchProgress.set_completion(completion)
+            progress_bar.set_completion(completion)
             loop.draw_screen()
     else:
         with gzip.open(log,mode='r') as f:
