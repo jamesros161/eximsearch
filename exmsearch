@@ -64,6 +64,7 @@ class GlobalSettings():
         #    json.dump(data, outfile)
     def dyn_debug(self, *args):
         debug('dynamic_debug_disabled')
+        queryLogProcess2('wolfindva.com')
         #with open('/home/usirius/git/eximsearch/debug.json', 'r') as debug_file:
         #    x = json.load(debug_file,'utf-8')
         #    for walker_item in state.get_view(ACTIVE).body.body:
@@ -2205,6 +2206,65 @@ def queryLogProcess(poolArgs):
                     w.searchProgress.set_completion(completion)
                     loop.draw_screen()
     return rawEntries
+def queryLogProcess2(poolArgs):
+    os.nice(20)
+    query,log = poolArgs
+    #debug('Log = %s, filters = %s', log, query)
+    rawEntries = []
+    if log[-2:] != 'gz':
+        popen_args = ["sudo", "cat" , log]
+        reqOutput, reqError = subprocess.Popen(popen_args, 
+            stdout=subprocess.PIPE, 
+            stderr=subprocess.PIPE
+            ).communicate()
+        log_file_contents = reqOutput
+        log_file_error = reqError
+        #logPoolArgs = []
+        #with open(log,mode='r') as p:
+        #    for i, line in enumerate(p):
+        #        if len(rawEntries) == 1000:
+        #            s.rl.resultOverflow = True
+        #            debug('ResultOverflow: %s', s.rl.resultOverflow)
+        #            rawEntries.append('RESULTSOVERFLOW')
+        #            break
+        #        if query in line:
+        #            if line not in rawEntries:
+        #                rawEntries.append(line)
+        #        if i % 1000000 == 0:
+        #            percent = float(i) / float(totalLines)
+        #            completion = int(percent * 100)
+        #            #debug('Total Lines in file: %s', totalLines)
+        #            #debug('Current Line Percent: %s', completion)
+        #            w.searchProgress.set_completion(completion)
+        #            loop.draw_screen()
+        debug("Log File Contents: %s", log_file_contents)
+    else:
+        popen_args = ["sudo", "zcat" , log]
+        reqOutput, reqError = subprocess.Popen(popen_args, 
+            stdout=subprocess.PIPE, 
+            stderr=subprocess.PIPE
+            ).communicate()
+        log_file_contents = reqOutput
+        log_file_error = reqError
+        #with gzip.open(log,mode='r') as f:
+        #    for i, line in enumerate(f):
+        #        if len(rawEntries) == 1000:
+        #            s.rl.resultOverflow = True
+        #            debug('ResultOverflow: %s',s.rl.resultOverflow)
+        #            rawEntries.append('RESULTSOVERFLOW')
+        #            break
+        #        if query in line:
+        #            if line not in rawEntries:
+        #                rawEntries.append(line)
+        #        if i % 1000000 == 0:
+        #            percent = float(i) / float(totalLines)
+        #            completion = int(percent * 100)
+        #            #debug('Total Lines in file: %s', totalLines)
+        #            #debug('Current Line Percent: %s', completion)
+        #            w.searchProgress.set_completion(completion)
+        #            loop.draw_screen()
+        debug("Gzipped Log File Contents: %s", log_file_contents)
+    #return rawEntries
 def query_for_cpanel_summary(poolArgs):
     os.nice(20)
     result_counts = {}
