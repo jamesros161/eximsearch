@@ -2221,7 +2221,7 @@ def queryLogProcess2(poolArgs):
             stderr=subprocess.PIPE,
             shell=True
             )
-        log_file_contents, log_file_error = log_less_process.communicate()
+        log_file_contents = log_less_process.stdout.read()
         debug("Log File Contents: %s", log_file_contents)
         log_less_process.communicate(input="^f")
         log_file_contents, log_file_error = log_less_process.communicate()
