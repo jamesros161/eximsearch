@@ -2272,7 +2272,7 @@ def queryLogProcess2(poolArgs):
         #            w.searchProgress.set_completion(completion)
         #            loop.draw_screen()
         #debug("Gzipped Log File Contents: %s", log_file_contents)
-    runtime = starttime - datetime.now()
+    runtime = datetime.now() - starttime
     debug("Runtime: %s", runtime)
     #return rawEntries
 def query_for_cpanel_summary(poolArgs):
