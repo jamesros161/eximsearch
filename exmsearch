@@ -2248,6 +2248,7 @@ def queryLogProcess_2(poolArgs):
     query, log, total_lines, start_line, end_line = poolArgs
     #debug('Log = %s, filters = %s', log, query)
     rawEntries = []
+    loop.draw_screen()
     if log[-2:] != 'gz':
         with open(log,mode='r') as p:
             for i, line in enumerate(p):
