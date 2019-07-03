@@ -2236,8 +2236,8 @@ def queryLogProcess2(poolArgs):
             debug("reqStdOut: %s", reqStdOut_newline)
             log_file_contents.extend(reqStdOut_newline)
             i = i + 100
-            if reqStdOut_newline[-1] == last_line:
-                x == False
+            #if reqStdOut_newline[-1] == last_line:
+            #    x == False
             if i >= 100000:
                 x == False
         debug("log_file_contents: %s", log_file_contents)
