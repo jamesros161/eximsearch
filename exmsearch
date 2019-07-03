@@ -2228,12 +2228,12 @@ def queryLogProcess2(poolArgs):
             sed_string = "'" + str(i) + "," + str(i + 99) + "p'"
             debug('sed_string: %s', sed_string)
             popen_args = ["sudo sed -n" + sed_string + " " + log]
-            reqStdOut,_ = subprocess.Popen(popen_args, 
+            reqStdOut,reqStdErr = subprocess.Popen(popen_args, 
                 stdout=subprocess.PIPE, 
                 stderr=subprocess.PIPE,
                 shell=True
                 ).communicate()
-            debug("reqStdOut: %s", reqStdOut)
+            debug("reqStdOut: %s, ReqStdErr: %s", reqStdOut, reqStdErr)
             log_file_contents.extend(reqStdOut)
             i = i + 100
             #if reqStdOut_newline[-1] == last_line:
