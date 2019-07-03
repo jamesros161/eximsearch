@@ -2234,7 +2234,7 @@ def queryLogProcess2(poolArgs):
                 shell=True
                 ).communicate()
             reqStdOut = reqStdOut.splitlines()
-            debug("reqStdOut: %s, ReqStdErr: %s", reqStdOut, reqStdErr)
+            debug("reqStdOut: %s, ", reqStdOut[-1])
             #log_file_contents.extend(reqStdOut)
             i = i + 100
             #if reqStdOut_newline[-1] == last_line:
