@@ -1626,9 +1626,9 @@ class Search():
             if hasattr(self,'process_pool'):
                 self.process_pool.terminate()
                 del(self.process_pool)
-                self.process_pool = Pool(maxtasksperchild=1)
+                self.process_pool = Pool()
             else:
-                self.process_pool = Pool(maxtasksperchild=1)
+                self.process_pool = Pool()
             searchedLogs = self.process_pool.map(queryLogProcess_2, logPoolArgs)
             for resultList in searchedLogs:
                 results.extend(resultList)
@@ -2260,13 +2260,13 @@ def queryLogProcess_2(poolArgs):
                     if query in line:
                         if line not in rawEntries:
                             rawEntries.append(line)
-                    if i % 1000000 == 0:
-                        percent = float(i) / float(total_lines)
-                        completion = int(percent * 100)
-                        #debug('Total Lines in file: %s', totalLines)
-                        #debug('Current Line Percent: %s', completion)
-                        w.searchProgress.set_completion(completion)
-                        loop.draw_screen()
+        #if total_lines % end_line == 0:
+        percent = float(end_line) / float(total_lines)
+        completion = int(percent * 100)
+        #debug('Total Lines in file: %s', totalLines)
+        #debug('Current Line Percent: %s', completion)
+        w.searchProgress.set_completion(completion)
+        loop.draw_screen()
     else:
         with gzip.open(log,mode='r') as f:
             for i, line in enumerate(f):
