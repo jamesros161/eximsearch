@@ -1440,7 +1440,7 @@ class LogFiles():
         date_ranges = []
         for log in s.lf.selectedLogs:
             if log[-2:] != 'gz':
-                popen_args = "sudo head -n 1 " + log
+                popen_args = "sudo head -1 " + log
                 reqOutput,_ = subprocess.Popen(popen_args, 
                     stdout=subprocess.PIPE, 
                     stderr=subprocess.PIPE,
@@ -1449,7 +1449,7 @@ class LogFiles():
                 first_line = reqOutput[:10]
                 debug('first_line: %s', first_line)
 
-                popen_args = "sudo tail -n 1 " + log
+                popen_args = "sudo tail -1 " + log
                 reqOutput,_ = subprocess.Popen(popen_args, 
                     stdout=subprocess.PIPE, 
                     stderr=subprocess.PIPE,
@@ -1464,7 +1464,7 @@ class LogFiles():
                 #last_line = y[:10]
                 #debug('First Line: %s, Last_line: %s',first_line,last_line)
             else:
-                popen_args = "sudo zcat " + log + " | head -n 1"
+                popen_args = "sudo zcat " + log + " | head -1"
                 reqOutput,_ = subprocess.Popen(popen_args, 
                     stdout=subprocess.PIPE, 
                     stderr=subprocess.PIPE,
@@ -1473,7 +1473,7 @@ class LogFiles():
                 first_line = reqOutput[:10]
                 debug('first_line: %s', first_line)
                 
-                popen_args = "sudo zcat " + log + " | tail -n 1"
+                popen_args = "sudo zcat " + log + " | tail -1"
                 reqOutput,_ = subprocess.Popen(popen_args, 
                     stdout=subprocess.PIPE, 
                     stderr=subprocess.PIPE,
