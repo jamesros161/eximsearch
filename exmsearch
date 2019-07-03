@@ -2215,7 +2215,7 @@ def queryLogProcess2(poolArgs):
     starttime = datetime.now()
     #log = '/var/log/exim_mainlog-20190421.gz'
     if log[-2:] != 'gz':
-        popen_args = ["sudo less -h 100" + log]
+        popen_args = ["sudo less -h 100 " + log]
         log_less_process = subprocess.Popen(popen_args, 
             stdout=subprocess.PIPE, 
             stderr=subprocess.PIPE,
