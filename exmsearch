@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import urwid, datetime, os, subprocess, sys, json, re, shlex, gzip, time, logging, collections, socket, threading, getpass
-from multiprocessing import Pool, Queue, current_process, connection
+from multiprocessing import Pool, Queue, current_process, connection, cpu_count
 from multiprocessing.pool import ThreadPool
 from datetime import datetime, timedelta
 os.nice(20)
@@ -1525,7 +1525,7 @@ class Search():
         results.new(
             searchNumber,
             'logResults',
-            self.filter_logs(),
+            self.filter_logs_2(),
             original_results=searchNumber
             )
         result_list = results.get_result_list(searchNumber)
@@ -1600,6 +1600,41 @@ class Search():
         if hasattr(self,'process_pool'):
             self.process_pool.terminate()
             del(self.process_pool)
+        return results
+    def filter_logs_2(self,related_query=False):
+        starttime = datetime.now()
+        logPoolArgs = []
+        query = state.get_query(ACTIVE)
+        results = []
+        for log in s.lf.selectedLogs:
+            if log[-2:] != 'gz':
+                with open(log,mode='r') as f:
+                    for i, line in enumerate(f):
+                        pass
+            totalLines = i
+            segment_line_size = totalLines / cpu_count()
+            start_line = 1
+            end_line = segment_line_size
+            logPoolArgs.append([query,log,totalLines,start_line,end_line])
+            while end_line < totalLines:
+                start_line = start_line + segment_line_size
+                end_line = end_line + segment_line_size
+                if end_line > totalLines:
+                    end_line == totalLines
+                logPoolArgs.append([query,log,totalLines,start_line,end_line])
+            if hasattr(self,'process_pool'):
+                self.process_pool.terminate()
+                del(self.process_pool)
+                self.process_pool = Pool(maxtasksperchild=1)
+            else:
+                self.process_pool = Pool(maxtasksperchild=1)
+            searchedLogs = self.process_pool.map(queryLogProcess_2, logPoolArgs)
+            for resultList in searchedLogs:
+                results.extend(resultList)
+            logging.info('QT = %s : filteredLog Pool Result Count: %s',datetime.now() - starttime, len(results))
+            if hasattr(self,'process_pool'):
+                self.process_pool.terminate()
+                del(self.process_pool)
         return results
 class CpanelStats():
     def new(self, cpanel_user_name,list_of_email_accounts,stat_results):
@@ -2207,6 +2242,54 @@ def queryLogProcess(poolArgs):
                     w.searchProgress.set_completion(completion)
                     loop.draw_screen()
     return rawEntries
+def queryLogProcess_2(poolArgs):
+    os.nice(20)
+    query, log, total_lines, start_line, end_line = poolArgs
+    #debug('Log = %s, filters = %s', log, query)
+    rawEntries = []
+    if log[-2:] != 'gz':
+        with open(log,mode='r') as p:
+            for i, line in enumerate(p):
+                if len(rawEntries) == 1000:
+                    s.rl.resultOverflow = True
+                    debug('ResultOverflow: %s', s.rl.resultOverflow)
+                    rawEntries.append('RESULTSOVERFLOW')
+                    break
+                if i >= start_line and i <= end_line:
+                    if query in line:
+                        if line not in rawEntries:
+                            rawEntries.append(line)
+                    if i % 1000000 == 0:
+                        percent = float(i) / float(total_lines)
+                        completion = int(percent * 100)
+                        #debug('Total Lines in file: %s', totalLines)
+                        #debug('Current Line Percent: %s', completion)
+                        w.searchProgress.set_completion(completion)
+                        loop.draw_screen()
+    else:
+        with gzip.open(log,mode='r') as f:
+            for i, line in enumerate(f):
+                pass
+            #debug('Lines in file: %s', i)
+            totalLines = i
+        with gzip.open(log,mode='r') as f:
+            for i, line in enumerate(f):
+                if len(rawEntries) == 1000:
+                    s.rl.resultOverflow = True
+                    debug('ResultOverflow: %s',s.rl.resultOverflow)
+                    rawEntries.append('RESULTSOVERFLOW')
+                    break
+                if query in line:
+                    if line not in rawEntries:
+                        rawEntries.append(line)
+                if i % 1000000 == 0:
+                    percent = float(i) / float(totalLines)
+                    completion = int(percent * 100)
+                    #debug('Total Lines in file: %s', totalLines)
+                    #debug('Current Line Percent: %s', completion)
+                    w.searchProgress.set_completion(completion)
+                    loop.draw_screen()
+    return rawEntries
 def queryLogProcess2(poolArgs):
     os.nice(20)
     query,log = poolArgs
@@ -2224,8 +2307,14 @@ def queryLogProcess2(poolArgs):
         x = True
         i = 1
         log_file_contents = []
+        process_pool = Pool(maxtasksperchild=1)
+        
+        results = []
+        for resultList in searchedLogs:
+            results.extend(resultList)
         while x == True:
             sed_string = "'" + str(i) + "," + str(i + 999) + "p'"
+            searchedLogs = self.process_pool.map(queryLogProcess, sed_string)
             debug('sed_string: %s', sed_string)
             popen_args = ["sudo sed -n " + sed_string + " " + log]
             reqStdOut,_ = subprocess.Popen(popen_args, 
