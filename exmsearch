@@ -2267,6 +2267,7 @@ def queryLogProcess_2(poolArgs):
         #debug('Total Lines in file: %s', totalLines)
         #debug('Current Line Percent: %s', completion)
         if completion > int(w.searchProgress.complete()):
+            debug("completion: %s", completion)
             w.searchProgress.set_completion(completion)
             loop.draw_screen()
     else:
