@@ -2223,9 +2223,9 @@ def queryLogProcess2(poolArgs):
             )
         log_file_contents = log_less_process.stdout.read()
         debug("Log File Contents: %s", log_file_contents)
-        log_less_process.communicate(input="^f")
-        log_file_contents, log_file_error = log_less_process.communicate()
-        debug("Log File Contents: %s", log_file_contents)
+        #log_less_process.communicate(input="^f")
+        #log_file_contents, log_file_error = log_less_process.communicate()
+        #debug("Log File Contents: %s", log_file_contents)
 
         #logPoolArgs = []
         #with open(log,mode='r') as p:
@@ -2245,7 +2245,7 @@ def queryLogProcess2(poolArgs):
         #            #debug('Current Line Percent: %s', completion)
         #            w.searchProgress.set_completion(completion)
         #            loop.draw_screen()
-        debug("Log File Contents: %s", log_file_contents)
+        #debug("Log File Contents: %s", log_file_contents)
     else:
         popen_args = ["sudo", "zcat" , log]
         reqOutput, reqError = subprocess.Popen(popen_args, 
@@ -2271,9 +2271,9 @@ def queryLogProcess2(poolArgs):
         #            #debug('Current Line Percent: %s', completion)
         #            w.searchProgress.set_completion(completion)
         #            loop.draw_screen()
-        debug("Gzipped Log File Contents: %s", log_file_contents)
-        runtime = starttime - datetime.now()
-        debug("Runtime: %s", datetime.strftime(runtime,s.dt.displayDateTimeFormat))
+        #debug("Gzipped Log File Contents: %s", log_file_contents)
+    runtime = starttime - datetime.now()
+    debug("Runtime: %s", datetime.strftime(runtime,s.dt.displayDateTimeFormat))
     #return rawEntries
 def query_for_cpanel_summary(poolArgs):
     os.nice(20)
