@@ -1,0 +1,3 @@
+{
+    "command":"debug('searchProgress.get_text: %s', frame.contents['body'][0].base_widget.contents[1][0])"
+}
