@@ -2263,7 +2263,7 @@ def queryLogProcess_2(poolArgs):
         completion = int(percent * 100)
         #debug('Total Lines in file: %s', totalLines)
         #debug('Current Line Percent: %s', completion)
-        debug('searchProgress.get_text: %s', frame.contents['body'][0].base_widget.contents[1][0].original_widget.original_widget)
+        debug('searchProgress.get_text: %s', frame.contents['body'][0].base_widget.contents[1][0].original_widget.original_widget.contents[1][0])
         if completion > int(w.searchProgress.get_text()[:-1].strip()):
             debug("completion: %s", completion)
             w.searchProgress.set_completion(completion)
