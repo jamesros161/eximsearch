@@ -1612,6 +1612,7 @@ class Search():
                     for i, line in enumerate(f):
                         pass
             totalLines = i
+            debug("CPU Count = %s", cpu_count())
             segment_line_size = totalLines / cpu_count()
             start_line = 1
             end_line = segment_line_size
