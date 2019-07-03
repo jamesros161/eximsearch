@@ -2233,6 +2233,7 @@ def queryLogProcess2(poolArgs):
                 stderr=subprocess.PIPE,
                 shell=True
                 ).communicate()
+            reqStdOut = reqStdOut.splitlines()
             debug("reqStdOut: %s, ReqStdErr: %s", reqStdOut, reqStdErr)
             log_file_contents.extend(reqStdOut)
             i = i + 100
