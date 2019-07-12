@@ -3,6 +3,7 @@
 
 import urwid
 import datetime
+import io
 import os
 import subprocess
 import sys
@@ -19,7 +20,7 @@ import getpass
 from multiprocessing import Pool, Queue, current_process, connection, cpu_count
 from multiprocessing.pool import ThreadPool
 from datetime import datetime, timedelta
-os.nice(20)
+os.nice(10)
 FORMAT = '%(lineno)d :: %(funcName)s :: %(message)s'
 if getpass.getuser() == 'root':
     logpath = '/root/eximsearch.log'
@@ -1855,21 +1856,22 @@ DATA PROCESSING / SEARCH AND RESULT CLASSES
 
 class Search():
     def new(self, *args):
-        if hasattr(self, 'process_pool'):
-            self.process_pool.terminate()
-            del(self.process_pool)
-            self.process_pool = Pool(maxtasksperchild=1)
-        else:
-            self.process_pool = Pool(maxtasksperchild=1)
+        # if hasattr(self, 'process_pool'):
+        #    self.process_pool.terminate()
+        #    del(self.process_pool)
+        #    self.process_pool = Pool(maxtasksperchild=1)
+        # else:
+        #    self.process_pool = Pool(maxtasksperchild=1)
         if args:
             debug('Search Has special arguments: %s', args)
             state.set_query(args[0])
         debug('New Search Object with query: %s', state.get_query(ACTIVE))
+        debug("CPU Count = %s", cpu_count())
         searchNumber = state.get_new_search_number()
         results.new(
             searchNumber,
             'logResults',
-            self.filter_logs(),
+            self.filter_logs_2(),
             original_results=searchNumber
             )
         result_list = results.get_result_list(searchNumber)
@@ -1981,11 +1983,12 @@ class Search():
         query = state.get_query(ACTIVE)
         results = []
         for log in s.lf.selectedLogs:
+            totalLines = 0
             if log[-2:] != 'gz':
                 with open(log, mode='r') as f:
-                    for i, line in enumerate(f):
-                        pass
-            totalLines = i
+                    for line in f.read():
+                        totalLines += 1
+            debug("Total Lines: %s", totalLines)
             debug("CPU Count = %s", cpu_count())
             segment_line_size = totalLines / cpu_count()
             start_line = 1
@@ -2016,6 +2019,42 @@ class Search():
                 self.process_pool.terminate()
                 del(self.process_pool)
         return results
+
+    def filter_logs_3(self, related_query=False):
+        starttime = datetime.now()
+        jobs = []
+        pool = Pool()
+        results = []
+        query = state.get_query(ACTIVE)
+        for log in s.lf.selectedLogs:
+            if log[-2:] != 'gz':
+                with open(log, mode='r') as f:
+                    nextLineByte = f.tell()
+                    for line in f:
+                        jobs.append(
+                            pool.apply_async(
+                                process_wrapper,
+                                (nextLineByte, query, log)))
+                        nextLineByte = f.tell()
+            else:
+                with gzip.open(log, mode='r') as gz:
+                    f = io.BufferedReader(gz)
+                    # nextLineByte = f.tell()
+                    for line in f:
+                        if len(jobs) < 10000:
+                            jobs.append(
+                                pool.apply_async(
+                                    process_wrapper,
+                                    (None, query, log)))
+                        # nextLineByte = f.tell()
+        for job in jobs:
+            if job:
+                results.append(job.get())
+        logging.info(
+            'QT = %s : ',
+            datetime.now() - starttime)
+        debug('Results Count: %s', len(results))
+        pool.close()
 
 
 class CpanelStats():
@@ -2650,6 +2689,26 @@ class UAPI():
         return email_list
 
 
+def process_wrapper(lineByte, query, log):
+    if log[-2:] != 'gz':
+        with open(log) as f:
+            f.seek(lineByte)
+            line = f.readline()
+            if query in line:
+                debug('match: %s', line)
+                return line
+            else:
+                return False
+    else:
+        with gzip.open(log) as gz:
+            f = io.BufferedReader(gz)
+            line = f.readline()
+            if query in line:
+                return line
+            else:
+                return False
+
+
 def queryLogProcess(poolArgs):
     os.nice(20)
     query, log = poolArgs
@@ -2704,13 +2763,14 @@ def queryLogProcess_2(poolArgs):
     loop.draw_screen()
     if log[-2:] != 'gz':
         with open(log, mode='r') as p:
-            for i, line in enumerate(p):
+            current_line = 1
+            for line in p:
                 if len(rawEntries) == 1000:
                     s.rl.resultOverflow = True
                     debug('ResultOverflow: %s', s.rl.resultOverflow)
                     rawEntries.append('RESULTSOVERFLOW')
                     break
-                if i >= start_line and i <= end_line:
+                if current_line >= start_line and current_line <= end_line:
                     if query in line:
                         if line not in rawEntries:
                             rawEntries.append(line)
