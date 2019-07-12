@@ -1868,7 +1868,7 @@ class Search():
         results.new(
             searchNumber,
             'logResults',
-            self.filter_logs_2(),
+            self.filter_logs(),
             original_results=searchNumber
             )
         result_list = results.get_result_list(searchNumber)
