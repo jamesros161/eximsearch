@@ -17,6 +17,7 @@ import collections
 import socket
 import threading
 import getpass
+from itertools import islice
 from multiprocessing import Pool, Queue, current_process, connection, cpu_count
 from multiprocessing.pool import ThreadPool
 from datetime import datetime, timedelta
@@ -1983,31 +1984,44 @@ class Search():
         query = state.get_query(ACTIVE)
         results = []
         for log in s.lf.selectedLogs:
-            totalLines = 0
-            if log[-2:] != 'gz':
-                with open(log, mode='r') as f:
-                    for line in f.read():
-                        totalLines += 1
-            debug("Total Lines: %s", totalLines)
-            debug("CPU Count = %s", cpu_count())
-            segment_line_size = totalLines / cpu_count()
+            x = True
+            total_lines, error = subprocess.Popen(
+                ["wc -l " + log + " | awk '{print $1}'"],
+                stderr=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                shell=True).communicate()
+            debug("Total Lines: %s", total_lines)
+            debug("Error: %s", error)
+            segment_line_size = int(total_lines) / (cpu_count() - 1)
+            # segment_line_size = 100000
             start_line = 1
             end_line = segment_line_size
-            logPoolArgs.append(
-                [query, log, totalLines, start_line, end_line])
-            while end_line < totalLines:
+            # with open(log) as f:
+            #    while x:
+            #        try:
+            #            line = next(islice(f, start_line - 1, start_line))
+            #        except StopIteration:
+            #            debug('Last Start Line: %s', start_line)
+            #            x = False
+            #        else:
+            #            logPoolArgs.append(
+            #                [query, log, start_line, end_line])
+            #        start_line = start_line + segment_line_size
+            #        end_line = end_line + segment_line_size
+            while start_line < int(total_lines):
+                logPoolArgs.append(
+                    [query, log, start_line, end_line])
                 start_line = start_line + segment_line_size
                 end_line = end_line + segment_line_size
-                if end_line > totalLines:
-                    end_line == totalLines
-                logPoolArgs.append(
-                    [query, log, totalLines, start_line, end_line])
+            pool_size_time = datetime.now() - starttime
+            debug("Time to Determine Pool Sizes: %s", pool_size_time)
+            debug("ProcessPool Args: %s", len(logPoolArgs))
             if hasattr(self, 'process_pool'):
                 self.process_pool.terminate()
                 del(self.process_pool)
                 self.process_pool = Pool()
             else:
-                self.process_pool = Pool()
+                self.process_pool = Pool(cpu_count())
             searchedLogs = self.process_pool.map(
                 queryLogProcess_2, logPoolArgs)
             for resultList in searchedLogs:
@@ -2710,6 +2724,7 @@ def process_wrapper(lineByte, query, log):
 
 
 def queryLogProcess(poolArgs):
+    process_start_time = datetime.now()
     os.nice(20)
     query, log = poolArgs
     rawEntries = []
@@ -2753,12 +2768,14 @@ def queryLogProcess(poolArgs):
                     completion = int(percent * 100)
                     w.searchProgress.set_completion(completion)
                     loop.draw_screen()
+    process_run_time = datetime.now() - process_start_time
     return rawEntries
 
 
 def queryLogProcess_2(poolArgs):
-    os.nice(20)
-    query, log, total_lines, start_line, end_line = poolArgs
+    process_start_time = datetime.now()
+    os.nice(10)
+    query, log, start_line, end_line = poolArgs
     rawEntries = []
     loop.draw_screen()
     if log[-2:] != 'gz':
@@ -2774,38 +2791,19 @@ def queryLogProcess_2(poolArgs):
                     if query in line:
                         if line not in rawEntries:
                             rawEntries.append(line)
-    else:
-        with gzip.open(log, mode='r') as f:
-            for i, line in enumerate(f):
-                pass
-            totalLines = i
-        with gzip.open(log, mode='r') as f:
-            for i, line in enumerate(f):
-                if len(rawEntries) == 1000:
-                    s.rl.resultOverflow = True
-                    debug('ResultOverflow: %s', s.rl.resultOverflow)
-                    rawEntries.append('RESULTSOVERFLOW')
-                    break
-                if query in line:
-                    if line not in rawEntries:
-                        rawEntries.append(line)
-                if i % 1000000 == 0:
-                    percent = float(i) / float(totalLines)
-                    completion = int(percent * 100)
-                    w.searchProgress.set_completion(completion)
-                    loop.draw_screen()
-    percent = float(end_line) / float(total_lines)
-    completion = int(percent * 100)
-    base_widget = frame.contents['body'][0].base_widget.contents[1][0]
-    original_widget = base_widget.original_widget.original_widget
-    search_progress_box = original_widget.original_widget
-    progress_bar = search_progress_box.original_widget.contents[1][0]
-    progress_bar_text = progress_bar.get_text()[:-1].strip()
-    debug('searchProgress.get_text: %s', progress_bar_text)
-    if completion > int(progress_bar_text):
-        debug("completion: %s", completion)
-        progress_bar.set_completion(completion)
-        loop.draw_screen()
+
+    # base_widget = frame.contents['body'][0].base_widget.contents[1][0]
+    # original_widget = base_widget.original_widget.original_widget
+    # search_progress_box = original_widget.original_widget
+    # progress_bar = search_progress_box.original_widget.contents[1][0]
+    # progress_bar_text = progress_bar.get_text()[:-1].strip()
+    # debug('searchProgress.get_text: %s', progress_bar_text)
+    # completion = int(progress_bar_text) + 1
+    # debug("completion: %s", completion)
+    # progress_bar.set_completion(completion)
+    # loop.draw_screen()
+    process_run_time = datetime.now() - process_start_time
+    debug('Process Run Time: %s', process_run_time)
     return rawEntries
 
 
