@@ -807,7 +807,6 @@ class BodyWidgets():
         """Page displayed as Home Page for the application
         """
         debug(' kwargs : %s', kwargs)
-        debug('Logs Selected: %s', s.lf.selected_logs)
         homeText = w.getText(
             'body',
             'Welcome to the best Exim Search Utility ever created. ' +
@@ -817,6 +816,7 @@ class BodyWidgets():
             debug(' No logs selected, returning to choose_logs ')
             return self.get_choose_logs()
         else:
+            debug('Logs Selected: %s', s.lf.selectedLogs)
             logFiles.get_date_range()
             return urwid.Filler(homeText, 'middle')
 
