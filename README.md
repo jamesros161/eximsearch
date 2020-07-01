@@ -27,29 +27,6 @@ In addition to the modules included in the Python Standard Library, you will nee
   
 This will have to be run on a server with cPanel / WHM 11+ . This must be run as root or sudo. 
 
-
-### Installing
-
-
-1) The Simplest way to install this application is to add our repo to your yum configuration:
-
-```
-sudo yum-config-manager --add-repo http://repo.wolfindva.com/wolfindva.repo
-
-```
-
-2) Then You can install the application using 
-
-```
-sudo yum -y install exmsearch
-```
-
-3) The application can then be started by running
-
-```
-sudo exmsearch
-```
-
 *** Please note, that due to the typical file permissions of the /var/log/exim_mainlog, this application will need to be run as either root, or run as sudo.
 
 ## Built With
